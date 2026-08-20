@@ -246,16 +246,17 @@ class Processor:
             batch = []
 
         consecutive_empty = 0
-        for raw_row in row_iter:
+
+        def handle(raw_row):
+            nonlocal row_no, consecutive_empty
             row_no += 1
 
             if not any(c not in (None, "") for c in raw_row):
                 consecutive_empty += 1
                 if consecutive_empty >= 100:
-                    # Stop scanning trailing empty ghost rows in Excel
-                    break
+                    return
                 result.skipped_rows += 1
-                continue
+                return
             else:
                 consecutive_empty = 0
 
