@@ -7,16 +7,12 @@
       "config": {
         "distDir": "dist"
       }
-    },
-    {
-      "src": "backend/app/main.py",
-      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "backend/app/main.py"
+      "dest": "https://web-production-9dadf.up.railway.app/api/$1"
     },
     {
       "handle": "filesystem"
