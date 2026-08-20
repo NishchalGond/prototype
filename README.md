@@ -179,5 +179,8 @@ prototype/
 
 ---
 
-## 📄 License
-Distributed under the MIT License. See `LICENSE` for more information.
+## 🔒 Copyright & License
+
+© 2026 **LPH** & **Nishchal Gond**. All Rights Reserved.
+
+All intellectual property, source code, normalization algorithms, design systems, and software assets contained within this platform are proprietary and strictly owned by **LPH** and **Nishchal Gond**. Unauthorized copying, distribution, reverse engineering, or commercial deployment without explicit written authorization is strictly prohibited.
