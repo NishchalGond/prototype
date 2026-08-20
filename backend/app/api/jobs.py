@@ -33,17 +33,54 @@ def _job_out(job: ProcessingJob) -> JobOut:
 
 
 # --------------------------------------------------------------------------
-@router.post("/files/upload", response_model=UploadResponse,
-             status_code=status.HTTP_201_CREATED)
+@router.post("/upload/inspect")
+async def inspect_file_endpoint(file: UploadFile = File(...)):
+    """Inspect file column headers without registering a job."""
+    from engine.inspection import inspect_source, UnreadableFile
+    if not file.filename:
+        raise HTTPException(400, "No filename supplied.")
+    settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")
+    dest = settings.UPLOAD_DIR / f"temp_{stamp}_{Path(file.filename).name}"
+    try:
+        with open(dest, "wb") as out:
+            while chunk := await file.read(1 << 20):
+                out.write(chunk)
+        info = inspect_source(dest)
+        info_dict = info.to_dict()
+        
+        preview_cols = []
+        for s in info_dict.get("sheets", []):
+            for col_mapping in s.get("mapped_columns", []):
+                preview_cols.append({
+                    "raw_header": col_mapping.get("raw_header"),
+                    "mapped_target": col_mapping.get("mapped_target")
+                })
+        
+        return {
+            "filename": file.filename,
+            "detected_format": info.detected_format,
+            "total_rows_estimate": info.total_rows,
+            "header_count": len(preview_cols),
+            "mapped_count": len([c for c in preview_cols if c.get("mapped_target")]),
+            "mapped_columns_preview": preview_cols
+        }
+    except Exception as exc:
+        log.exception("Inspection error")
+        raise HTTPException(422, f"Unreadable file: {str(exc)}")
+    finally:
+        dest.unlink(missing_ok=True)
+        await file.close()
+
+
+@router.post("/upload", response_model=UploadResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/files/upload", response_model=UploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_file(
     background: BackgroundTasks,
     file: UploadFile = File(...),
     batch_size: int | None = Query(None, ge=1, le=100000),
-    autostart: bool = Query(False, description="Begin processing immediately. "
-                                                "Default false: the dashboard calls "
-                                                "/api/jobs/{id}/start explicitly."),
-    force: bool = Query(False, description="Re-ingest even if this exact file "
-                                           "(same SHA-256) was already processed."),
+    autostart: bool = Query(False, description="Begin processing immediately."),
+    force: bool = Query(False, description="Re-ingest even if this exact file was already processed."),
     db: Session = Depends(get_db),
 ):
     """Accept an Excel/CSV upload, register it, and (by default) start processing."""
@@ -209,6 +246,15 @@ def start_job(
     background.add_task(run_job, job_id)
     db.refresh(job)
     return _job_out(job)
+
+
+@router.post("/jobs/{job_id}/mapping-overrides")
+def set_mapping_overrides(job_id: int, payload: dict, db: Session = Depends(get_db)):
+    job = db.get(ProcessingJob, job_id)
+    if not job:
+        raise HTTPException(404, f"Job {job_id} not found")
+    overrides = payload.get("overrides", {})
+    return {"status": "ok", "job_id": job_id, "overrides_count": len(overrides)}
 
 
 @router.get("/jobs", response_model=Page[JobOut])
