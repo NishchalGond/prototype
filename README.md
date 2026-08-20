@@ -132,22 +132,6 @@ The application interface will open at **`http://localhost:3000/`**.
 
 ---
 
-## 🌐 Deploying to Vercel
-
-### Step 1: Import Project to Vercel
-1. Log in to [Vercel](https://vercel.com).
-2. Click **Add New...** ➔ **Project**.
-3. Select your GitHub repository: `NishchalGond/prototype`.
-
-### Step 2: Configure Environment Variables
-In the Vercel deployment settings, expand **Environment Variables** and add:
-- **`DATABASE_URL`**: `postgresql://postgres.lghmffcxtytdacdearuo:Rio%409535266172@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres`
-
-### Step 3: Deploy
-- Click **Deploy**. Vercel will automatically read `vercel.json`, build the Vite frontend, spin up the Python backend serverless function, and issue your live production URL!
-
----
-
 ## 📡 API Endpoint Reference
 
 | Method | Endpoint | Description |

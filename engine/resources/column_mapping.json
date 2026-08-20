@@ -340,7 +340,8 @@
       "Party Type",
       "Type (Buyer or Seller)",
       "TYPE ( BUYER/SELLER)",
-      "Party_Type"
+      "Party_Type",
+      "Person Type"
     ],
     "Mobile 1": [
       "CONTACT",
