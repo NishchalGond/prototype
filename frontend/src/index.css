@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply text-slate-800 font-sans antialiased selection:bg-blue-600 selection:text-white min-h-screen overflow-x-hidden;
+    background-color: #eef0f4;
+  }
+}
+
+/* ==========================================================================
+   PREMIUM WHITE & LIGHT GREY NEUMORPHISM DESIGN SYSTEM
+   ========================================================================== */
+
+/* Primary Light Neumorphic Card (Raised Soft Surface) */
+.neumorph-card {
+  background: #eef0f4;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    9px 9px 18px #cbd2dc, 
+    -9px -9px 18px #ffffff;
+  transition: all 0.2s ease-in-out;
+}
+
+.neumorph-card-interactive {
+  background: #eef0f4;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 
+    9px 9px 18px #cbd2dc, 
+    -9px -9px 18px #ffffff;
+  transition: all 0.2s ease-in-out;
+}
+
+.neumorph-card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    12px 12px 24px #c3c9d4, 
+    -12px -12px 24px #ffffff;
+}
+
+/* Debossed Inset Control (Inputs, Search Bars, Dropdowns) */
+.neumorph-inset {
+  background: #eef0f4;
+  border-radius: 16px;
+  border: 1px solid rgba(203, 210, 220, 0.4);
+  box-shadow: 
+    inset 4px 4px 8px #cbd2dc, 
+    inset -4px -4px 8px #ffffff;
+  color: #1f2937;
+}
+
+.neumorph-inset:focus-within, .neumorph-inset:focus {
+  border-color: rgba(37, 99, 235, 0.6);
+  box-shadow: 
+    inset 5px 5px 10px #c3c9d4, 
+    inset -5px -5px 10px #ffffff;
+}
+
+/* Tactile Secondary Button (Light Grey Extruded) */
+.neumorph-button {
+  background: #eef0f4;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 
+    6px 6px 14px #cbd2dc, 
+    -6px -6px 14px #ffffff;
+  color: #1f2937;
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.neumorph-button:hover {
+  background: #f3f5f8;
+  box-shadow: 
+    8px 8px 16px #c3c9d4, 
+    -8px -8px 16px #ffffff;
+}
+
+.neumorph-button:active {
+  background: #e8ebf0;
+  box-shadow: 
+    inset 3px 3px 6px #cbd2dc, 
+    inset -3px -3px 6px #ffffff;
+  transform: translateY(1px);
+}
+
+/* Primary Accent Button (Soft Blue) */
+.neumorph-button-primary {
+  background: #2563eb;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    6px 6px 14px #cbd2dc, 
+    -6px -6px 14px #ffffff;
+  color: #ffffff;
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.neumorph-button-primary:hover {
+  background: #1d4ed8;
+  box-shadow: 
+    8px 8px 18px #c3c9d4, 
+    -8px -8px 18px #ffffff;
+}
+
+.neumorph-button-primary:active {
+  background: #1e40af;
+  box-shadow: 
+    inset 3px 3px 6px rgba(0, 0, 0, 0.25), 
+    inset -3px -3px 6px rgba(255, 255, 255, 0.1);
+  transform: translateY(1px);
+}
+
+/* Custom Soft Grey Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #eef0f4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd2dc;
+  border-radius: 9999px;
+  border: 2px solid #eef0f4;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

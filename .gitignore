@@ -1,0 +1,47 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.local
+frontend/.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+
+# Database & Storage
+*.db
+*.sqlite3
+prototype_core.db
+uploads/
+logs/
+*.log
+
+# Node dependencies & builds
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+
+# Data sheets & heavy files
+Builders data/
+Excel sheets/
+*.xlsx
+*.csv
+*.xls
+
+# IDE & System files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Agent skills cache
+.agents/
+skills-lock.json
