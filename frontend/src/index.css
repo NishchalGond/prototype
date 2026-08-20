@@ -1,87 +1,118 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --bg-main: #eef0f4;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --card-bg: #eef0f4;
+    --card-border: rgba(255, 255, 255, 0.7);
+    --card-shadow: 9px 9px 18px #cbd2dc, -9px -9px 18px #ffffff;
+    --card-shadow-hover: 12px 12px 24px #c3c9d4, -12px -12px 24px #ffffff;
+    --inset-bg: #eef0f4;
+    --inset-border: rgba(203, 210, 220, 0.4);
+    --inset-shadow: inset 4px 4px 8px #cbd2dc, inset -4px -4px 8px #ffffff;
+    --inset-shadow-focus: inset 5px 5px 10px #c3c9d4, inset -5px -5px 10px #ffffff;
+    --button-bg: #eef0f4;
+    --button-border: rgba(255, 255, 255, 0.8);
+    --button-shadow: 6px 6px 14px #cbd2dc, -6px -6px 14px #ffffff;
+    --button-shadow-hover: 8px 8px 16px #c3c9d4, -8px -8px 16px #ffffff;
+    --button-active-shadow: inset 3px 3px 6px #cbd2dc, inset -3px -3px 6px #ffffff;
+    --scrollbar-track: #eef0f4;
+    --scrollbar-thumb: #cbd2dc;
+    --table-header-bg: #eef0f4;
+    --table-row-border: rgba(203, 210, 220, 0.5);
+    --table-row-hover: rgba(255, 255, 255, 0.6);
+  }
+
+  .dark {
+    --bg-main: #161920;
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --card-bg: #1c2029;
+    --card-border: rgba(255, 255, 255, 0.07);
+    --card-shadow: 8px 8px 18px #0f1116, -8px -8px 18px #292f3c;
+    --card-shadow-hover: 11px 11px 22px #0c0e12, -11px -11px 22px #2d3442;
+    --inset-bg: #15181f;
+    --inset-border: rgba(255, 255, 255, 0.05);
+    --inset-shadow: inset 4px 4px 8px #0d0f13, inset -4px -4px 8px #242935;
+    --inset-shadow-focus: inset 5px 5px 10px #0b0c10, inset -5px -5px 10px #2a303e;
+    --button-bg: #1c2029;
+    --button-border: rgba(255, 255, 255, 0.09);
+    --button-shadow: 5px 5px 12px #0f1116, -5px -5px 12px #292f3c;
+    --button-shadow-hover: 7px 7px 15px #0c0e12, -7px -7px 15px #2d3442;
+    --button-active-shadow: inset 3px 3px 6px #0f1116, inset -3px -3px 6px #292f3c;
+    --scrollbar-track: #161920;
+    --scrollbar-thumb: #2d3442;
+    --table-header-bg: #191c24;
+    --table-row-border: rgba(255, 255, 255, 0.05);
+    --table-row-hover: rgba(255, 255, 255, 0.03);
+  }
+
   body {
-    @apply text-slate-800 font-sans antialiased selection:bg-blue-600 selection:text-white min-h-screen overflow-x-hidden;
-    background-color: #eef0f4;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    @apply font-sans antialiased selection:bg-blue-600 selection:text-white min-h-screen overflow-x-hidden transition-colors duration-200;
   }
 }
 
 /* ==========================================================================
-   PREMIUM WHITE & LIGHT GREY NEUMORPHISM DESIGN SYSTEM
+   DYNAMIC NEUMORPHISM DESIGN SYSTEM (LIGHT & DARK WITH SLATE/GREY UNDERTONES)
    ========================================================================== */
 
-/* Primary Light Neumorphic Card (Raised Soft Surface) */
+/* Primary Neumorphic Card (Raised Soft Surface) */
 .neumorph-card {
-  background: #eef0f4;
+  background: var(--card-bg);
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 
-    9px 9px 18px #cbd2dc, 
-    -9px -9px 18px #ffffff;
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
   transition: all 0.2s ease-in-out;
 }
 
 .neumorph-card-interactive {
-  background: #eef0f4;
+  background: var(--card-bg);
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow: 
-    9px 9px 18px #cbd2dc, 
-    -9px -9px 18px #ffffff;
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
   transition: all 0.2s ease-in-out;
 }
 
 .neumorph-card-interactive:hover {
   transform: translateY(-2px);
-  box-shadow: 
-    12px 12px 24px #c3c9d4, 
-    -12px -12px 24px #ffffff;
+  box-shadow: var(--card-shadow-hover);
 }
 
 /* Debossed Inset Control (Inputs, Search Bars, Dropdowns) */
 .neumorph-inset {
-  background: #eef0f4;
+  background: var(--inset-bg);
   border-radius: 16px;
-  border: 1px solid rgba(203, 210, 220, 0.4);
-  box-shadow: 
-    inset 4px 4px 8px #cbd2dc, 
-    inset -4px -4px 8px #ffffff;
-  color: #1f2937;
+  border: 1px solid var(--inset-border);
+  box-shadow: var(--inset-shadow);
+  color: var(--text-main);
 }
 
 .neumorph-inset:focus-within, .neumorph-inset:focus {
   border-color: rgba(37, 99, 235, 0.6);
-  box-shadow: 
-    inset 5px 5px 10px #c3c9d4, 
-    inset -5px -5px 10px #ffffff;
+  box-shadow: var(--inset-shadow-focus);
 }
 
-/* Tactile Secondary Button (Light Grey Extruded) */
+/* Tactile Secondary Button */
 .neumorph-button {
-  background: #eef0f4;
+  background: var(--button-bg);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 
-    6px 6px 14px #cbd2dc, 
-    -6px -6px 14px #ffffff;
-  color: #1f2937;
+  border: 1px solid var(--button-border);
+  box-shadow: var(--button-shadow);
+  color: var(--text-main);
   transition: all 0.15s ease-in-out;
   cursor: pointer;
 }
 
 .neumorph-button:hover {
-  background: #f3f5f8;
-  box-shadow: 
-    8px 8px 16px #c3c9d4, 
-    -8px -8px 16px #ffffff;
+  box-shadow: var(--button-shadow-hover);
 }
 
 .neumorph-button:active {
-  background: #e8ebf0;
-  box-shadow: 
-    inset 3px 3px 6px #cbd2dc, 
-    inset -3px -3px 6px #ffffff;
+  box-shadow: var(--button-active-shadow);
   transform: translateY(1px);
 }
 
@@ -91,8 +122,8 @@
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 
-    6px 6px 14px #cbd2dc, 
-    -6px -6px 14px #ffffff;
+    0 4px 14px rgba(37, 99, 235, 0.35),
+    var(--button-shadow);
   color: #ffffff;
   transition: all 0.15s ease-in-out;
   cursor: pointer;
@@ -101,34 +132,54 @@
 .neumorph-button-primary:hover {
   background: #1d4ed8;
   box-shadow: 
-    8px 8px 18px #c3c9d4, 
-    -8px -8px 18px #ffffff;
+    0 6px 18px rgba(37, 99, 235, 0.5),
+    var(--button-shadow-hover);
 }
 
 .neumorph-button-primary:active {
   background: #1e40af;
   box-shadow: 
-    inset 3px 3px 6px rgba(0, 0, 0, 0.25), 
+    inset 3px 3px 6px rgba(0, 0, 0, 0.3), 
     inset -3px -3px 6px rgba(255, 255, 255, 0.1);
   transform: translateY(1px);
 }
 
-/* Custom Soft Grey Scrollbar */
+/* Custom Soft Scrollbar */
 ::-webkit-scrollbar {
   width: 7px;
   height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #eef0f4;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd2dc;
+  background: var(--scrollbar-thumb);
   border-radius: 9999px;
-  border: 2px solid #eef0f4;
+  border: 2px solid var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: #64748b;
+}
+
+/* Keyframe animations */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out;
 }

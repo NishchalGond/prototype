@@ -8,17 +8,52 @@ import RecordsExplorer from './components/RecordsExplorer';
 import JobDetailsView from './components/JobDetailsView';
 import ColumnMappingInspector from './components/ColumnMappingInspector';
 import Spatial3DCanvas from './components/Spatial3DCanvas';
+import AuthLockScreen from './components/AuthLockScreen';
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('datalink_auth') === 'authenticated';
+  });
+
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('datalink_theme') || 'dark';
+  });
+
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState(null);
   const [activeJobId, setActiveJobId] = useState(null);
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Sync theme with document classList
   useEffect(() => {
-    fetchStats();
-  }, []);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('datalink_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  const handleAuthenticate = () => {
+    localStorage.setItem('datalink_auth', 'authenticated');
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('datalink_auth');
+    setIsAuthenticated(false);
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchStats();
+    }
+  }, [isAuthenticated]);
 
   const fetchStats = async () => {
     try {
@@ -42,10 +77,21 @@ export default function App() {
     fetchStats();
   };
 
+  // If not authenticated, display the Neumorphic Lock Screen
+  if (!isAuthenticated) {
+    return (
+      <AuthLockScreen 
+        onAuthenticate={handleAuthenticate}
+        theme={theme}
+        toggleTheme={toggleTheme}
+      />
+    );
+  }
+
   return (
-    <div className="relative h-screen w-screen bg-[#eef0f4] text-slate-800 font-sans selection:bg-blue-600 selection:text-white overflow-hidden">
-      {/* Static Light Canvas */}
-      <Spatial3DCanvas />
+    <div className={`relative h-screen w-screen bg-[var(--bg-main)] text-[var(--text-main)] font-sans selection:bg-blue-600 selection:text-white overflow-hidden transition-colors duration-200`}>
+      {/* Dynamic 3D Spatial Canvas */}
+      <Spatial3DCanvas theme={theme} />
 
       {/* Fixed Full Screen Layout */}
       <div className="relative z-10 flex w-full h-full overflow-hidden">
@@ -54,26 +100,31 @@ export default function App() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           activeJob={activeJobId ? { id: activeJobId, status: 'RUNNING' } : null}
+          theme={theme}
         />
 
         {/* Fixed Content Panel */}
-        <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-[#eef0f4]">
+        <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-[var(--bg-main)]">
           <Header
             onRefresh={fetchStats}
             activeJob={activeJobId ? { id: activeJobId, status: 'PROCESSING' } : null}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             setActiveTab={setActiveTab}
+            theme={theme}
+            toggleTheme={toggleTheme}
+            onLogout={handleLogout}
           />
 
           {/* Active View Container */}
-          <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#eef0f4]">
+          <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[var(--bg-main)]">
             {activeTab === 'overview' && (
               <div className="flex-1 overflow-y-auto">
                 <OverviewDashboard
                   stats={stats}
                   setActiveTab={setActiveTab}
                   setSelectedJobId={setSelectedJobId}
+                  theme={theme}
                 />
               </div>
             )}
@@ -83,6 +134,7 @@ export default function App() {
                 <UploadSection
                   onUploadComplete={handleUploadComplete}
                   activeJob={activeJobId}
+                  theme={theme}
                 />
               </div>
             )}
@@ -93,6 +145,7 @@ export default function App() {
                   jobId={activeJobId}
                   onJobCompleted={handleJobFinished}
                   setActiveTab={setActiveTab}
+                  theme={theme}
                 />
               </div>
             )}
@@ -102,17 +155,18 @@ export default function App() {
                 <JobDetailsView
                   selectedJobId={selectedJobId}
                   setSelectedJobId={setSelectedJobId}
+                  theme={theme}
                 />
               </div>
             )}
 
             {activeTab === 'records' && (
-              <RecordsExplorer initialQuery={searchQuery} />
+              <RecordsExplorer initialQuery={searchQuery} theme={theme} />
             )}
 
             {activeTab === 'mapping' && (
               <div className="flex-1 overflow-y-auto">
-                <ColumnMappingInspector />
+                <ColumnMappingInspector theme={theme} />
               </div>
             )}
           </main>
