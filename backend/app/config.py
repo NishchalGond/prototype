@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     # --- processing -----------------------------------------------------
     BATCH_SIZE: int = 1000
     MAX_UPLOAD_MB: int = 512
-    UPLOAD_DIR: Path = ROOT / "uploads"
-    LOG_DIR: Path = ROOT / "logs"
+    UPLOAD_DIR: Path = Path("/tmp/uploads")
+    LOG_DIR: Path = Path("/tmp/logs")
 
     # Record grain: "owner"    -> one row per owner-property pair (keeps every owner)
     #               "property" -> one row per property, owners collapsed into Mobile 1..3
@@ -34,7 +34,12 @@ class Settings(BaseSettings):
 
     # --- api ------------------------------------------------------------
     API_PREFIX: str = "/api"
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://prototype-azure-theta.vercel.app",
+        "https://prototype-b0ejqriyk-lpj1.vercel.app",
+    ]
     DEFAULT_PAGE_SIZE: int = 50
     MAX_PAGE_SIZE: int = 500
 
