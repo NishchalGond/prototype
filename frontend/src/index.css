@@ -5,6 +5,7 @@
     --bg-main: #eef0f4;
     --text-main: #1e293b;
     --text-muted: #64748b;
+    --text-subtle: #475569;
     --card-bg: #eef0f4;
     --card-border: rgba(255, 255, 255, 0.7);
     --card-shadow: 9px 9px 18px #cbd2dc, -9px -9px 18px #ffffff;
@@ -21,32 +22,41 @@
     --scrollbar-track: #eef0f4;
     --scrollbar-thumb: #cbd2dc;
     --table-header-bg: #eef0f4;
-    --table-row-border: rgba(203, 210, 220, 0.5);
+    --table-header-text: #334155;
     --table-row-hover: rgba(255, 255, 255, 0.6);
+    --table-border: rgba(203, 210, 220, 0.6);
+    --badge-bg: #eef0f4;
+    --badge-text: #475569;
+    --badge-border: rgba(203, 210, 220, 0.8);
   }
 
   .dark {
-    --bg-main: #161920;
-    --text-main: #f1f5f9;
-    --text-muted: #94a3b8;
-    --card-bg: #1c2029;
-    --card-border: rgba(255, 255, 255, 0.07);
-    --card-shadow: 8px 8px 18px #0f1116, -8px -8px 18px #292f3c;
-    --card-shadow-hover: 11px 11px 22px #0c0e12, -11px -11px 22px #2d3442;
-    --inset-bg: #15181f;
-    --inset-border: rgba(255, 255, 255, 0.05);
-    --inset-shadow: inset 4px 4px 8px #0d0f13, inset -4px -4px 8px #242935;
-    --inset-shadow-focus: inset 5px 5px 10px #0b0c10, inset -5px -5px 10px #2a303e;
-    --button-bg: #1c2029;
-    --button-border: rgba(255, 255, 255, 0.09);
-    --button-shadow: 5px 5px 12px #0f1116, -5px -5px 12px #292f3c;
-    --button-shadow-hover: 7px 7px 15px #0c0e12, -7px -7px 15px #2d3442;
-    --button-active-shadow: inset 3px 3px 6px #0f1116, inset -3px -3px 6px #292f3c;
-    --scrollbar-track: #161920;
-    --scrollbar-thumb: #2d3442;
-    --table-header-bg: #191c24;
-    --table-row-border: rgba(255, 255, 255, 0.05);
-    --table-row-hover: rgba(255, 255, 255, 0.03);
+    --bg-main: #14171e;
+    --text-main: #f8fafc;
+    --text-muted: #cbd5e1;
+    --text-subtle: #94a3b8;
+    --card-bg: #1c202a;
+    --card-border: rgba(255, 255, 255, 0.08);
+    --card-shadow: 8px 8px 18px #0d0f14, -8px -8px 18px #282f3d;
+    --card-shadow-hover: 11px 11px 22px #0a0b0f, -11px -11px 22px #2e3646;
+    --inset-bg: #161921;
+    --inset-border: rgba(255, 255, 255, 0.06);
+    --inset-shadow: inset 4px 4px 8px #0d0f14, inset -4px -4px 8px #242b38;
+    --inset-shadow-focus: inset 5px 5px 10px #090a0d, inset -5px -5px 10px #2c3444;
+    --button-bg: #1c202a;
+    --button-border: rgba(255, 255, 255, 0.1);
+    --button-shadow: 5px 5px 12px #0d0f14, -5px -5px 12px #282f3d;
+    --button-shadow-hover: 7px 7px 15px #0a0b0f, -7px -7px 15px #2e3646;
+    --button-active-shadow: inset 3px 3px 6px #0d0f14, inset -3px -3px 6px #282f3d;
+    --scrollbar-track: #14171e;
+    --scrollbar-thumb: #2e3646;
+    --table-header-bg: #181c25;
+    --table-header-text: #cbd5e1;
+    --table-row-hover: rgba(255, 255, 255, 0.05);
+    --table-border: rgba(255, 255, 255, 0.08);
+    --badge-bg: #191d26;
+    --badge-text: #cbd5e1;
+    --badge-border: rgba(255, 255, 255, 0.12);
   }
 
   body {
@@ -57,7 +67,7 @@
 }
 
 /* ==========================================================================
-   DYNAMIC NEUMORPHISM DESIGN SYSTEM (LIGHT & DARK WITH SLATE/GREY UNDERTONES)
+   DYNAMIC NEUMORPHISM DESIGN SYSTEM
    ========================================================================== */
 
 /* Primary Neumorphic Card (Raised Soft Surface) */
@@ -92,7 +102,7 @@
 }
 
 .neumorph-inset:focus-within, .neumorph-inset:focus {
-  border-color: rgba(37, 99, 235, 0.6);
+  border-color: rgba(59, 130, 246, 0.7);
   box-shadow: var(--inset-shadow-focus);
 }
 
@@ -109,6 +119,7 @@
 
 .neumorph-button:hover {
   box-shadow: var(--button-shadow-hover);
+  color: var(--text-main);
 }
 
 .neumorph-button:active {
@@ -116,7 +127,7 @@
   transform: translateY(1px);
 }
 
-/* Primary Accent Button (Soft Blue) */
+/* Primary Accent Button */
 .neumorph-button-primary {
   background: #2563eb;
   border-radius: 16px;
@@ -142,6 +153,90 @@
     inset 3px 3px 6px rgba(0, 0, 0, 0.3), 
     inset -3px -3px 6px rgba(255, 255, 255, 0.1);
   transform: translateY(1px);
+}
+
+/* ==========================================================================
+   HIGH-CONTRAST DARK THEME OVERRIDES (ENSURES FULL VISIBILITY)
+   ========================================================================== */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #f8fafc !important;
+}
+
+.dark p,
+.dark span,
+.dark div,
+.dark label,
+.dark button,
+.dark input,
+.dark select {
+  color: var(--text-main);
+}
+
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700,
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700,
+.dark .text-black {
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-600,
+.dark .text-slate-500,
+.dark .text-gray-600,
+.dark .text-gray-500 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-400,
+.dark .text-gray-400 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-slate-300 {
+  color: #e2e8f0 !important;
+}
+
+/* Soft Neumorphic Badges & Inset Tags in Dark Mode */
+.dark .bg-\[\#eef0f4\] {
+  background-color: var(--card-bg) !important;
+  color: var(--text-main);
+}
+
+.dark .border-slate-300,
+.dark .border-slate-300\/80,
+.dark .border-slate-300\/60,
+.dark .border-slate-200,
+.dark .border-slate-200\/50,
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-300\/60 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Tables in Dark Mode */
+.dark table thead tr {
+  background-color: #171b23 !important;
+  color: #cbd5e1 !important;
+}
+
+.dark table thead th {
+  color: #94a3b8 !important;
+}
+
+.dark table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.dark table tbody tr {
+  border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Custom Soft Scrollbar */

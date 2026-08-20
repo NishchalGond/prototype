@@ -29,17 +29,17 @@ export default function CustomSelect({ value, onChange, options = [], placeholde
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full neumorph-inset text-xs font-semibold text-slate-800 rounded-2xl px-4 py-2.5 flex items-center justify-between transition-all cursor-pointer ${
+        className={`w-full neumorph-inset text-xs font-semibold rounded-2xl px-4 py-2.5 flex items-center justify-between transition-all cursor-pointer ${
           isOpen ? 'ring-2 ring-blue-500/40 border-blue-400' : ''
         }`}
       >
-        <span className="truncate mr-2">{displayLabel}</span>
-        <ChevronDown className={`w-4 h-4 text-blue-600 transition-transform duration-200 ${isOpen ? 'transform rotate-180' : ''}`} />
+        <span className="truncate mr-2 text-[var(--text-main)]">{displayLabel}</span>
+        <ChevronDown className={`w-4 h-4 text-blue-500 transition-transform duration-200 ${isOpen ? 'transform rotate-180' : ''}`} />
       </button>
 
       {/* Floating Neumorphic Popover Card */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-full min-w-[200px] z-50 bg-[#eef0f4] rounded-2xl p-2 border border-white/80 shadow-[9px_9px_18px_#cbd2dc,-9px_-9px_18px_#ffffff] animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto">
+        <div className="absolute right-0 mt-2 w-full min-w-[200px] z-50 bg-[var(--card-bg)] neumorph-card rounded-2xl p-2 animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto">
           <div className="space-y-1">
             {options.map((opt, idx) => {
               const val = typeof opt === 'object' ? opt.value : opt;
@@ -56,8 +56,8 @@ export default function CustomSelect({ value, onChange, options = [], placeholde
                   }}
                   className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-medium transition-all flex items-center justify-between cursor-pointer ${
                     isSelected
-                      ? 'bg-blue-600 text-white font-bold shadow-[2px_2px_5px_#cbd2dc]'
-                      : 'text-slate-700 hover:bg-[#e2e6ed] hover:text-slate-900'
+                      ? 'bg-blue-600 text-white font-bold shadow-md'
+                      : 'text-[var(--text-main)] hover:bg-slate-500/10'
                   }`}
                 >
                   <span className="truncate">{label}</span>
