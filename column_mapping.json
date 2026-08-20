@@ -696,7 +696,6 @@
     "UnifiedNumber"
   ],
   "do_not_map": {
-    "Person Type": "values are Unit Owner / Unit Tenant / Building Owner Enduser / Building Owner = occupancy role, NOT buyer/seller. 28,561 rows. Send to extras.",
     "Customer Type": "values are PERSON / ORGANIZATION = entity type, NOT buyer/seller. 2,999 rows. Send to extras.",
     "Created by": "CRM user who created the lead - not a property developer. -> extras",
     "Responsible person": "CRM assignee - not a developer. -> extras",
