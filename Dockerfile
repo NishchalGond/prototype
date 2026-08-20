@@ -18,5 +18,5 @@ COPY . .
 # Make sure engine + backend are importable
 ENV PYTHONPATH=/app
 
-# Railway injects $PORT at runtime
-CMD python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+# Use sh -c so $PORT is properly expanded by the shell at runtime
+CMD ["sh", "-c", "python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT"]
