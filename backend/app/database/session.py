@@ -9,10 +9,13 @@ from sqlalchemy.pool import NullPool
 from ..config import settings
 from ..models.models import Base
 
-db_url = str(settings.DATABASE_URL or "").strip().strip("'").strip('"')
-if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
+def _clean_url(u: str) -> str:
+    raw = "".join(str(u or "").split()).strip("'\"")
+    if raw.startswith("postgres://"):
+        raw = "postgresql://" + raw[11:]
+    return raw
 
+db_url = _clean_url(settings.DATABASE_URL)
 _is_sqlite = db_url.startswith("sqlite")
 
 # Background jobs each hold a session open for the job's full duration (can be
