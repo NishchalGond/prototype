@@ -7,6 +7,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState(initialQuery);
   const [community, setCommunity] = useState('');
+  const [propertyType, setPropertyType] = useState('');
   const [bedroom, setBedroom] = useState('');
   const [status, setStatus] = useState('');
   const [sourceFile, setSourceFile] = useState('');
@@ -16,7 +17,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
   const [limit, setLimit] = useState(25);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const [filterOptions, setFilterOptions] = useState({ communities: [], bedroom_types: [], source_files: [], statuses: [] });
+  const [filterOptions, setFilterOptions] = useState({ communities: [], property_types: [], bedroom_types: [], source_files: [], statuses: [] });
 
   // Modal & Editing States
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -46,7 +47,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
 
   useEffect(() => {
     fetchRecords();
-  }, [search, community, bedroom, status, sourceFile, sortBy, sortDir, page, limit]);
+  }, [search, community, propertyType, bedroom, status, sourceFile, sortBy, sortDir, page, limit]);
 
   const fetchFilterOptions = async () => {
     try {
@@ -56,6 +57,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
         setFilterOptions((prev) => ({
           ...prev,
           communities: data.communities || prev.communities,
+          property_types: data.property_types || prev.property_types,
           bedroom_types: data.bedrooms || data.bedroom_types || prev.bedroom_types,
           source_files: data.source_files || prev.source_files,
           statuses: data.statuses || ['VALID', 'DUPLICATE', 'ERROR']
@@ -77,6 +79,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
       });
       if (search) params.append('q', search);
       if (community) params.append('community', community);
+      if (propertyType) params.append('property_type', propertyType);
       if (bedroom) params.append('bedroom', bedroom);
       if (status) params.append('record_status', status);
       if (sourceFile) params.append('source_file', sourceFile);
@@ -92,6 +95,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
         if (data.filter_options) {
           setFilterOptions({
             communities: data.filter_options.communities || [],
+            property_types: data.filter_options.property_types || [],
             bedroom_types: data.filter_options.bedrooms || data.filter_options.bedroom_types || [],
             source_files: data.filter_options.source_files || [],
             statuses: data.filter_options.statuses || ['VALID', 'DUPLICATE', 'ERROR']
@@ -182,7 +186,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
 
         {/* Filter Bar */}
         <div className="neumorph-card p-4 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
             {/* Search Input */}
             <div className="relative lg:col-span-2">
               <Search className="w-4 h-4 absolute left-3.5 top-3 text-blue-600" />
@@ -203,6 +207,22 @@ export default function RecordsExplorer({ initialQuery = '' }) {
               options={[
                 { label: 'All Communities', value: '' },
                 ...filterOptions.communities.map((c) => ({ label: c, value: c }))
+              ]}
+            />
+
+            {/* Property Type Filter (Residential, Commercial, Land, etc.) */}
+            <CustomSelect
+              value={propertyType}
+              onChange={(val) => { setPropertyType(val); setPage(1); }}
+              placeholder="All Property Types"
+              options={[
+                { label: 'All Property Types', value: '' },
+                { label: 'Residential', value: 'Residential' },
+                { label: 'Commercial', value: 'Commercial' },
+                { label: 'Land', value: 'Land' },
+                ...(filterOptions.property_types || [])
+                  .filter((pt) => !['Residential', 'Commercial', 'Land', 'LAND'].includes(pt))
+                  .map((pt) => ({ label: pt, value: pt }))
               ]}
             />
 

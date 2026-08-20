@@ -66,13 +66,16 @@ def list_records(
 
     for col, val in (
         (Record.community, community), (Record.sub_community, sub_community),
-        (Record.building_cluster, building_cluster), (Record.property_type, property_type),
+        (Record.building_cluster, building_cluster),
         (Record.bedroom, bedroom), (Record.developer, developer),
         (Record.nationality, nationality), (Record.source_file, source_file),
         (Record.status, record_status.upper() if record_status else None),
     ):
         if val:
             stmt = stmt.where(col == val)
+
+    if property_type:
+        stmt = stmt.where(Record.property_type.ilike(property_type))
 
     if job_id is not None:
         stmt = stmt.where(Record.job_id == job_id)
