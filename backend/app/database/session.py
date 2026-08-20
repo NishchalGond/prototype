@@ -9,7 +9,7 @@ from sqlalchemy.pool import NullPool
 from ..config import settings
 from ..models.models import Base
 
-db_url = settings.DATABASE_URL
+db_url = str(settings.DATABASE_URL or "").strip().strip("'").strip('"')
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
@@ -25,7 +25,7 @@ _is_sqlite = db_url.startswith("sqlite")
 # has no ceiling to hit. PostgreSQL connections are not free, so it keeps a
 # real pool, sized for the same concurrency this app actually produces.
 engine = create_engine(
-    settings.DATABASE_URL,
+    db_url,
     echo=False,
     future=True,
     poolclass=NullPool if _is_sqlite else None,
