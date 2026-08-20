@@ -36,7 +36,8 @@ def _job_out(job: ProcessingJob) -> JobOut:
 @router.post("/upload/inspect")
 async def inspect_file_endpoint(file: UploadFile = File(...)):
     """Inspect file column headers without registering a job."""
-    from engine.inspection import inspect_source, UnreadableFile
+    from engine.inspection import inspect_source
+    from engine.mapping import build_plan
     if not file.filename:
         raise HTTPException(400, "No filename supplied.")
     settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -47,23 +48,44 @@ async def inspect_file_endpoint(file: UploadFile = File(...)):
             while chunk := await file.read(1 << 20):
                 out.write(chunk)
         info = inspect_source(dest)
-        info_dict = info.to_dict()
-        
+
+        # Build per-column raw_header → mapped_target pairs by running
+        # build_plan on each non-reference sheet (same logic the processor uses)
         preview_cols = []
-        for s in info_dict.get("sheets", []):
-            for col_mapping in s.get("mapped_columns", []):
+        for sheet in info.sheets:
+            if sheet.is_reference:
+                continue
+            n_cols = sheet.n_cols
+            # Use the header list we already have; samples not needed here
+            samples = {i: [] for i in range(n_cols)}
+            plan = build_plan(sheet.header, sheet.headerless, n_cols, samples)
+            for idx, raw_header in enumerate(sheet.header):
+                mapped = plan.index_to_target.get(idx, "")
                 preview_cols.append({
-                    "raw_header": col_mapping.get("raw_header"),
-                    "mapped_target": col_mapping.get("mapped_target")
+                    "raw_header": raw_header,
+                    "mapped_target": mapped,
                 })
-        
+            # Each sheet is usually one file; break after first content sheet
+            break
+
         return {
             "filename": file.filename,
             "detected_format": info.detected_format,
             "total_rows_estimate": info.total_rows,
             "header_count": len(preview_cols),
             "mapped_count": len([c for c in preview_cols if c.get("mapped_target")]),
-            "mapped_columns_preview": preview_cols
+            "mapped_columns_preview": preview_cols,
+            "sheets": [
+                {
+                    "name": s.name,
+                    "total_rows": s.total_rows,
+                    "n_cols": s.n_cols,
+                    "is_reference": s.is_reference,
+                    "mapped_targets": s.mapped_targets,
+                    "header": s.header,
+                }
+                for s in info.sheets
+            ],
         }
     except Exception as exc:
         log.exception("Inspection error")
