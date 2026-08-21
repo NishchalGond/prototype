@@ -25,7 +25,7 @@ export default function App() {
   });
 
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('datalink_theme') || 'dark';
+    return localStorage.getItem('datalink_theme') || 'light';
   });
 
   const [activeTab, setActiveTab] = useState('overview');
