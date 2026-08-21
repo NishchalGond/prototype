@@ -552,11 +552,20 @@ export default function RecordsExplorer({ initialQuery = '' }) {
                       className="neumorph-inset text-slate-800 font-bold text-xs rounded-xl px-2 py-1 mt-1 focus:outline-none font-mono"
                     >
                       <option value="VALID">VALID</option>
+                      <option value="INCOMPLETE">INCOMPLETE</option>
                       <option value="DUPLICATE">DUPLICATE</option>
                       <option value="ERROR">ERROR</option>
                     </select>
                   ) : (
-                    <span className="text-slate-900 text-xs font-black font-mono">
+                    <span className={`text-xs font-black font-mono px-2.5 py-1 rounded-full border inline-block ${
+                      selectedRecord.status === 'VALID'
+                        ? 'text-emerald-700 bg-emerald-500/10 border-emerald-500/30'
+                        : selectedRecord.status === 'INCOMPLETE'
+                        ? 'text-amber-700 bg-amber-500/10 border-amber-500/30'
+                        : selectedRecord.status === 'DUPLICATE'
+                        ? 'text-purple-700 bg-purple-500/10 border-purple-500/30'
+                        : 'text-rose-700 bg-rose-500/10 border-rose-500/30'
+                    }`}>
                       {selectedRecord.status}
                     </span>
                   )}
