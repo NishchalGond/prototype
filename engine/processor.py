@@ -327,16 +327,22 @@ class Processor:
                 result.duplicate_rows += 1
                 return
             seen.add(row["identity_hash"])
-            # Check if record has person name, email, or phone
-            has_name_or_contact = bool(row.get("name") or row.get("mobile_1") or row.get("email_address"))
-            if not has_name_or_contact:
-                row["status"] = "INCOMPLETE"
-                if "incomplete_missing_name_email_phone" not in flags:
-                    flags.append("incomplete_missing_name_email_phone")
-                row["validation_flags"] = flags
-            else:
+            # Check outreach readiness: record must have BOTH name and at least one contact detail (phone or email)
+            has_name = bool(row.get("name") and str(row.get("name")).strip())
+            has_contact = bool(row.get("mobile_1") or row.get("email_address"))
+
+            if has_name and has_contact:
                 row["status"] = "VALID"
                 result.valid_rows += 1
+            else:
+                row["status"] = "INCOMPLETE"
+                if not has_name and not has_contact:
+                    flags.append("incomplete_missing_name_and_contact")
+                elif not has_name:
+                    flags.append("incomplete_missing_name")
+                elif not has_contact:
+                    flags.append("incomplete_missing_contact")
+                row["validation_flags"] = flags
 
             batch.append(row)
             if len(batch) >= self.batch_size:

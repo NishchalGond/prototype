@@ -82,8 +82,8 @@ def list_records(
         else:
             stmt = stmt.where(Record.status == st_upper)
     else:
-        # Default: hide INCOMPLETE records from standard view unless explicitly filtered
-        stmt = stmt.where(Record.status != "INCOMPLETE")
+        # Default: show only VALID (outreach-ready with both name and contact info)
+        stmt = stmt.where(Record.status == "VALID")
 
     if property_type:
         stmt = stmt.where(Record.property_type.ilike(property_type))
