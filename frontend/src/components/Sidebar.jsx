@@ -4,9 +4,9 @@ import {
   Upload, 
   Database, 
   Activity, 
-  Sparkles,
   Layers
 } from 'lucide-react';
+import DataLinkLogo from './DataLinkLogo';
 
 export default function Sidebar({ activeTab, setActiveTab, activeJob, theme }) {
   const isDark = theme === 'dark';
@@ -24,12 +24,12 @@ export default function Sidebar({ activeTab, setActiveTab, activeJob, theme }) {
       <div>
         {/* Brand Header */}
         <div className="p-5 border-b border-slate-500/20 flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-2xl bg-[var(--card-bg)] neumorph-inset flex items-center justify-center border border-white/10">
-            <Sparkles className="w-5 h-5 text-blue-500" />
+          <div className="w-10 h-10 rounded-2xl bg-[var(--card-bg)] neumorph-inset flex items-center justify-center border border-white/10 p-2 shadow-[inset_2px_2px_4px_#cbd2dc,inset_-2px_-2px_4px_#ffffff]">
+            <DataLinkLogo className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-black text-sm tracking-tight leading-tight">DATALINK ENGINE</h1>
-            <span className="text-[10px] font-mono uppercase tracking-wider text-blue-500 font-bold px-2 py-0.5 rounded-full neumorph-inset border border-blue-500/20 inline-block mt-0.5">
+            <h1 className="font-black text-sm tracking-tight leading-tight text-slate-800 dark:text-slate-100">DATALINK ENGINE</h1>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 font-black px-2 py-0.5 rounded-full neumorph-inset border border-blue-500/20 inline-block mt-0.5">
               {isDark ? 'DARK NEUMORPHIC' : 'WHITE NEUMORPHIC'}
             </span>
           </div>
