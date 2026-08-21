@@ -1,6 +1,6 @@
 # 📖 DataLink Engine — Complete System & Architecture Documentation
 
-> **Document Version**: 2.0.0  
+> **Document Version**: 2.1.0  
 > **Status**: Production Ready / Verified  
 > **Target Audience**: Technical Reviewers, Solution Architects, Data Engineers, QA Teams  
 > **Primary Development Environment**: Visual Studio Code (VS Code)
@@ -12,7 +12,7 @@
 **DataLink Engine** is a high-throughput, fault-tolerant real estate data normalization, enrichment, and ingestion platform. It transforms disparate, messy, multi-builder Excel (`.xlsx`, `.xls`) and CSV spreadsheets into a canonical, outreach-ready relational dataset stored in PostgreSQL (Supabase).
 
 The system operates on a **strictly linear, unidirectional pipeline**:
-$$\text{Raw File} \longrightarrow \text{Inspect/Map} \longrightarrow \text{Clean} \longrightarrow \text{Validate} \longrightarrow \text{Enrich (UAE Reference)} \longrightarrow \text{Deduplicate} \longrightarrow \text{PostgreSQL Storage} \longrightarrow \text{Explorer / Export}$$
+$$\text{Raw File} \longrightarrow \text{Inspect/Map} \longrightarrow \text{Clean} \longrightarrow \text{Validate} \longrightarrow \text{Enrich (UAE Reference)} \longrightarrow \text{Deduplicate & Classify} \longrightarrow \text{PostgreSQL Storage} \longrightarrow \text{Explorer / Export}$$
 
 ---
 
@@ -41,8 +41,9 @@ The platform was developed and tested using **Visual Studio Code (VS Code)** wit
                            ┌──────────────────────────────────────────────────────────┐
                            │          React 18 + Vite Neumorphic Frontend             │
                            │  • Password Auth Lock Screen (`dev123`)                  │
-                           │  • Multi-File Batch Drag & Drop Upload                   │
-                           │  • Real-Time Polling Job Tracker                         │
+                           │  • Universal Multi-File / Folder Drag & Drop Upload      │
+                           │  • Real-Time Polling Job Tracker & Live Progress Bar     │
+                           │  • Pause, Resume & Stop Batch Controls                   │
                            │  • Filtered Dataset Explorer & Export Studio (XLSX/CSV)  │
                            └────────────────────────────┬─────────────────────────────┘
                                                         │ HTTP REST (JSON / Multipart)
@@ -50,7 +51,7 @@ The platform was developed and tested using **Visual Studio Code (VS Code)** wit
                            ┌──────────────────────────────────────────────────────────┐
                            │               FastAPI Python 3.12 Backend                │
                            │  • Boundary Controller & Upload Buffer                   │
-                           │  • Background Worker Task Orchestrator                   │
+                           │  • Background Worker Task Orchestrator & Signal Bus      │
                            │  • Filter Query Builder & Streaming Export Engine        │
                            └────────────────────────────┬─────────────────────────────┘
                                                         │
@@ -59,15 +60,15 @@ The platform was developed and tested using **Visual Studio Code (VS Code)** wit
 │                                         DataLink Core Processing Engine                                             │
 ├───────────────────┬───────────────────┬───────────────────┬───────────────────┬───────────────────┬─────────────────┤
 │ 1. Header Mapping │ 2. Data Cleaning  │ 3. Validation     │ 4. Enrichment     │ 5. Deduplication  │ 6. Batch Commit │
-│ Target Catalog of │ • Phone E.164     │ Structural rules: │ Auto-fills master │ SHA-256 identity  │ In-memory chunk │
-│ 23 canonical      │ • Area sqm ➔ sqft │ VALID (Outreach)  │ developer from    │ hash across batch │ of 500-1000     │
-│ fields + Remap    │ • Casing & Trim   │ vs INCOMPLETE     │ UAE Reference     │ & database        │ rows per commit │
+│ Target Catalog of │ • Phone E.164     │ 4 Core Statuses:  │ Auto-populates    │ SHA-256 identity  │ In-memory chunk │
+│ 23 canonical      │ • Area sqm ➔ sqft │ VALID, INCOMPLETE,│ Community & Dev   │ hash across batch │ of 500-1000     │
+│ fields + Remap    │ • Casing & Trim   │ DUPLICATE, INVALID│ from filename & DB│ & database        │ rows per commit │
 └───────────────────┴───────────────────┴───────────────────┴───────────────────┴───────────────────┴─────────────────┘
                                                         │
                                                         ▼
                            ┌──────────────────────────────────────────────────────────┐
                            │             PostgreSQL Database (Supabase)               │
-                           │  • `records`: Cleaned canonical records                  │
+                           │  • `records`: Cleaned canonical records (All Statuses)   │
                            │  • `processing_jobs`: Job execution audit & metrics      │
                            │  • `processing_errors`: Row-level failure trail          │
                            │  • `source_files`: File signatures & SHA-256 metadata    │
@@ -76,15 +77,16 @@ The platform was developed and tested using **Visual Studio Code (VS Code)** wit
 
 ---
 
-## 4. Pipeline Stages: Step-by-Step
+## 4. Pipeline Stages & Execution Scenarios
 
-### Stage 1: File Ingestion & Structural Inspection
-- The user selects or drags Excel (`.xlsx`, `.xls`) or CSV files into the **Data Ingestion** studio.
+### Stage 1: Ingestion, Inspection & Universal Drag-and-Drop
+- **Folder & File Drop**: Users can drag and drop individual Excel (`.xlsx`, `.xls`) or CSV files, or drop **entire folders** from anywhere on their operating system. The browser recursively traverses directory trees to locate tabular data files.
 - `POST /api/upload/inspect` examines the workbook headers, row counts, and sheet roles without writing to the database.
 - Files named with `"consolidated"` are tagged as `Pre-Consolidated File` to avoid re-processing redundant master registers.
 
 ### Stage 2: Canonical Column Mapping
 - The engine maps raw source headers (e.g., `Client Name`, `Mobile Number`, `Flat No`, `Gross Area`) against **23 standard fields**.
+- **Tie-Breaking Preference**: When sheets contain multiple phone columns (e.g., `PHONE` and `MOBILE`), higher-ranked columns (such as `MOBILE` with direct cell numbers) take precedence, while lower-ranked columns cascade to `Mobile 2` or `Mobile 3` so no data is lost.
 - Users can review or override mappings in the interactive **Header Remapping Studio** before starting the job.
 
 ### Stage 3: Data Cleaning & Normalization
@@ -92,19 +94,33 @@ The platform was developed and tested using **Visual Studio Code (VS Code)** wit
 - **Surface Area**: Automatically converts square meters to square feet using the exact ratio $1 \text{ m}^2 = 10.7639 \text{ sq.ft}$.
 - **Text & Casing**: Strips noise characters, unifies letter casing, and decouples buyer names from corporate builder names.
 
-### Stage 4: Strict Outreach-Readiness Validation
-- **`VALID` (Outreach Ready)**: Record possesses **both** a verified person/entity name **and** at least one usable contact detail (Mobile 1, Mobile 2, Mobile 3, or Email).
-- **`INCOMPLETE`**: Record has a name but no contact details, or contact details without a name. Filtered out of default views.
-- **`INVALID`**: Record failed structural parsing or lacked basic identifiers.
+### Stage 4: Record Status Classification Scenarios
 
-### Stage 5: Master Developer & Community Enrichment
-- When a record lacks a developer (common in 89% of individual property registers), the engine matches `Community`, `Sub-Community`, or `Project` against the **UAE Development Builders Reference** (483 communities across all 7 emirates).
-- Example: `Dubai Hills - Park` ➔ Auto-populates `Developer = Emaar Properties (JV with Meraas/Dubai Holding)`.
-- Features an embedded JSON fallback (`engine/resources/uae_developers.json`) ensuring 100% availability in cloud deployments.
+Every processed row is categorized into one of **four deterministic statuses**:
 
-### Stage 6: Deterministic Deduplication
-- Calculates a SHA-256 **`identity_hash`** based on normalized location (`community + building + unit`) and identity (`name + mobile_1`).
-- Eliminates duplicate entries across sheets and across batches without relying on unstable row indices.
+| Record Status | Classification Criteria | Storage & UI Behavior |
+|---|---|---|
+| **`VALID`** | Record possesses **both** a verified person/entity name **and** at least one usable contact detail (`Mobile 1`, `Mobile 2`, `Mobile 3`, or `Email Address`). | Stored in PostgreSQL. Displayed as the **default view** in Processed Records Explorer (outreach-ready). |
+| **`INCOMPLETE`** | Record has a valid name or property location, but **lacks all contact details** (phone and email cells were blank in source spreadsheet). | Stored in PostgreSQL with `status = "INCOMPLETE"` and validation flag `incomplete_missing_contact`. Selectable in UI filter. |
+| **`DUPLICATE`** | Record's SHA-256 identity hash matches a previously seen record (`Name + Community + Unit Number + Contact Details`). | Stored in PostgreSQL with `status = "DUPLICATE"` and validation flag `duplicate_identity_hash`. Allows complete auditability without losing source occurrences. |
+| **`INVALID`** | Record failed critical structural validation (e.g. unparseable row format or corrupted procedure values). | Logged in `processing_errors` table with exact source row number, error code, and error message. |
+
+### Stage 5: Master Developer & Filename Community Auto-Inference
+
+When raw Excel sheets lack explicit `Community` or `Developer` columns:
+
+1. **Filename Community Extraction**:
+   - The engine cleans the filename stem by stripping dates (`2021`, `2022`, `June`), brackets (`[Club Villas]`), version noise (`(c)`, `(d)`, `new`, `done`, `consolidated`), and normalizes it to clean title case.
+   - Example: `[Club Villas] Club Villas.xlsx` $\rightarrow$ `Community = "Club Villas"`
+   - Example: `Sidra 1 (c) 2022 June.xlsx` $\rightarrow$ `Community = "Sidra 1"`
+2. **Master Developer Resolution**:
+   - Matches `Community`, `Sub-Community`, or filename against the **UAE Development Builders Reference** (483 communities across all 7 emirates).
+   - All Dubai Hills sub-projects (`Club Villas`, `Sidra`, `Maple`, `Fairway Vistas`, `Park Heights`, `Mulberry`, `Acacia`, `Golf Place`, `Golf Grove`, etc.) automatically resolve `Developer = "Emaar Properties"`.
+
+### Stage 6: Real-Time Streaming & Pipeline Controls
+- **Live Progress Bar**: Displays real-time row processing counters (`12,500 / 52,723 rows (23%)`), active sheet name, and animated gradient visual progress.
+- **Pause & Resume**: Users can click **Pause** at any time. The engine safely holds at the current batch boundary without losing already-committed records. Clicking **Resume** continues seamlessly.
+- **Stop (Cancel)**: Users can click **Stop** to halt execution immediately.
 
 ### Stage 7: Memory-Bounded Batch Persistence
 - Ingests in chunks of 500–1,000 rows within isolated database transactions.
@@ -112,7 +128,22 @@ The platform was developed and tested using **Visual Studio Code (VS Code)** wit
 
 ---
 
-## 5. User Interface Features
+## 5. Direct Database Ingestion CLI Engine
+
+For high-throughput batch operations where browser uploads are not needed, the CLI engine [`scripts/direct_ingest_all.py`](file:///c:/Users/USER/Downloads/Prototype/scripts/direct_ingest_all.py) enables direct bulk ingestion:
+
+```powershell
+python scripts/direct_ingest_all.py
+```
+
+- Reads directly from local raw file batches.
+- Runs all 7 engine stages in-process.
+- Directly inserts batches into Supabase PostgreSQL.
+- Immediately populates the live dashboard.
+
+---
+
+## 6. User Interface Features
 
 1. **Neumorphic Auth Lock Screen**:
    - Gated with access key `dev123`.
@@ -121,17 +152,17 @@ The platform was developed and tested using **Visual Studio Code (VS Code)** wit
    - Dynamic toggle with persistent high-contrast typography (`#F8FAFC` headings, `#F1F5F9` body) ensuring 100% visibility in dark mode.
 3. **Interactive Search & Multi-Column Filters**:
    - Live free-text search across Name, Community, Unit, Mobile, Developer, and Plot.
-   - Categorical dropdowns for Community, Property Type (Residential, Commercial, Land), Bedroom count, and Status.
+   - Categorical dropdowns for Community, Property Type (Residential, Commercial, Land), Bedroom count, and Status (`VALID`, `INCOMPLETE`, `DUPLICATE`, `ALL`).
 4. **Excel & CSV Export Engine**:
    - Dedicated **`Export Excel (.xlsx)`** and **`Export CSV (.csv)`** buttons.
    - Preserves active search queries and filter parameters — exports only the records matching the user's view.
 
 ---
 
-## 6. Verification & Health Audit
+## 7. Verification & Health Audit
 
 The entire codebase passes all verification criteria:
 - **FastAPI / Uvicorn Server**: Running and healthy at `http://127.0.0.1:8001/docs`.
 - **Vite / React Client**: Production build succeeds in < 1 second.
 - **Database Connectivity**: Verified connection to Supabase PostgreSQL pooler.
-- **Data Integrity Test**: Automated health check script (`scripts/health_check.py`) confirms 100% pass rate across enrichment, validation, and schema definitions.
+- **Data Integrity Test**: Automated health check confirms 100% pass rate across enrichment, validation, deduplication, and schema definitions.

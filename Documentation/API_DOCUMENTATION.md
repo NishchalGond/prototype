@@ -1,178 +1,175 @@
-# 🌐 DataLink Engine — REST API Reference Documentation
+# 🌐 DataLink Engine — Complete REST API Specification
 
-> **API Version**: `v1`  
-> **Base URL (Production / Vercel Proxy)**: `https://prototype-azure-theta.vercel.app/api`  
-> **Base URL (Direct Railway Backend)**: `https://web-production-9dadf.up.railway.app/api`  
-> **Base URL (Local Development / VS Code)**: `http://127.0.0.1:8001/api`  
-> **Interactive Swagger / OpenAPI UI**: `http://127.0.0.1:8001/docs` or `https://web-production-9dadf.up.railway.app/docs`
-
----
-
-## 1. Overview & Authentication
-
-The DataLink API is a high-performance RESTful service built with FastAPI and Python 3.12. All data transfer uses UTF-8 JSON payloads, except for file upload endpoints which consume `multipart/form-data` and export endpoints which stream binary `.xlsx` and text `.csv`.
+> **API Version**: 2.1.0  
+> **Base URL**: `http://127.0.0.1:8001/api` (Local) / `https://prototype-production-4598.up.railway.app/api` (Production)  
+> **Primary Development Environment**: Visual Studio Code (VS Code)  
+> **Documentation Formats**: OpenAPI 3.0 (`/openapi.json`), Swagger UI (`/docs`), ReDoc (`/redoc`)
 
 ---
 
-## 2. Endpoints Summary Table
+## 1. Authentication & Protocols
 
-| Category | HTTP Method | Path | Description |
-|---|---|---|---|
-| **Upload & Inspection** | `POST` | `/upload/inspect` | Inspect workbook sheets and preview column mappings without persisting. |
-| | `POST` | `/upload` (or `/files/upload`) | Upload an Excel or CSV file to create a processing job. |
-| **Job Execution** | `POST` | `/jobs/{job_id}/mapping-overrides` | Apply custom column remappings to a job. |
-| | `POST` | `/jobs/{job_id}/start` | Trigger background processing for an uploaded job. |
-| | `GET` | `/jobs` | Paginated list of all job execution runs. |
-| | `GET` | `/jobs/{job_id}` | Real-time status, progress %, and metrics of a specific job. |
-| | `GET` | `/jobs/{job_id}/errors` | Row-level validation failure audit trail for a job. |
-| **Records & Retrieval** | `GET` | `/records` | Search, filter, and paginate normalized real estate records. |
-| | `GET` | `/records/{record_id}` | Retrieve full details of a single record. |
-| | `PUT` | `/records/{record_id}` | Update fields of an existing record. |
-| | `GET` | `/records/filters` | Distinct values for all frontend filter dropdowns. |
-| | `GET` | `/records/export` | Stream filtered dataset to **Excel (`.xlsx`)** or **CSV (`.csv`)**. |
-| **Analytics & Schema** | `GET` | `/dashboard/stats` | Aggregated metrics, completeness %, and community breakdown. |
-| | `GET` | `/column-mappings` | Catalog of 23 target canonical fields with recognized aliases. |
+All endpoints accept and return `application/json` (except file upload and data export endpoints).
+
+| Protocol | Specification |
+|---|---|
+| **Content-Type** | `application/json` (Requests & Responses) |
+| **File Uploads** | `multipart/form-data` |
+| **File Exports** | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` (`.xlsx`) and `text/csv; charset=utf-8` (`.csv`) |
+| **CORS** | Enabled for `localhost:3000`, `localhost:5173`, and Vercel domains (`https://*.vercel.app`) |
 
 ---
 
-## 3. Detailed Endpoint Specifications
+## 2. API Endpoints Overview
 
-### 3.1 Upload & File Inspection
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/upload/inspect` | Inspects workbook structure, header mappings, and sheet roles without database writes. |
+| `POST` | `/api/upload` | Uploads an Excel or CSV file and registers a processing job. |
+| `POST` | `/api/jobs/{id}/start` | Starts background execution of an uploaded job. |
+| `POST` | `/api/jobs/{id}/pause` | Safely pauses a running job at the current batch boundary. |
+| `POST` | `/api/jobs/{id}/resume` | Resumes a paused processing job. |
+| `POST` | `/api/jobs/{id}/cancel` | Halts and cancels a running or paused processing job. |
+| `GET` | `/api/jobs/{id}` | Fetches real-time status, row counts, and progress percentage. |
+| `GET` | `/api/jobs/{id}/errors` | Retrieves row-level error audit logs for a specific job. |
+| `GET` | `/api/jobs` | Lists all historical and active processing jobs. |
+| `GET` | `/api/records` | Paginated, filterable, sortable list of processed records. |
+| `GET` | `/api/records/export` | Streams filtered records to formatted Excel (`.xlsx`) or UTF-8 CSV (`.csv`). |
+| `GET` | `/api/records/filters` | Distinct values for frontend filter dropdowns (Communities, Property Types, Bedrooms, Statuses). |
+| `GET` | `/api/dashboard/stats` | High-level metrics: total clean records, success rate, duplicate counts, and community distribution. |
+| `GET` | `/api/column-mappings` | Returns canonical target fields, aliases, and exclusion rules. |
 
-#### `POST /api/upload/inspect`
-Inspects an Excel/CSV file in memory, extracts sheet names, estimates total rows, and suggests canonical field mappings.
+---
 
-* **Content-Type**: `multipart/form-data`
-* **Form Field**: `file` (Binary File: `.xlsx`, `.xls`, `.csv`)
-* **Response `200 OK`**:
+## 3. Detailed Endpoint Reference
+
+### 3.1 Inspect File (`POST /api/upload/inspect`)
+Examines workbook sheets, detected columns, and provisional target mappings before starting ingestion.
+
+**Request:** `multipart/form-data` with `file: Binary`
+
+**Response Example (`200 OK`):**
 ```json
 {
   "filename": "Club Villas.xlsx",
-  "detected_format": "openpyxl",
-  "total_rows_estimate": 142,
-  "header_count": 16,
-  "mapped_count": 14,
+  "detected_format": "xlsx",
+  "total_rows_estimate": 158,
+  "header_count": 8,
+  "mapped_count": 8,
   "mapped_columns_preview": [
-    { "raw_header": "Owner Name", "mapped_target": "Name" },
-    { "raw_header": "Mobile", "mapped_target": "Mobile 1" },
-    { "raw_header": "Villa No", "mapped_target": "Unit Number" },
-    { "raw_header": "Community", "mapped_target": "Community" }
-  ],
-  "sheets": [
-    { "name": "Sheet1", "total_rows": 142, "n_cols": 16, "is_reference": false }
+    { "raw_header": "NAME", "mapped_target": "Name" },
+    { "raw_header": "PHONE", "mapped_target": "Mobile 1" },
+    { "raw_header": "EMAIL", "mapped_target": "Email Address" },
+    { "raw_header": "Rooms", "mapped_target": "Bedroom" },
+    { "raw_header": "Villa NO", "mapped_target": "Unit Number" }
   ]
 }
 ```
 
 ---
 
-#### `POST /api/upload`
-Uploads and persists a source file into the system, generating a unique `job_id`.
+### 3.2 Upload & Register Job (`POST /api/upload`)
+Uploads a source file to disk and registers a new `ProcessingJob` entry in PostgreSQL.
 
-* **Content-Type**: `multipart/form-data`
-* **Query Parameters**:
-  * `batch_size` *(integer, optional, default: 1000)*: Rows processed per database transaction chunk.
-  * `autostart` *(boolean, optional, default: false)*: Immediately begin execution without waiting for mapping confirmation.
-  * `force` *(boolean, optional, default: false)*: Re-process even if content SHA-256 matches a prior run.
-* **Response `201 Created`**:
+**Query Parameters:**
+- `batch_size` *(integer, optional)*: Batch chunk size (default `500`).
+- `autostart` *(boolean, optional)*: If `true`, starts ingestion immediately.
+
+**Response Example (`201 Created`):**
 ```json
 {
-  "job_id": 42,
-  "source_file_id": 18,
+  "job_id": 4,
+  "source_file_id": 4,
   "filename": "Club Villas.xlsx",
-  "size_bytes": 27480,
   "status": "UPLOADED",
-  "created_at": "2026-08-21T10:00:00Z"
+  "total_rows": 158,
+  "size_bytes": 27546
 }
 ```
 
 ---
 
-### 3.2 Job Execution & Audit
+### 3.3 Job Controls: Pause, Resume & Cancel
 
-#### `POST /api/jobs/{job_id}/start`
-Starts the in-process batch pipeline for the specified job.
-
-* **Response `200 OK`**:
+#### Pause Job (`POST /api/jobs/{id}/pause`)
+Halts execution gracefully at the current batch transaction boundary.
 ```json
 {
-  "job_id": 42,
-  "status": "READING",
-  "message": "Processing started in background."
+  "id": 4,
+  "status": "PAUSED",
+  "processed_rows": 12500,
+  "total_rows": 17340,
+  "progress_percent": 72.1
 }
 ```
 
----
-
-#### `GET /api/jobs/{job_id}`
-Polls the real-time execution status of a running or completed job.
-
-* **Response `200 OK`**:
+#### Resume Job (`POST /api/jobs/{id}/resume`)
+Continues processing a paused job from where it left off.
 ```json
 {
-  "id": 42,
-  "source_file_id": 18,
-  "filename": "Club Villas.xlsx",
-  "status": "COMPLETED",
-  "total_rows": 142,
-  "processed_rows": 142,
-  "valid_rows": 138,
-  "invalid_rows": 0,
-  "duplicate_rows": 4,
-  "skipped_rows": 0,
-  "error_count": 0,
-  "progress_percent": 100.0,
-  "current_sheet": null,
-  "started_at": "2026-08-21T10:00:01Z",
-  "finished_at": "2026-08-21T10:00:04Z"
+  "id": 4,
+  "status": "PROCESSING",
+  "processed_rows": 12500,
+  "total_rows": 17340,
+  "progress_percent": 72.1
+}
+```
+
+#### Cancel Job (`POST /api/jobs/{id}/cancel`)
+Stops execution and marks the job as `CANCELLED`.
+```json
+{
+  "id": 4,
+  "status": "CANCELLED",
+  "message": "Job cancelled by user.",
+  "processed_rows": 12500
 }
 ```
 
 ---
 
-### 3.3 Records Search, Retrieval & Export
+### 3.4 List Processed Records (`GET /api/records`)
+Fetches paginated records with multi-field search and filters.
 
-#### `GET /api/records`
-Search and filter normalized real estate records.
+**Query Parameters:**
+- `q` *(string, optional)*: Free-text search across name, community, unit, mobile, developer.
+- `community` *(string, optional)*: Filter by exact community name.
+- `property_type` *(string, optional)*: Filter by property type (e.g. `Residential`, `Commercial`, `Land`).
+- `bedroom` *(string, optional)*: Filter by bedroom count (e.g. `1 BR`, `2 BR`, `3 BR`).
+- `status` *(string, optional)*: Record status filter:
+  - `VALID` *(default)*: Only outreach-ready records (has verified name AND phone/email).
+  - `INCOMPLETE`: Records missing contact information.
+  - `DUPLICATE`: Duplicate records stored for auditability.
+  - `ALL`: All records combined.
+- `page` *(integer, default 1)*: Page number.
+- `page_size` *(integer, default 25)*: Records per page.
+- `sort_by` *(string, default `id`)*: Sort column (`name`, `community`, `unit_number`, `bedroom`, `procedure_value`, `mobile_1`).
+- `sort_dir` *(string, `asc` | `desc`)*: Sort direction.
 
-* **Query Parameters**:
-  * `q` *(string, optional)*: Free-text search across Name, Community, Unit, Mobile, Developer, Plot.
-  * `community` *(string, optional)*: Filter by exact community name (e.g. `Dubai Hills`).
-  * `property_type` *(string, optional)*: Filter by type (`Residential`, `Commercial`, `Land`).
-  * `bedroom` *(string, optional)*: Filter by bedroom count (`Studio`, `1 BR`, `2 BR`, `3 BR`, etc.).
-  * `developer` *(string, optional)*: Filter by developer name (e.g. `Emaar Properties`).
-  * `status` *(string, optional)*: Record status (`VALID` [default], `INCOMPLETE`, `DUPLICATE`, `INVALID`, `ALL_WITH_INCOMPLETE`).
-  * `sort_by` *(string, default: "id")*: Sort column (`name`, `community`, `unit_number`, `developer`, `procedure_value`, etc.).
-  * `sort_dir` *(string, default: "desc")*: Direction (`asc` or `desc`).
-  * `page` *(integer, default: 1)*: Page number.
-  * `page_size` *(integer, default: 50, max: 500)*: Records per page.
-* **Response `200 OK`**:
+**Response Example (`200 OK`):**
 ```json
 {
   "items": [
     {
-      "id": 101,
-      "name": "MINTESH HITESHBHAI SHAH",
-      "community": "Dubai Hills",
-      "sub_community": "MULBERRY AT PARK HEIGHTS",
+      "id": 1,
+      "name": "AAKASH JAYAPRAKASH",
+      "community": "Dubai Hills - Park",
+      "sub_community": "PARK HEIGHTS II",
       "building_cluster": "2",
-      "unit_number": "G08",
-      "bedroom": "2 BR",
-      "property_type": "Residential",
-      "developer": "Emaar Properties",
-      "procedure_value": 2450000.0,
-      "size": 1380.5,
-      "mobile_1": "+971555064172",
-      "mobile_2": null,
+      "unit_number": "1713",
+      "size": 149.47,
+      "bedroom": null,
+      "mobile_1": "+971506506989",
       "email_address": null,
+      "developer": "Emaar Properties",
       "status": "VALID",
-      "source_file": "MULBERRY at PARK HEIGHTS.xlsx"
+      "source_file": "DHE 2021 NEW.xlsx"
     }
   ],
-  "total": 18450,
+  "total": 7190,
   "page": 1,
-  "page_size": 50,
-  "total_pages": 369,
+  "page_size": 25,
+  "total_pages": 288,
   "has_next": true,
   "has_prev": false
 }
@@ -180,39 +177,37 @@ Search and filter normalized real estate records.
 
 ---
 
-#### `GET /api/records/export`
-Exports the dataset matching the active search and filter query. Streams either an Excel spreadsheet or CSV file.
+### 3.5 Export Dataset (`GET /api/records/export`)
+Streams formatted records based on active search and filter parameters.
 
-* **Query Parameters**: Same parameters as `/api/records`, plus:
-  * `format` *(string, required)*: `"xlsx"` or `"csv"`.
-  * `limit` *(integer, default: 50000, max: 100000)*: Max records to export.
-* **Response `200 OK`**:
-  * If `format=xlsx`: `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` (Formatted with dark navy headers, bold text, frozen top row).
-  * If `format=csv`: `Content-Type: text/csv; charset=utf-8` (Encoded with `utf-8-sig` BOM for native Excel compatibility).
-  * Header: `Content-Disposition: attachment; filename="datalink_records_export_20260821_110000.xlsx"`
+**Query Parameters:**
+- `format` *(string, required)*: `xlsx` (styled Excel workbook) or `csv` (UTF-8 with BOM).
+- All filter parameters from `GET /api/records` (`q`, `community`, `property_type`, `bedroom`, `status`, `sort_by`, `sort_dir`).
+
+**Response:** File stream with dynamic attachment header:
+```http
+Content-Disposition: attachment; filename="datalink_export_20260821_130000.xlsx"
+```
 
 ---
 
-## 4. cURL Usage Examples
+### 3.6 Dashboard Summary Stats (`GET /api/dashboard/stats`)
+Returns high-level KPI metrics across the platform.
 
-### 1. Ingest a File (Upload & Start)
-```bash
-# Step 1: Upload
-JOB_DATA=$(curl -s -X POST "http://127.0.0.1:8001/api/upload?batch_size=500" \
-  -F "file=@Dubai_Hills_Batch1.xlsx")
-JOB_ID=$(echo $JOB_DATA | python -c "import sys, json; print(json.load(sys.stdin)['job_id'])")
-
-# Step 2: Start Processing
-curl -X POST "http://127.0.0.1:8001/api/jobs/$JOB_ID/start"
-```
-
-### 2. Search Records by Developer & Property Type
-```bash
-curl "http://127.0.0.1:8001/api/records?developer=Emaar%20Properties&property_type=Residential&status=VALID&limit=25"
-```
-
-### 3. Download Filtered Dataset as Excel (.xlsx)
-```bash
-curl "http://127.0.0.1:8001/api/records/export?format=xlsx&community=Dubai%20Hills&status=VALID" \
-  --output "Dubai_Hills_Outreach_List.xlsx"
+**Response Example (`200 OK`):**
+```json
+{
+  "total_records": 16573,
+  "valid_records": 7190,
+  "invalid_records": 1,
+  "duplicate_records": 2118,
+  "success_rate": 43.4,
+  "total_files": 3,
+  "total_jobs": 4,
+  "community_distribution": [
+    { "name": "Dubai Hills - Hills Grove", "count": 9415 },
+    { "name": "Dubai Hills - Park", "count": 3000 },
+    { "name": "Club Villas", "count": 158 }
+  ]
+}
 ```

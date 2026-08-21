@@ -330,8 +330,16 @@ class Processor:
 
             if row["identity_hash"] in seen:
                 row["status"] = "DUPLICATE"
+                flags.append("duplicate_identity_hash")
+                row["validation_flags"] = flags
                 result.duplicate_rows += 1
+                batch.append(row)
+                if len(batch) >= self.batch_size:
+                    flush()
+                    if on_progress:
+                        on_progress(result, sheet.name)
                 return
+
             seen.add(row["identity_hash"])
             # Check outreach readiness: record must have BOTH name and at least one contact detail (phone or email)
             has_name = bool(row.get("name") and str(row.get("name")).strip())
