@@ -24,12 +24,14 @@ export default function Sidebar({ activeTab, setActiveTab, activeJob, theme }) {
       <div>
         {/* Brand Header */}
         <div className="p-5 border-b border-slate-500/20 flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-2xl bg-[var(--card-bg)] neumorph-inset flex items-center justify-center border border-white/10 p-2 shadow-[inset_2px_2px_4px_#cbd2dc,inset_-2px_-2px_4px_#ffffff]">
+          <div className="w-10 h-10 rounded-2xl bg-[var(--card-bg)] neumorph-inset flex items-center justify-center border border-white/10 p-2 shadow-[inset_2px_2px_4px_#cbd2dc,inset_-2px_-2px_4px_#ffffff] shrink-0">
             <DataLinkLogo className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-black text-sm tracking-tight leading-tight text-slate-800 dark:text-slate-100">DATALINK ENGINE</h1>
-            <span className="text-[10px] font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 font-black px-2 py-0.5 rounded-full neumorph-inset border border-blue-500/20 inline-block mt-0.5">
+            <h1 className="font-black text-sm tracking-tight leading-tight text-[#0F172A] dark:text-[#F8FAFC]">
+              DATALINK ENGINE
+            </h1>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 font-black px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 inline-block mt-0.5">
               {isDark ? 'DARK NEUMORPHIC' : 'WHITE NEUMORPHIC'}
             </span>
           </div>
@@ -46,16 +48,16 @@ export default function Sidebar({ activeTab, setActiveTab, activeJob, theme }) {
                 onClick={() => setActiveTab(item.id)}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl font-bold text-xs transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'text-blue-500 neumorph-inset border border-blue-500/30'
-                    : 'text-slate-400 hover:text-slate-200 neumorph-button'
+                    ? 'text-blue-600 dark:text-blue-400 neumorph-inset border border-blue-500/40 bg-blue-500/5 font-black shadow-inner'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-[#0F172A] dark:hover:text-white neumorph-button'
                 }`}
               >
                 <div className="flex items-center space-x-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-500' : 'text-slate-400'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  <span className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-[10px] font-black px-2 py-0.5 rounded-full">
                     {item.badge}
                   </span>
                 )}
@@ -68,16 +70,16 @@ export default function Sidebar({ activeTab, setActiveTab, activeJob, theme }) {
       {/* Engine Status Card Footer */}
       <div className="p-4 m-3 rounded-2xl bg-[var(--card-bg)] border border-slate-500/20 neumorph-inset space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] text-slate-400 font-medium">Pipeline Engine</span>
-          <span className="flex items-center text-[10px] text-emerald-500 font-mono font-bold px-2 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10">
+          <span className="text-[11px] text-slate-700 dark:text-slate-300 font-bold">Pipeline Engine</span>
+          <span className="flex items-center text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold px-2 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
             ACTIVE
           </span>
         </div>
         <div className="text-[11px] font-mono space-y-0.5">
-          <p className="font-bold text-slate-200">FastAPI + Python 3.11</p>
-          <p className="text-slate-400">Direct In-Process Batching</p>
-          <p className="text-blue-500 font-bold">Supabase Cloud DB</p>
+          <p className="font-black text-[#0F172A] dark:text-[#F8FAFC]">FastAPI + Python 3.11</p>
+          <p className="text-slate-600 dark:text-slate-400 font-medium">Direct In-Process Batching</p>
+          <p className="text-blue-600 dark:text-blue-400 font-bold">Supabase Cloud DB</p>
         </div>
       </div>
     </aside>
