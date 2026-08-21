@@ -4,8 +4,7 @@ import {
   Upload, 
   Database, 
   Activity, 
-  Layers,
-  Radio
+  Layers
 } from 'lucide-react';
 import DataLinkLogo from './DataLinkLogo';
 
@@ -14,7 +13,6 @@ export default function Sidebar({ activeTab, setActiveTab, activeJob, theme }) {
 
   const navItems = [
     { id: 'overview', label: 'Overview Dashboard', icon: LayoutDashboard },
-    { id: 'telemetry', label: 'Live Telemetry & Kiosk', icon: Radio, badge: 'LIVE' },
     { id: 'upload', label: 'Data Ingestion & Upload', icon: Upload },
     { id: 'jobs', label: 'Processing Jobs', icon: Activity, badge: activeJob ? '1 Active' : null },
     { id: 'records', label: 'Processed Records', icon: Database },
