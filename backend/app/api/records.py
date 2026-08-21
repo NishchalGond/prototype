@@ -66,8 +66,8 @@ def _build_records_query(
 
     if record_status:
         st_upper = record_status.upper()
-        if st_upper in ("ALL_RECORDS", "ALL_WITH_INCOMPLETE", "SHOW_ALL"):
-            pass  # show all records including incomplete
+        if st_upper in ("ALL", "ALL_RECORDS", "ALL_WITH_INCOMPLETE", "SHOW_ALL"):
+            pass  # show all records including duplicates and incomplete
         elif st_upper in ("INCOMPLETE", "MISSING_CONTACT"):
             stmt = stmt.where(Record.status == "INCOMPLETE")
         else:

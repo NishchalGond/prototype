@@ -322,11 +322,11 @@ export default function RecordsExplorer({ initialQuery = '' }) {
               placeholder="All Valid Records"
               options={[
                 { label: 'All Valid Records (Default)', value: '' },
-                { label: 'VALID Only', value: 'VALID' },
+                { label: 'VALID Only (Outreach-Ready)', value: 'VALID' },
+                { label: 'DUPLICATE Only (Preserved Duplicates)', value: 'DUPLICATE' },
                 { label: 'INCOMPLETE (No Name/Contact)', value: 'INCOMPLETE' },
-                { label: 'DUPLICATE Only', value: 'DUPLICATE' },
                 { label: 'ERROR / INVALID Only', value: 'INVALID' },
-                { label: 'Show All (Incl. Incomplete)', value: 'ALL_WITH_INCOMPLETE' },
+                { label: 'Show All (Valid + Duplicates + Incomplete)', value: 'ALL' },
               ]}
             />
           </div>
@@ -347,6 +347,16 @@ export default function RecordsExplorer({ initialQuery = '' }) {
                   <span className="flex items-center space-x-1.5">
                     <span>NAME</span>
                     {renderSortIndicator('name')}
+                  </span>
+                </th>
+                <th
+                  onClick={() => handleHeaderSort('status')}
+                  className="px-4 py-3.5 font-bold cursor-pointer hover:text-blue-600 transition-colors select-none group whitespace-nowrap min-w-[120px]"
+                  title="Click to sort by Status"
+                >
+                  <span className="flex items-center space-x-1.5">
+                    <span>STATUS</span>
+                    {renderSortIndicator('status')}
                   </span>
                 </th>
                 <th
@@ -424,7 +434,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
             <tbody className="divide-y divide-slate-300/60 font-sans">
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="py-10 text-center text-slate-400 font-mono whitespace-nowrap">
+                  <td colSpan="9" className="py-10 text-center text-slate-400 font-mono whitespace-nowrap">
                     Searching records database...
                   </td>
                 </tr>
@@ -438,6 +448,22 @@ export default function RecordsExplorer({ initialQuery = '' }) {
                   >
                     <td className="px-4 py-3.5 font-black text-slate-900 group-hover:text-blue-700 transition-colors max-w-[180px] truncate" title={r.name || 'N/A'}>
                       {r.name || 'N/A'}
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-black uppercase tracking-wider border shadow-xs inline-flex items-center gap-1 ${
+                          r.status === 'DUPLICATE'
+                            ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40'
+                            : r.status === 'VALID'
+                            ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/40'
+                            : r.status === 'INCOMPLETE'
+                            ? 'bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border-indigo-500/30'
+                            : 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/40'
+                        }`}
+                      >
+                        {r.status === 'DUPLICATE' && '⚠️ '}
+                        {r.status || 'VALID'}
+                      </span>
                     </td>
                     <td className="px-4 py-3.5 text-slate-700 font-semibold max-w-[160px] truncate" title={r.developer || 'N/A'}>
                       {r.developer || 'N/A'}
@@ -464,7 +490,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="py-10 text-center text-slate-500 font-mono">
+                  <td colSpan="9" className="py-10 text-center text-slate-500 font-mono">
                     No records found matching filters.
                   </td>
                 </tr>
