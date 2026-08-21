@@ -502,33 +502,33 @@ export default function RecordsExplorer({ initialQuery = '' }) {
         </div>
 
         {/* Pagination Footer & Status Color Legend */}
-        <div className="p-3.5 px-5 border-t border-slate-300/80 flex flex-col md:flex-row items-center justify-between gap-3 font-mono text-xs bg-[var(--card-bg)]">
+        <div className="p-3.5 px-5 border-t border-slate-300/80 dark:border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 font-mono text-xs bg-[var(--card-bg)]">
           {/* Status Color Legend */}
           <div className="flex flex-wrap items-center gap-4 text-[11px]">
-            <span style={{ color: '#0F172A' }} className="dark:text-slate-200 font-black uppercase tracking-wider text-[11px]">
+            <span className="text-slate-900 dark:text-slate-100 font-black uppercase tracking-wider text-[11px]">
               Status Key:
             </span>
             <div className="flex items-center space-x-1.5" title="Has verified name and contact info (phone or email)">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)] shrink-0" />
-              <span style={{ color: '#065F46' }} className="dark:text-emerald-300 font-black">
+              <span className="text-emerald-700 dark:text-emerald-300 font-black">
                 Valid (Outreach Ready)
               </span>
             </div>
             <div className="flex items-center space-x-1.5" title="Matching SHA-256 identity hash across records">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.8)] animate-pulse shrink-0" />
-              <span style={{ color: '#92400E' }} className="dark:text-amber-300 font-black">
+              <span className="text-amber-700 dark:text-amber-300 font-black">
                 Duplicate (Preserved)
               </span>
             </div>
             <div className="flex items-center space-x-1.5" title="Property/Owner details exist but phone and email were blank">
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 dark:bg-indigo-400 shrink-0" />
-              <span style={{ color: '#3730A3' }} className="dark:text-indigo-300 font-black">
+              <span className="text-indigo-700 dark:text-indigo-300 font-black">
                 Incomplete (No Contact)
               </span>
             </div>
             <div className="flex items-center space-x-1.5" title="Failed critical structural validation">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.7)] shrink-0" />
-              <span style={{ color: '#9F1239' }} className="dark:text-rose-400 font-black">
+              <span className="text-rose-700 dark:text-rose-400 font-black">
                 Invalid / Error
               </span>
             </div>
@@ -536,9 +536,10 @@ export default function RecordsExplorer({ initialQuery = '' }) {
 
           {/* Page Counter & Controls */}
           <div className="flex items-center space-x-4">
-            <div style={{ color: '#0F172A' }} className="dark:text-slate-200 font-bold">
+            <div className="text-slate-800 dark:text-slate-200 font-bold">
               Page <span className="text-blue-600 dark:text-blue-400 font-black">{page}</span> of{' '}
-              <span className="text-blue-600 dark:text-blue-400 font-black">{totalPages}</span> ({totalRecords.toLocaleString()} records)
+              <span className="text-blue-600 dark:text-blue-400 font-black">{totalPages}</span>{' '}
+              <span className="text-slate-600 dark:text-slate-400 font-medium">({totalRecords.toLocaleString()} records)</span>
             </div>
             <div className="flex items-center space-x-1.5">
               <button
