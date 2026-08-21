@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -23,11 +23,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 
 class UserOut(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     email: str
     full_name: str
@@ -37,9 +39,6 @@ class UserOut(BaseModel):
     created_at: datetime
     last_login_at: datetime | None = None
 
-    class Config:
-        from_attributes = True
-
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -48,7 +47,7 @@ class TokenResponse(BaseModel):
 
 
 class CreateUserRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
     full_name: str
     role: str = UserRole.DATA_PROCESSOR
