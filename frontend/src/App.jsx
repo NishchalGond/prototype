@@ -7,6 +7,7 @@ import LiveProcessingTracker from './components/LiveProcessingTracker';
 import RecordsExplorer from './components/RecordsExplorer';
 import JobDetailsView from './components/JobDetailsView';
 import ColumnMappingInspector from './components/ColumnMappingInspector';
+import LiveTelemetryKiosk from './components/LiveTelemetryKiosk';
 import Spatial3DCanvas from './components/Spatial3DCanvas';
 import AuthLockScreen from './components/AuthLockScreen';
 
@@ -24,6 +25,7 @@ export default function App() {
   const [activeJobId, setActiveJobId] = useState(null);
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFullscreenLocked, setIsFullscreenLocked] = useState(false);
 
   // Sync theme with document classList
   useEffect(() => {
@@ -125,6 +127,15 @@ export default function App() {
                   setActiveTab={setActiveTab}
                   setSelectedJobId={setSelectedJobId}
                   theme={theme}
+                />
+              </div>
+            )}
+
+            {activeTab === 'telemetry' && (
+              <div className="flex-1 overflow-y-auto">
+                <LiveTelemetryKiosk
+                  isFullscreenLocked={isFullscreenLocked}
+                  setIsFullscreenLocked={setIsFullscreenLocked}
                 />
               </div>
             )}

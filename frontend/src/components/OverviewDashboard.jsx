@@ -13,14 +13,17 @@ import {
   Box
 } from 'lucide-react';
 import Tilt3DCard from './Tilt3DCard';
+import DataLinkLogo from './DataLinkLogo';
 
 export default function OverviewDashboard({ stats, setActiveTab, setSelectedJobId }) {
   if (!stats) {
     return (
-      <div className="p-16 text-center text-slate-500 font-mono text-xs flex flex-col items-center justify-center space-y-4">
-        <Sparkles className="w-10 h-10 text-blue-600 animate-spin" />
-        <p className="text-slate-800 font-bold text-sm tracking-wider">INITIALIZING NEUMORPHIC ENGINE...</p>
-        <p className="text-slate-500">Connecting to Supabase Cloud Database</p>
+      <div className="p-20 text-center text-slate-500 font-mono text-xs flex flex-col items-center justify-center space-y-5 h-full">
+        <div className="w-16 h-16 rounded-3xl bg-[#eef0f4] p-3 border border-blue-400/40 shadow-[inset_3px_3px_6px_#cbd2dc,inset_-3px_-3px_6px_#ffffff] flex items-center justify-center animate-pulse">
+          <DataLinkLogo className="w-10 h-10" />
+        </div>
+        <p className="text-slate-800 font-black text-sm tracking-widest uppercase">CONNECTING TO SUPABASE CLOUD...</p>
+        <p className="text-slate-500 text-xs">Loading live telemetry and canonical real estate registers</p>
       </div>
     );
   }

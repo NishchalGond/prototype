@@ -38,6 +38,16 @@ export default function Header({ onRefresh, activeJob, searchQuery, setSearchQue
 
       {/* Right Controls */}
       <div className="flex items-center space-x-3">
+        {/* Live Kiosk Button */}
+        <button
+          onClick={() => setActiveTab('telemetry')}
+          title="Open Live Telemetry & Kiosk (F11)"
+          className="neumorph-button px-3 py-2 text-xs flex items-center space-x-1.5 font-bold text-blue-600 dark:text-blue-400 transition-transform hover:scale-105 active:scale-95"
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+          <span className="hidden md:inline">Live Kiosk</span>
+        </button>
+
         {/* Sync Data Button */}
         <button
           onClick={onRefresh}
