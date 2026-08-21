@@ -104,8 +104,12 @@ def _load_from_json(json_path: Path) -> ReferenceData:
 def load_reference(path_str: str) -> ReferenceData:
     path = Path(path_str)
 
+    # --- if direct json path ---
+    if path.suffix.lower() == ".json" and path.exists():
+        return _load_from_json(path)
+
     # --- try xlsx first (local dev) ---
-    if path.exists():
+    if path.exists() and path.suffix.lower() in (".xlsx", ".xlsm"):
         try:
             from openpyxl import load_workbook
         except ImportError:
@@ -169,27 +173,97 @@ def load_reference(path_str: str) -> ReferenceData:
     return ReferenceData([])
 
 
-def enrich(fields: dict, ref: ReferenceData) -> list[str]:
-    """Fill Developer (and Community when absent) from the reference workbook.
+_MONTHS_AND_NOISE = re.compile(
+    r"\b(january|february|march|april|may|june|july|august|september|october|november|december|"
+    r"jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|"
+    r"201\d|202\d|done|new|full|master|others|contacts|ongoing|update|partial|consolidated|"
+    r"file is hanging|hanging|end)\b",
+    re.IGNORECASE,
+)
+
+
+def clean_filename_community(filename: str | None) -> str:
+    """Extract a clean community / project name from an uploaded file name."""
+    if not filename:
+        return ""
+    stem = Path(filename).stem
+    # If filename has a bracketed tag like [Club Villas] Club Villas.xlsx, extract
+    bracket_match = re.match(r"^\[(.*?)\]\s*(.*)", stem)
+    tag = None
+    if bracket_match:
+        tag, rest = bracket_match.groups()
+        stem = rest if rest.strip() else tag
+
+    # Strip parenthesized tokens like (2022), (c), (1)
+    s = re.sub(r"[\(\[\{].*?[\)\]\}]", " ", stem)
+    # Strip noise terms
+    s = _MONTHS_AND_NOISE.sub(" ", s)
+    # Strip punctuation / separators
+    s = re.sub(r"[-_./\\]", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    s = re.sub(r"\b(done|new)\b", "", s, flags=re.IGNORECASE).strip()
+
+    if not s and tag:
+        s = _MONTHS_AND_NOISE.sub(" ", tag).strip()
+
+    words = s.split()
+    if words and (s.isupper() or s.islower()):
+        s = " ".join(w.capitalize() for w in words)
+    return s
+
+
+_DUBAI_HILLS_SUBPROJECTS = (
+    "club villas", "fairway vistas", "sidra", "maple", "park heights",
+    "mulberry", "acacia", "park point", "park ridge", "golf place",
+    "golf grove", "golf suites", "golf views", "golf ville", "emerald hills",
+    "majestic vistas", "hills grove", "hills view", "collective", "elvira",
+    "lime", "address hillcrest", "ellington house", "dhe", "dubai hills",
+    "parkway vistas", "golf link", "golf palace", "parkridge",
+)
+
+
+def enrich(fields: dict, ref: ReferenceData, source_name: str | None = None) -> list[str]:
+    """Fill Community (from filename if missing) and Developer from the UAE reference workbook.
 
     Returns the list of field names that were filled by enrichment rather than
-    read from the source file. Never overwrites source data.
+    read from the source file. Never overwrites valid source data.
     """
-    if not len(ref):
-        return []
     filled: list[str] = []
-    match = ref.lookup(fields.get("Project"), fields.get("Sub-Community"),
-                       fields.get("Community"), fields.get("Building/Cluster"))
-    if not match:
-        return []
+    inferred_comm = clean_filename_community(source_name) if source_name else ""
 
-    if not fields.get("Developer") and match.developer:
-        fields["Developer"] = match.developer
-        filled.append("developer")
-    if not fields.get("Community") and match.region:
-        fields["Community"] = match.region
+    # 1. If Community is absent or blank in the row, use the inferred community from filename
+    if not fields.get("Community") and inferred_comm:
+        fields["Community"] = inferred_comm
         filled.append("community")
-    if not fields.get("Property Type") and match.dev_type:
-        fields["Property Type"] = match.dev_type
-        filled.append("property_type")
+
+    # 2. Check reference table lookup
+    if len(ref):
+        match = ref.lookup(
+            fields.get("Project"),
+            fields.get("Sub-Community"),
+            fields.get("Community"),
+            fields.get("Building/Cluster"),
+            inferred_comm if inferred_comm else None,
+        )
+        if match:
+            if not fields.get("Developer") and match.developer:
+                fields["Developer"] = match.developer
+                filled.append("developer")
+            if not fields.get("Community") and match.region:
+                fields["Community"] = match.region
+                if "community" not in filled:
+                    filled.append("community")
+            if not fields.get("Property Type") and match.dev_type:
+                fields["Property Type"] = match.dev_type
+                filled.append("property_type")
+
+    # 3. Dubai Hills Master Builder Fallback (All Dubai Hills sub-communities are Emaar)
+    all_text = " ".join(
+        str(fields.get(k) or "") for k in ("Community", "Sub-Community", "Project", "Building/Cluster")
+    ).lower() + " " + inferred_comm.lower()
+
+    if not fields.get("Developer") and any(sp in all_text for sp in _DUBAI_HILLS_SUBPROJECTS):
+        fields["Developer"] = "Emaar Properties"
+        filled.append("developer")
+
     return filled

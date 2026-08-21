@@ -295,9 +295,15 @@ class Processor:
             enriched: list[str] = []
             if self.ref is not None:
                 try:
-                    enriched = enrich(fields, self.ref)
+                    enriched = enrich(fields, self.ref, source_name=source_name)
                 except Exception:
                     enriched = []
+            elif source_name and not fields.get("Community"):
+                from .reference import clean_filename_community
+                inferred = clean_filename_community(source_name)
+                if inferred:
+                    fields["Community"] = inferred
+                    enriched = ["community"]
 
             row, flags = V.transform(fields, extras)
             ok, vflags = V.validate(row)
