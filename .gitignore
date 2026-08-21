@@ -32,6 +32,9 @@ frontend/dist/
 # Data sheets & heavy files
 Builders data/
 Excel sheets/
+Dubai Hills/
+Dubai Hills Raw Work/
+Dubai Hills*/
 *.xlsx
 *.csv
 *.xls
