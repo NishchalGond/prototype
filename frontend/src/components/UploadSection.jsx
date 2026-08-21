@@ -6,6 +6,8 @@ import {
   CheckCircle2,
   RefreshCw,
   Play,
+  Pause,
+  Square,
   FileCode,
   Layers,
   Layers3,
@@ -307,6 +309,10 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
       const uploadData = await uploadRes.json();
       const jobId = uploadData.job_id;
 
+      setFileQueue((prev) =>
+        prev.map((f, idx) => (idx === fileIndex ? { ...f, jobId, status: 'PROCESSING', error: null } : f))
+      );
+
       if (Object.keys(columnOverrides).length > 0 && selectedFileForRemap?.id === queueItem.id) {
         await fetch(`/api/jobs/${jobId}/mapping-overrides`, {
           method: 'POST',
@@ -332,8 +338,12 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
               idx === fileIndex
                 ? {
                     ...f,
+                    jobId: jobId,
                     processedRows: sData.processed_rows || 0,
                     totalRows: sData.total_rows || f.totalRows,
+                    progressPercent: sData.progress_percent || 0,
+                    currentSheet: sData.current_sheet || '',
+                    status: sData.status === 'PAUSED' ? 'PAUSED' : sData.status || f.status,
                   }
                 : f
             )
@@ -347,12 +357,21 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
               )
             );
             if (onUploadComplete) onUploadComplete(jobId);
+          } else if (sData.status === 'CANCELLED') {
+            isFinished = true;
+            setFileQueue((prev) =>
+              prev.map((f, idx) =>
+                idx === fileIndex
+                  ? { ...f, status: 'CANCELLED', error: 'Job stopped by user' }
+                  : f
+              )
+            );
           } else if (sData.status === 'FAILED') {
             isFinished = true;
             setFileQueue((prev) =>
               prev.map((f, idx) =>
                 idx === fileIndex
-                  ? { ...f, status: 'FAILED', error: sData.error_message || 'Processing failed' }
+                  ? { ...f, status: 'FAILED', error: sData.message || sData.error_message || 'Processing failed' }
                   : f
               )
             );
@@ -368,6 +387,42 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
       );
     } finally {
       setActiveQueueIndex(null);
+    }
+  };
+
+  const handlePauseJob = async (jobId) => {
+    if (!jobId) return;
+    try {
+      await fetch(`/api/jobs/${jobId}/pause`, { method: 'POST' });
+      setFileQueue((prev) =>
+        prev.map((f) => (f.jobId === jobId ? { ...f, status: 'PAUSED' } : f))
+      );
+    } catch (err) {
+      console.error('Failed to pause job:', err);
+    }
+  };
+
+  const handleResumeJob = async (jobId) => {
+    if (!jobId) return;
+    try {
+      await fetch(`/api/jobs/${jobId}/resume`, { method: 'POST' });
+      setFileQueue((prev) =>
+        prev.map((f) => (f.jobId === jobId ? { ...f, status: 'PROCESSING' } : f))
+      );
+    } catch (err) {
+      console.error('Failed to resume job:', err);
+    }
+  };
+
+  const handleCancelJob = async (jobId) => {
+    if (!jobId) return;
+    try {
+      await fetch(`/api/jobs/${jobId}/cancel`, { method: 'POST' });
+      setFileQueue((prev) =>
+        prev.map((f) => (f.jobId === jobId ? { ...f, status: 'CANCELLED', error: 'Job stopped by user' } : f))
+      );
+    } catch (err) {
+      console.error('Failed to cancel job:', err);
     }
   };
 
@@ -527,114 +582,227 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
             </div>
           </div>
 
-          <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
             {fileQueue.map((item, idx) => (
               <div
                 key={item.id}
-                className={`p-3.5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono ${
-                  activeQueueIndex === idx
+                className={`p-4 rounded-2xl border transition-all flex flex-col gap-3 text-xs font-mono ${
+                  activeQueueIndex === idx || item.status === 'PROCESSING'
                     ? 'bg-[#eef0f4] border-blue-400 shadow-[inset_3px_3px_6px_#cbd2dc,inset_-3px_-3px_6px_#ffffff]'
+                    : item.status === 'PAUSED'
+                    ? 'bg-[#eef0f4] border-amber-400 shadow-[inset_3px_3px_6px_#cbd2dc,inset_-3px_-3px_6px_#ffffff]'
                     : item.status === 'COMPLETED'
                     ? 'bg-[#eef0f4] border-emerald-300 shadow-[4px_4px_10px_#cbd2dc,-4px_-4px_10px_#ffffff]'
-                    : item.status === 'FAILED'
+                    : item.status === 'FAILED' || item.status === 'CANCELLED'
                     ? 'bg-[#eef0f4] border-rose-300 shadow-[4px_4px_10px_#cbd2dc,-4px_-4px_10px_#ffffff]'
                     : 'bg-[#eef0f4] border-slate-300/80 shadow-[4px_4px_10px_#cbd2dc,-4px_-4px_10px_#ffffff]'
                 }`}
               >
-                <div className="flex items-center space-x-3 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-[#eef0f4] border border-slate-300/80 flex items-center justify-center text-blue-600 flex-shrink-0 shadow-[inset_2px_2px_4px_#cbd2dc]">
-                    <FileSpreadsheet className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center space-x-2 flex-wrap">
-                      <p className="font-bold text-slate-800 truncate max-w-xs sm:max-w-md">{item.name}</p>
-                      {item.name.toLowerCase().includes('consolidated') && (
-                        <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-700 text-[10px] font-bold border border-amber-300">
-                          Pre-Consolidated File
-                        </span>
-                      )}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+                  <div className="flex items-center space-x-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-[#eef0f4] border border-slate-300/80 flex items-center justify-center text-blue-600 flex-shrink-0 shadow-[inset_2px_2px_4px_#cbd2dc]">
+                      <FileSpreadsheet className="w-5 h-5" />
                     </div>
-                    <p className="text-[10px] text-slate-500">
-                      {(item.size / 1024).toFixed(1)} KB | Status: <span className="text-slate-900 font-bold">{item.status}</span>
-                      {item.totalRows > 0 && ` | ${item.totalRows.toLocaleString()} rows`}
-                    </p>
+                    <div className="min-w-0">
+                      <div className="flex items-center space-x-2 flex-wrap">
+                        <p className="font-bold text-slate-800 truncate max-w-xs sm:max-w-md">{item.name}</p>
+                        {item.name.toLowerCase().includes('consolidated') && (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-700 text-[10px] font-bold border border-amber-300">
+                            Pre-Consolidated File
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-500">
+                        {(item.size / 1024).toFixed(1)} KB | Status: <span className="text-slate-900 font-bold">{item.status}</span>
+                        {item.totalRows > 0 && ` | ${item.totalRows.toLocaleString()} rows`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Status Badges & Controls */}
+                  <div className="flex items-center space-x-2 flex-shrink-0 self-end sm:self-center">
+                    {item.status === 'QUEUED' && (
+                      <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-slate-700 text-[10px] font-bold border border-slate-300/80 shadow-[inset_2px_2px_4px_#cbd2dc]">
+                        QUEUED
+                      </span>
+                    )}
+
+                    {item.status === 'INSPECTING' && (
+                      <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-blue-700 text-[10px] font-bold border border-blue-300 flex items-center space-x-1 shadow-[inset_2px_2px_4px_#cbd2dc]">
+                        <RefreshCw className="w-3 h-3 animate-spin text-blue-600" />
+                        <span>INSPECTING</span>
+                      </span>
+                    )}
+
+                    {item.status === 'INSPECTED' && (
+                      <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-blue-700 text-[10px] font-bold border border-blue-300 flex items-center space-x-1 shadow-[inset_2px_2px_4px_#cbd2dc]">
+                        <FileCode className="w-3 h-3 text-blue-600" />
+                        <span>INSPECTED ({item.uploadResult?.mapped_target_count || 0} mapped)</span>
+                      </span>
+                    )}
+
+                    {item.status === 'PROCESSING' && (
+                      <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-emerald-700 text-[10px] font-bold border border-emerald-300 flex items-center space-x-1 shadow-[inset_2px_2px_4px_#cbd2dc]">
+                        <RefreshCw className="w-3 h-3 animate-spin text-emerald-600" />
+                        <span>PROCESSING</span>
+                      </span>
+                    )}
+
+                    {item.status === 'PAUSED' && (
+                      <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-amber-700 text-[10px] font-bold border border-amber-300 flex items-center space-x-1 shadow-[inset_2px_2px_4px_#cbd2dc]">
+                        <Pause className="w-3 h-3 text-amber-600" />
+                        <span>PAUSED</span>
+                      </span>
+                    )}
+
+                    {item.status === 'COMPLETED' && (
+                      <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-emerald-700 text-[10px] font-bold border border-emerald-300 flex items-center space-x-1 shadow-[inset_2px_2px_4px_#cbd2dc]">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>INGESTED ({item.processedRows || item.totalRows} rows)</span>
+                      </span>
+                    )}
+
+                    {item.status === 'CANCELLED' && (
+                      <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-slate-700 text-[10px] font-bold border border-slate-300 flex items-center space-x-1 shadow-[inset_2px_2px_4px_#cbd2dc]">
+                        <Square className="w-3 h-3 text-slate-500" />
+                        <span>CANCELLED</span>
+                      </span>
+                    )}
+
+                    {item.status === 'FAILED' && (
+                      <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-rose-700 text-[10px] font-bold border border-rose-300 flex items-center space-x-1 shadow-[inset_2px_2px_4px_#cbd2dc]">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                        <span>FAILED</span>
+                      </span>
+                    )}
+
+                    {/* Pause / Resume / Stop Controls for Active Job */}
+                    {(item.status === 'PROCESSING' || item.status === 'PAUSED') && item.jobId && (
+                      <div className="flex items-center space-x-1.5 ml-1">
+                        {item.status === 'PROCESSING' ? (
+                          <button
+                            onClick={() => handlePauseJob(item.jobId)}
+                            className="neumorph-button px-2.5 py-1 text-amber-700 text-[10px] font-bold flex items-center space-x-1 hover:text-amber-800 shadow-xs"
+                            title="Pause processing at batch boundary"
+                          >
+                            <Pause className="w-3 h-3 text-amber-600" />
+                            <span>Pause</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleResumeJob(item.jobId)}
+                            className="neumorph-button-primary px-2.5 py-1 text-[10px] font-bold flex items-center space-x-1 shadow-xs"
+                            title="Resume processing"
+                          >
+                            <Play className="w-3 h-3 fill-white text-white" />
+                            <span>Resume</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleCancelJob(item.jobId)}
+                          className="neumorph-button px-2.5 py-1 text-rose-600 text-[10px] font-bold flex items-center space-x-1 hover:text-rose-700 shadow-xs"
+                          title="Stop / Cancel processing"
+                        >
+                          <Square className="w-3 h-3 text-rose-600 fill-rose-600" />
+                          <span>Stop</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Actions per file */}
+                    {item.status !== 'COMPLETED' && item.status !== 'PROCESSING' && item.status !== 'PAUSED' && (
+                      <>
+                        <button
+                          onClick={() => inspectQueueFile(item)}
+                          className="neumorph-button px-2.5 py-1 text-blue-600 text-[10px] font-bold flex items-center space-x-1"
+                          title="Inspect Column Headers"
+                        >
+                          <FileCode className="w-3 h-3" />
+                          <span>Inspect</span>
+                        </button>
+                        <button
+                          onClick={() => processSingleFile(idx)}
+                          className="neumorph-button-primary px-2.5 py-1 text-[10px] font-bold flex items-center space-x-1"
+                          title="Process File Now"
+                        >
+                          <Play className="w-3 h-3 fill-white text-white" />
+                          <span>Run</span>
+                        </button>
+                      </>
+                    )}
+
+                    {item.status !== 'PROCESSING' && item.status !== 'PAUSED' && (
+                      <button
+                        onClick={() => removeFromQueue(item.id)}
+                        disabled={isProcessingQueue}
+                        className="neumorph-button p-1.5 text-slate-500 hover:text-rose-600"
+                        title="Remove from Queue"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                {/* Status Badges & Controls */}
-                <div className="flex items-center space-x-2 flex-shrink-0 self-end sm:self-center">
-                  {item.status === 'QUEUED' && (
-                    <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-slate-700 text-[10px] font-bold border border-slate-300/80 shadow-[inset_2px_2px_4px_#cbd2dc]">
-                      QUEUED
-                    </span>
-                  )}
+                {/* Real-Time Live Progress Bar */}
+                {(item.status === 'PROCESSING' || item.status === 'PAUSED' || (item.status === 'COMPLETED' && item.processedRows > 0)) && (
+                  <div className="w-full mt-1 pt-2 border-t border-slate-300/60 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-mono">
+                      <span className="flex items-center space-x-1.5 font-bold">
+                        {item.status === 'PROCESSING' && (
+                          <span className="flex items-center space-x-1 text-emerald-600">
+                            <RefreshCw className="w-3 h-3 animate-spin text-emerald-600" />
+                            <span>Streaming rows ({item.currentSheet || 'Sheet 1'})...</span>
+                          </span>
+                        )}
+                        {item.status === 'PAUSED' && (
+                          <span className="text-amber-600 font-bold flex items-center space-x-1">
+                            <Pause className="w-3 h-3 text-amber-600" />
+                            <span>Paused at batch boundary</span>
+                          </span>
+                        )}
+                        {item.status === 'COMPLETED' && (
+                          <span className="text-emerald-700 font-bold flex items-center space-x-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>Processing complete</span>
+                          </span>
+                        )}
+                      </span>
 
-                  {item.status === 'INSPECTING' && (
-                    <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-blue-700 text-[10px] font-bold border border-blue-300 flex items-center space-x-1 shadow-[inset_2px_2px_4px_#cbd2dc]">
-                      <RefreshCw className="w-3 h-3 animate-spin text-blue-600" />
-                      <span>INSPECTING</span>
-                    </span>
-                  )}
+                      <span className="font-bold text-slate-800">
+                        {(item.processedRows || 0).toLocaleString()} / {(item.totalRows || 0).toLocaleString()} rows (
+                        {item.status === 'COMPLETED'
+                          ? 100
+                          : item.totalRows > 0
+                          ? Math.min(99, Math.round(((item.processedRows || 0) / item.totalRows) * 100))
+                          : Math.round(item.progressPercent || 0)}
+                        %)
+                      </span>
+                    </div>
 
-                  {item.status === 'INSPECTED' && (
-                    <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-blue-700 text-[10px] font-bold border border-blue-300 flex items-center space-x-1 shadow-[inset_2px_2px_4px_#cbd2dc]">
-                      <FileCode className="w-3 h-3 text-blue-600" />
-                      <span>INSPECTED ({item.uploadResult?.mapped_target_count || 0} mapped)</span>
-                    </span>
-                  )}
-
-                  {item.status === 'PROCESSING' && (
-                    <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-emerald-700 text-[10px] font-bold border border-emerald-300 flex items-center space-x-1 shadow-[inset_2px_2px_4px_#cbd2dc]">
-                      <RefreshCw className="w-3 h-3 animate-spin text-emerald-600" />
-                      <span>PROCESSING</span>
-                    </span>
-                  )}
-
-                  {item.status === 'COMPLETED' && (
-                    <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-emerald-700 text-[10px] font-bold border border-emerald-300 flex items-center space-x-1 shadow-[inset_2px_2px_4px_#cbd2dc]">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>INGESTED ({item.processedRows || item.totalRows} rows)</span>
-                    </span>
-                  )}
-
-                  {item.status === 'FAILED' && (
-                    <span className="px-2.5 py-1 rounded-lg bg-[#eef0f4] text-rose-700 text-[10px] font-bold border border-rose-300 flex items-center space-x-1 shadow-[inset_2px_2px_4px_#cbd2dc]">
-                      <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
-                      <span>FAILED</span>
-                    </span>
-                  )}
-
-                  {/* Actions per file */}
-                  {item.status !== 'COMPLETED' && item.status !== 'PROCESSING' && (
-                    <>
-                      <button
-                        onClick={() => inspectQueueFile(item)}
-                        className="neumorph-button px-2.5 py-1 text-blue-600 text-[10px] font-bold flex items-center space-x-1"
-                        title="Inspect Column Headers"
-                      >
-                        <FileCode className="w-3 h-3" />
-                        <span>Inspect</span>
-                      </button>
-                      <button
-                        onClick={() => processSingleFile(idx)}
-                        className="neumorph-button-primary px-2.5 py-1 text-[10px] font-bold flex items-center space-x-1"
-                        title="Process File Now"
-                      >
-                        <Play className="w-3 h-3 fill-white" />
-                        <span>Run</span>
-                      </button>
-                    </>
-                  )}
-
-                  <button
-                    onClick={() => removeFromQueue(item.id)}
-                    disabled={isProcessingQueue}
-                    className="neumorph-button p-1.5 text-slate-500 hover:text-rose-600"
-                    title="Remove from Queue"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                    {/* Bar */}
+                    <div className="w-full h-2.5 rounded-full bg-[#cbd2dc] overflow-hidden shadow-[inset_1px_1px_3px_#94a3b8] p-0.5">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          item.status === 'PAUSED'
+                            ? 'bg-amber-500'
+                            : item.status === 'COMPLETED'
+                            ? 'bg-emerald-500'
+                            : 'bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500'
+                        }`}
+                        style={{
+                          width: `${
+                            item.status === 'COMPLETED'
+                              ? 100
+                              : item.totalRows > 0
+                              ? Math.max(4, Math.min(99, Math.round(((item.processedRows || 0) / item.totalRows) * 100)))
+                              : Math.max(4, Math.min(99, item.progressPercent || 5))
+                          }%`
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

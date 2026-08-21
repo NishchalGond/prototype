@@ -337,13 +337,60 @@ def get_job_errors(
 
 
 # --------------------------------------------------------------------------
+JOB_SIGNALS: dict[int, str] = {}
+
+
+@router.post("/jobs/{job_id}/pause", response_model=JobOut)
+def pause_job(job_id: int, db: Session = Depends(get_db)):
+    """Pause an actively running processing job."""
+    job = db.get(ProcessingJob, job_id)
+    if not job:
+        raise HTTPException(404, f"Job {job_id} not found.")
+    JOB_SIGNALS[job_id] = "PAUSE"
+    job.status = JobStatus.PAUSED
+    db.commit()
+    db.refresh(job)
+    return _job_out(job)
+
+
+@router.post("/jobs/{job_id}/resume", response_model=JobOut)
+def resume_job(job_id: int, db: Session = Depends(get_db)):
+    """Resume a paused processing job."""
+    job = db.get(ProcessingJob, job_id)
+    if not job:
+        raise HTTPException(404, f"Job {job_id} not found.")
+    JOB_SIGNALS[job_id] = "RESUME"
+    job.status = JobStatus.PROCESSING
+    db.commit()
+    db.refresh(job)
+    return _job_out(job)
+
+
+@router.post("/jobs/{job_id}/cancel", response_model=JobOut)
+def cancel_job(job_id: int, db: Session = Depends(get_db)):
+    """Cancel a running or paused processing job."""
+    job = db.get(ProcessingJob, job_id)
+    if not job:
+        raise HTTPException(404, f"Job {job_id} not found.")
+    JOB_SIGNALS[job_id] = "CANCEL"
+    job.status = JobStatus.CANCELLED
+    job.message = "Job cancelled by user."
+    job.finished_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(job)
+    return _job_out(job)
+
+
+# --------------------------------------------------------------------------
 # background worker
 # --------------------------------------------------------------------------
 def run_job(job_id: int) -> None:
     """Process one job. Runs in a FastAPI background task with its own session."""
+    import time
     from engine.detection import UnreadableFile
     from engine.processor import Processor
 
+    JOB_SIGNALS[job_id] = "RUN"
     db = SessionLocal()
     try:
         job = db.get(ProcessingJob, job_id)
@@ -364,6 +411,15 @@ def run_job(job_id: int) -> None:
 
         def on_batch(rows: list[dict]) -> int:
             """One transaction per batch: a failure rolls back only this batch."""
+            sig = JOB_SIGNALS.get(job_id)
+            if sig == "CANCEL":
+                raise InterruptedError("Job cancelled by user.")
+            while sig == "PAUSE":
+                time.sleep(0.5)
+                sig = JOB_SIGNALS.get(job_id)
+                if sig == "CANCEL":
+                    raise InterruptedError("Job cancelled by user.")
+
             for r in rows:
                 r["job_id"] = job_id
             try:
@@ -376,7 +432,11 @@ def run_job(job_id: int) -> None:
             return len(rows)
 
         def on_progress(res, sheet_name: str) -> None:
-            job.status = JobStatus.PROCESSING
+            sig = JOB_SIGNALS.get(job_id)
+            if sig == "CANCEL":
+                raise InterruptedError("Job cancelled by user.")
+
+            job.status = JobStatus.PAUSED if sig == "PAUSE" else JobStatus.PROCESSING
             job.current_sheet = sheet_name
             job.total_rows = res.total_rows
             job.processed_rows = res.processed_rows
@@ -384,9 +444,11 @@ def run_job(job_id: int) -> None:
             job.invalid_rows = res.invalid_rows
             job.duplicate_rows = res.duplicate_rows
             job.skipped_rows = res.skipped_rows
-            # Total row count is unknown until the stream ends, so progress is
-            # reported as an honest lower bound rather than a fabricated ETA.
-            job.progress_percent = 99.0 if res.total_rows else 0.0
+
+            if res.total_rows and res.total_rows > 0:
+                job.progress_percent = min(round(100.0 * res.processed_rows / res.total_rows, 1), 99.0)
+            else:
+                job.progress_percent = 0.0
             db.commit()
 
         seen = set(db.scalars(select(Record.identity_hash)
@@ -420,6 +482,14 @@ def run_job(job_id: int) -> None:
         job.current_sheet = None
         db.commit()
 
+    except InterruptedError as exc:
+        db.rollback()
+        job = db.get(ProcessingJob, job_id)
+        if job:
+            job.status = JobStatus.CANCELLED
+            job.message = "Job stopped by user."
+            job.finished_at = datetime.now(timezone.utc)
+            db.commit()
     except UnreadableFile as exc:
         db.rollback()
         job = db.get(ProcessingJob, job_id)
@@ -444,4 +514,5 @@ def run_job(job_id: int) -> None:
                                    code="JOB_CRASHED", message=str(exc)[:2000]))
             db.commit()
     finally:
+        JOB_SIGNALS.pop(job_id, None)
         db.close()
