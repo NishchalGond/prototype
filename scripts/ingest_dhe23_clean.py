@@ -25,25 +25,20 @@ def main():
     print("  INGESTING DHE 23.xlsx (ALL 52,725 ROWS)")
     print("=" * 60)
 
-    # 1. Clean previous partial jobs for DHE 23 using raw SQL
+    # 1. Clean previous partial jobs for DHE 23 using exact job_id deletion
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cur = conn.cursor()
-    cur.execute("DELETE FROM records WHERE source_file = 'DHE 23.xlsx'")
-    conn.commit()
     cur.execute("""
-        DELETE FROM processing_errors WHERE job_id IN (
-            SELECT id FROM processing_jobs WHERE source_file_id IN (
-                SELECT id FROM source_files WHERE filename = 'DHE 23.xlsx'
-            )
-        )
+        SELECT id FROM processing_jobs WHERE source_file_id IN (
+            SELECT id FROM source_files WHERE filename ILIKE '%DHE 23%'
+        );
     """)
-    conn.commit()
-    cur.execute("""
-        DELETE FROM processing_jobs WHERE source_file_id IN (
-            SELECT id FROM source_files WHERE filename = 'DHE 23.xlsx'
-        )
-    """)
-    conn.commit()
+    job_ids = [r[0] for r in cur.fetchall()]
+    if job_ids:
+        cur.execute("DELETE FROM records WHERE job_id = ANY(%s)", (job_ids,))
+        cur.execute("DELETE FROM processing_errors WHERE job_id = ANY(%s)", (job_ids,))
+        cur.execute("DELETE FROM processing_jobs WHERE id = ANY(%s)", (job_ids,))
+        conn.commit()
     cur.close()
     conn.close()
 
