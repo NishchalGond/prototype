@@ -32,6 +32,31 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
 
   useEffect(() => {
     fetchMappingSchema();
+
+    // Window-level drag listeners to enable dropping files from anywhere
+    const onWindowDragOver = (e) => {
+      e.preventDefault();
+      setIsDragOver(true);
+    };
+    const onWindowDragLeave = (e) => {
+      if (e.clientX === 0 || e.clientY === 0) {
+        setIsDragOver(false);
+      }
+    };
+    const onWindowDrop = (e) => {
+      e.preventDefault();
+      setIsDragOver(false);
+    };
+
+    window.addEventListener('dragover', onWindowDragOver);
+    window.addEventListener('dragleave', onWindowDragLeave);
+    window.addEventListener('drop', onWindowDrop);
+
+    return () => {
+      window.removeEventListener('dragover', onWindowDragOver);
+      window.removeEventListener('dragleave', onWindowDragLeave);
+      window.removeEventListener('drop', onWindowDrop);
+    };
   }, []);
 
   const fetchMappingSchema = async () => {
@@ -46,6 +71,73 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
     }
   };
 
+  const getFilesFromDataTransfer = async (dataTransfer) => {
+    const validExtensions = ['.xlsx', '.xls', '.csv'];
+    const files = [];
+
+    // Helper to read directory recursively when user drags a folder
+    const readEntry = async (entry) => {
+      if (!entry) return;
+      if (entry.isFile) {
+        const file = await new Promise((resolve) => entry.file(resolve));
+        if (file) {
+          const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+          if (validExtensions.includes(ext) && !file.name.startsWith('~$') && !file.name.startsWith('._')) {
+            files.push(file);
+          }
+        }
+      } else if (entry.isDirectory) {
+        const dirReader = entry.createReader();
+        const entries = await new Promise((resolve) => {
+          const allEntries = [];
+          const readBatch = () => {
+            dirReader.readEntries((results) => {
+              if (!results || !results.length) {
+                resolve(allEntries);
+              } else {
+                allEntries.push(...results);
+                readBatch();
+              }
+            }, () => resolve(allEntries));
+          };
+          readBatch();
+        });
+        for (const child of entries) {
+          await readEntry(child);
+        }
+      }
+    };
+
+    if (dataTransfer.items && dataTransfer.items.length > 0) {
+      const items = Array.from(dataTransfer.items);
+      for (const item of items) {
+        if (item.webkitGetAsEntry) {
+          const entry = item.webkitGetAsEntry();
+          if (entry) {
+            await readEntry(entry);
+            continue;
+          }
+        }
+        const file = item.getAsFile();
+        if (file) {
+          const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+          if (validExtensions.includes(ext) && !file.name.startsWith('~$') && !file.name.startsWith('._')) {
+            files.push(file);
+          }
+        }
+      }
+    } else if (dataTransfer.files && dataTransfer.files.length > 0) {
+      for (const file of Array.from(dataTransfer.files)) {
+        const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        if (validExtensions.includes(ext) && !file.name.startsWith('~$') && !file.name.startsWith('._')) {
+          files.push(file);
+        }
+      }
+    }
+
+    return files;
+  };
+
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -56,12 +148,16 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
     }
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      addFilesToQueue(Array.from(e.dataTransfer.files));
+    
+    const files = await getFilesFromDataTransfer(e.dataTransfer);
+    if (files.length > 0) {
+      addFilesToQueue(files);
+    } else {
+      setGlobalError('Please select or drop valid Excel (.xlsx, .xls) or CSV (.csv) files.');
     }
   };
 
@@ -76,7 +172,7 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
     const newItems = files
       .filter((f) => {
         const ext = f.name.substring(f.name.lastIndexOf('.')).toLowerCase();
-        return validExtensions.includes(ext);
+        return validExtensions.includes(ext) && !f.name.startsWith('~$') && !f.name.startsWith('._');
       })
       .map((f) => ({
         id: Math.random().toString(36).substring(2, 9),
