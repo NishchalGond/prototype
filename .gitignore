@@ -48,3 +48,8 @@ Thumbs.db
 # Agent skills cache
 .agents/
 skills-lock.json
+
+# Private user documentation & PDFs (kept strictly local)
+Documentation/
+*.pdf
+
