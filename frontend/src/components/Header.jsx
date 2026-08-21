@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, RefreshCw, Cloud, Sun, Moon, LogOut } from 'lucide-react';
+import { Search, RefreshCw, Cloud, Sun, Moon, LogOut, ShieldCheck } from 'lucide-react';
 
 export default function Header({ onRefresh, activeJob, searchQuery, setSearchQuery, setActiveTab, theme, toggleTheme, onLogout, currentUser }) {
   const isDark = theme === 'dark';
@@ -71,33 +71,12 @@ export default function Header({ onRefresh, activeJob, searchQuery, setSearchQue
 
         <div className="h-4 w-[1px] bg-slate-500/20"></div>
 
-        {/* User Profile & Role Badge */}
-        <div className="flex items-center space-x-2.5 px-3 py-1 rounded-xl bg-[var(--card-bg)] neumorph-button cursor-default select-none border border-slate-300/60 dark:border-white/5">
-          {/* Avatar Icon */}
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black bg-blue-600 text-white shadow-sm">
-            {initials}
-          </div>
-          
-          {/* Name and Role */}
-          <div className="hidden md:flex flex-col text-left justify-center">
-            <span 
-              className="text-xs font-black leading-none"
-              style={{ color: isDark ? '#F8FAFC' : '#0F172A' }}
-            >
-              {fullName}
-            </span>
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className={`text-[8px] font-mono font-black uppercase px-1.5 py-0.5 rounded leading-none ${
-                role === 'ADMIN'
-                  ? 'bg-rose-500 text-white'
-                  : role === 'DATA_PROCESSOR'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-600 text-white'
-              }`}>
-                {role}
-              </span>
-            </div>
-          </div>
+        {/* Admin Logo Icon */}
+        <div 
+          title={`${fullName} (${role})`}
+          className="neumorph-button p-2 text-xs flex items-center justify-center transition-transform hover:scale-105 select-none cursor-default text-blue-600 dark:text-blue-400"
+        >
+          <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
         </div>
 
         {/* Logout / Lock Button */}
