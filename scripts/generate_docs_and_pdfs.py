@@ -310,9 +310,9 @@ def generate_pdf_from_markdown(md_path: Path, output_pdf: Path, title: str, subt
 
     if output_pdf.exists():
         size_kb = output_pdf.stat().st_size / 1024
-        print(f"✓ Generated PDF: {output_pdf.name} ({size_kb:.1f} KB)")
+        print(f"[OK] Generated PDF: {output_pdf.name} ({size_kb:.1f} KB)")
     else:
-        print(f"✗ Failed to generate PDF: {output_pdf.name}")
+        print(f"[ERROR] Failed to generate PDF: {output_pdf.name}")
 
 # Generate 1: System Documentation PDF
 sys_md = DOCS_DIR / "SYSTEM_DOCUMENTATION.md"
@@ -359,4 +359,4 @@ generate_pdf_from_markdown(
 
 print("\n=== Documentation Packaging Complete ===")
 for item in sorted(DOCS_DIR.iterdir()):
-    print(f"  📁 Documentation/{item.name} ({item.stat().st_size / 1024:.1f} KB)")
+    print(f"  * Documentation/{item.name} ({item.stat().st_size / 1024:.1f} KB)")
