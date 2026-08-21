@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ChevronLeft, ChevronRight, X, ArrowUpDown, ArrowUp, ArrowDown, Edit3, Save, CheckCircle2, AlertCircle, Download, FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, X, ArrowUpDown, ArrowUp, ArrowDown, Edit3, Save, CheckCircle2, AlertCircle, Download, FileSpreadsheet, FileText, Loader2, SlidersHorizontal, RotateCcw, Filter } from 'lucide-react';
 import CustomSelect from './CustomSelect';
 
 export default function RecordsExplorer({ initialQuery = '' }) {
@@ -19,6 +19,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [filterOptions, setFilterOptions] = useState({ communities: [], property_types: [], bedroom_types: [], source_files: [], statuses: [] });
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Modal & Editing States
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -211,14 +212,14 @@ export default function RecordsExplorer({ initialQuery = '' }) {
   };
 
   return (
-    <div className="p-6 h-full w-full max-w-[1450px] mx-auto flex flex-col min-h-0 overflow-hidden space-y-4">
+    <div className="p-3 sm:p-6 h-full w-full max-w-[1450px] mx-auto flex flex-col min-h-0 overflow-hidden space-y-3 sm:space-y-4">
       {/* Top Header & Filter Controls (Fixed, non-scrolling) */}
-      <div className="flex-shrink-0 space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex-shrink-0 space-y-3 sm:space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Processed Dataset Explorer</h2>
-            <p className="text-xs text-slate-600 mt-1 font-medium">
-              Search, filter, and inspect normalized records across all ingested builder registers ({totalRecords.toLocaleString()} records). Click any row to view or edit.
+            <h2 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Processed Dataset Explorer</h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
+              Search, filter, and inspect normalized records across all ingested registers ({totalRecords.toLocaleString()} records).
             </p>
           </div>
 
@@ -255,20 +256,62 @@ export default function RecordsExplorer({ initialQuery = '' }) {
         </div>
 
         {/* Filter Bar */}
-        <div className="neumorph-card p-4 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-            {/* Search Input */}
-            <div className="relative lg:col-span-2">
-              <Search className="w-4 h-4 absolute left-3.5 top-3 text-blue-600" />
+        <div className="neumorph-card p-3 sm:p-4 space-y-3">
+          {/* Main Search Row with Mobile Filter Toggle */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-blue-600 dark:text-blue-400" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Search Name, Community, Unit, Mobile..."
-                className="w-full neumorph-inset text-xs text-slate-800 placeholder-slate-400 rounded-2xl pl-10 pr-4 py-2.5 focus:outline-none font-medium"
+                className="w-full neumorph-inset text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 rounded-2xl pl-10 pr-4 py-2.5 focus:outline-none font-medium"
               />
             </div>
 
+            {/* Mobile Filter Toggle Button (< lg) */}
+            <button
+              type="button"
+              onClick={() => setShowMobileFilters((prev) => !prev)}
+              className={`lg:hidden neumorph-button px-3 py-2.5 rounded-2xl flex items-center space-x-1.5 text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                [community, propertyType, bedroom, status].some(Boolean)
+                  ? 'text-blue-600 dark:text-blue-400 border border-blue-500/40 bg-blue-500/10'
+                  : 'text-slate-800 dark:text-slate-200'
+              }`}
+              title="Toggle Filters"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              <span className="text-xs">Filters</span>
+              {[community, propertyType, bedroom, status].filter(Boolean).length > 0 && (
+                <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] flex items-center justify-center font-black">
+                  {[community, propertyType, bedroom, status].filter(Boolean).length}
+                </span>
+              )}
+            </button>
+
+            {/* Reset Filters button if any filter active */}
+            {[community, propertyType, bedroom, status, search].some(Boolean) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCommunity('');
+                  setPropertyType('');
+                  setBedroom('');
+                  setStatus('');
+                  setSearch('');
+                  setPage(1);
+                }}
+                className="neumorph-button p-2.5 rounded-2xl text-rose-500 hover:text-rose-600 transition-all shrink-0 cursor-pointer"
+                title="Reset Search & Filters"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Collapsible Dropdown Filters Grid (Always visible on lg+, toggleable on mobile) */}
+          <div className={`${showMobileFilters ? 'grid' : 'hidden lg:grid'} grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1 animate-in fade-in duration-150`}>
             {/* Community Filter */}
             <CustomSelect
               value={community}
@@ -280,7 +323,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
               ]}
             />
 
-            {/* Property Type Filter (Residential, Commercial, Land, etc.) */}
+            {/* Property Type Filter */}
             <CustomSelect
               value={propertyType}
               onChange={(val) => { setPropertyType(val); setPage(1); }}
@@ -502,46 +545,46 @@ export default function RecordsExplorer({ initialQuery = '' }) {
         </div>
 
         {/* Pagination Footer & Status Color Legend */}
-        <div className="p-3.5 px-5 border-t border-slate-300/80 dark:border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 font-mono text-xs bg-[var(--card-bg)]">
-          {/* Status Color Legend */}
-          <div className="flex flex-wrap items-center gap-4 text-[11px]">
-            <span className="text-slate-900 dark:text-slate-100 font-black uppercase tracking-wider text-[11px]">
+        <div className="p-3 px-4 border-t border-slate-300/80 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2.5 font-mono text-xs bg-[var(--card-bg)]">
+          {/* Status Color Legend (Hidden on small phones to maximize table height, visible on tablet/desktop) */}
+          <div className="hidden md:flex flex-wrap items-center gap-3 text-[11px]">
+            <span className="text-slate-900 dark:text-slate-100 font-black uppercase tracking-wider text-[10px]">
               Status Key:
             </span>
-            <div className="flex items-center space-x-1.5" title="Has verified name and contact info (phone or email)">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)] shrink-0" />
-              <span className="text-emerald-700 dark:text-emerald-300 font-black">
-                Valid (Outreach Ready)
+            <div className="flex items-center space-x-1" title="Has verified name and contact info (phone or email)">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)] shrink-0" />
+              <span className="text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">
+                Valid
               </span>
             </div>
-            <div className="flex items-center space-x-1.5" title="Matching SHA-256 identity hash across records">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.8)] animate-pulse shrink-0" />
-              <span className="text-amber-700 dark:text-amber-300 font-black">
-                Duplicate (Preserved)
+            <div className="flex items-center space-x-1" title="Matching SHA-256 identity hash across records">
+              <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.8)] animate-pulse shrink-0" />
+              <span className="text-amber-700 dark:text-amber-300 font-bold text-[10px]">
+                Duplicate
               </span>
             </div>
-            <div className="flex items-center space-x-1.5" title="Property/Owner details exist but phone and email were blank">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 dark:bg-indigo-400 shrink-0" />
-              <span className="text-indigo-700 dark:text-indigo-300 font-black">
-                Incomplete (No Contact)
+            <div className="flex items-center space-x-1" title="Property/Owner details exist but phone and email were blank">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 dark:bg-indigo-400 shrink-0" />
+              <span className="text-indigo-700 dark:text-indigo-300 font-bold text-[10px]">
+                Incomplete
               </span>
             </div>
-            <div className="flex items-center space-x-1.5" title="Failed critical structural validation">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.7)] shrink-0" />
-              <span className="text-rose-700 dark:text-rose-400 font-black">
-                Invalid / Error
+            <div className="flex items-center space-x-1" title="Failed critical structural validation">
+              <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.7)] shrink-0" />
+              <span className="text-rose-700 dark:text-rose-400 font-bold text-[10px]">
+                Invalid
               </span>
             </div>
           </div>
 
-          {/* Page Counter & Controls */}
-          <div className="flex items-center space-x-4">
-            <div className="text-slate-800 dark:text-slate-200 font-bold">
+          {/* Page Counter & Controls (Full width flex on mobile, auto on desktop) */}
+          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-3">
+            <div className="text-slate-800 dark:text-slate-200 font-bold text-[11px] sm:text-xs">
               Page <span className="text-blue-600 dark:text-blue-400 font-black">{page}</span> of{' '}
               <span className="text-blue-600 dark:text-blue-400 font-black">{totalPages}</span>{' '}
-              <span className="text-slate-600 dark:text-slate-400 font-medium">({totalRecords.toLocaleString()} records)</span>
+              <span className="text-slate-500 dark:text-slate-400 font-normal">({totalRecords.toLocaleString()})</span>
             </div>
-            <div className="flex items-center space-x-1.5">
+            <div className="flex items-center space-x-1.5 shrink-0">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}

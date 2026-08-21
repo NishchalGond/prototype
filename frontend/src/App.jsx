@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from './components/Sidebar';
+import Sidebar, { MobileBottomNav } from './components/Sidebar';
 import Header from './components/Header';
 import OverviewDashboard from './components/OverviewDashboard';
 import UploadSection from './components/UploadSection';
@@ -28,6 +28,7 @@ export default function App() {
     return localStorage.getItem('datalink_theme') || 'light';
   });
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState(null);
   const [activeJobId, setActiveJobId] = useState(null);
@@ -111,12 +112,14 @@ export default function App() {
 
       {/* Fixed Full Screen Layout */}
       <div className="relative z-10 flex w-full h-full overflow-hidden">
-        {/* Sidebar */}
+        {/* Desktop Sidebar & Mobile Drawer */}
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           activeJob={activeJobId ? { id: activeJobId, status: 'RUNNING' } : null}
           theme={theme}
+          mobileOpen={mobileMenuOpen}
+          setMobileOpen={setMobileMenuOpen}
         />
 
         {/* Fixed Content Panel */}
@@ -131,10 +134,11 @@ export default function App() {
             toggleTheme={toggleTheme}
             onLogout={handleLogout}
             currentUser={currentUser}
+            onToggleMobileMenu={() => setMobileMenuOpen((prev) => !prev)}
           />
 
-          {/* Active View Container */}
-          <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[var(--bg-main)]">
+          {/* Active View Container (with bottom padding on mobile for the bottom nav) */}
+          <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[var(--bg-main)] pb-14 md:pb-0">
             {activeTab === 'overview' && (
               <div className="flex-1 overflow-y-auto">
                 <OverviewDashboard
@@ -189,6 +193,13 @@ export default function App() {
           </main>
         </div>
       </div>
+
+      {/* Native Mobile Bottom Navigation Bar (< md) */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        activeJob={activeJobId}
+      />
     </div>
   );
 }

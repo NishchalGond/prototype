@@ -440,19 +440,19 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       {/* Title Header */}
-      <Tilt3DCard className="p-6 rounded-3xl">
+      <Tilt3DCard className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center space-x-2">
-              <span className="px-3 py-1 rounded-full bg-[#eef0f4] text-blue-600 font-mono text-[10px] font-black tracking-wider border border-slate-300/80 shadow-[inset_2px_2px_4px_#cbd2dc,inset_-2px_-2px_4px_#ffffff]">
+              <span className="px-2.5 py-1 rounded-full bg-[var(--card-bg)] text-blue-600 dark:text-blue-400 font-mono text-[10px] font-black tracking-wider border border-blue-500/30 neumorph-inset">
                 MULTI-REGISTER BATCH STUDIO
               </span>
             </div>
-            <h2 className="text-2xl font-black text-slate-800 tracking-tight mt-2">Ingestion & Inspection Studio</h2>
-            <p className="text-xs text-slate-600 mt-1 font-medium">
-              Upload multiple registers. Inspect schema mappings across all files with <strong>Inspect All</strong>, then execute automated batch queueing with <strong>Run All</strong> directly into Supabase.
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight mt-2">Ingestion & Inspection Studio</h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
+              Upload multiple registers, inspect schema mappings with <strong>Inspect All</strong>, and execute automated batch ingestion directly into Supabase.
             </p>
           </div>
 
@@ -512,13 +512,13 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
       </Tilt3DCard>
 
       {/* Drag & Drop Multi-File Zone */}
-      <Tilt3DCard className="p-8 text-center border border-slate-300/80">
+      <Tilt3DCard className="p-5 sm:p-8 text-center border border-slate-500/20">
         <div
           onDragEnter={handleDrag}
           onDragOver={handleDrag}
           onDragLeave={handleDrag}
           onDrop={handleDrop}
-          className="space-y-4"
+          className="space-y-3 sm:space-y-4"
         >
           <input
             type="file"
@@ -529,20 +529,20 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
             className="hidden"
           />
 
-          <div className="w-16 h-16 mx-auto rounded-3xl bg-[#eef0f4] border border-white/80 flex items-center justify-center text-blue-600 shadow-[inset_4px_4px_8px_#cbd2dc,inset_-4px_-4px_8px_#ffffff]">
-            <Layers3 className="w-8 h-8 text-blue-600" />
+          <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto rounded-2xl sm:rounded-3xl bg-[var(--card-bg)] border border-blue-500/30 flex items-center justify-center text-blue-600 dark:text-blue-400 neumorph-inset shadow-inner">
+            <Layers3 className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
 
           <div className="space-y-2">
-            <p className="text-lg font-black text-slate-800 tracking-tight">
-              Drag and drop multiple Excel or CSV files here
+            <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">
+              Tap to choose files or drop Excel / CSV files here
             </p>
-            <p className="text-xs text-slate-500 font-mono">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-mono max-w-md mx-auto">
               Select 1 or 20+ registers simultaneously (.xlsx, .xls, .csv). Batch engine processes files sequentially.
             </p>
             <label
               htmlFor="file-upload-multi"
-              className="neumorph-button-primary inline-flex items-center space-x-2 px-6 py-3 text-xs font-black"
+              className="neumorph-button-primary inline-flex items-center space-x-2 px-5 sm:px-6 py-2.5 sm:py-3 text-xs font-black cursor-pointer active:scale-95"
             >
               <Plus className="w-4 h-4" />
               <span>Select Multiple Files</span>
