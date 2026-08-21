@@ -327,9 +327,17 @@ class Processor:
                 result.duplicate_rows += 1
                 return
             seen.add(row["identity_hash"])
+            # Check if record has person name, email, or phone
+            has_name_or_contact = bool(row.get("name") or row.get("mobile_1") or row.get("email_address"))
+            if not has_name_or_contact:
+                row["status"] = "INCOMPLETE"
+                if "incomplete_missing_name_email_phone" not in flags:
+                    flags.append("incomplete_missing_name_email_phone")
+                row["validation_flags"] = flags
+            else:
+                row["status"] = "VALID"
+                result.valid_rows += 1
 
-            row["status"] = "VALID"
-            result.valid_rows += 1
             batch.append(row)
             if len(batch) >= self.batch_size:
                 flush()

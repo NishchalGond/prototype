@@ -69,10 +69,21 @@ def list_records(
         (Record.building_cluster, building_cluster),
         (Record.bedroom, bedroom), (Record.developer, developer),
         (Record.nationality, nationality), (Record.source_file, source_file),
-        (Record.status, record_status.upper() if record_status else None),
     ):
         if val:
             stmt = stmt.where(col == val)
+
+    if record_status:
+        st_upper = record_status.upper()
+        if st_upper in ("ALL_RECORDS", "ALL_WITH_INCOMPLETE", "SHOW_ALL"):
+            pass  # show all records including incomplete
+        elif st_upper in ("INCOMPLETE", "MISSING_CONTACT"):
+            stmt = stmt.where(Record.status == "INCOMPLETE")
+        else:
+            stmt = stmt.where(Record.status == st_upper)
+    else:
+        # Default: hide INCOMPLETE records from standard view unless explicitly filtered
+        stmt = stmt.where(Record.status != "INCOMPLETE")
 
     if property_type:
         stmt = stmt.where(Record.property_type.ilike(property_type))

@@ -249,12 +249,14 @@ export default function RecordsExplorer({ initialQuery = '' }) {
             <CustomSelect
               value={status}
               onChange={(val) => { setStatus(val); setPage(1); }}
-              placeholder="All Record Statuses"
+              placeholder="All Valid Records"
               options={[
-                { label: 'All Record Statuses', value: '' },
+                { label: 'All Valid Records (Default)', value: '' },
                 { label: 'VALID Only', value: 'VALID' },
+                { label: 'INCOMPLETE (No Name/Contact)', value: 'INCOMPLETE' },
                 { label: 'DUPLICATE Only', value: 'DUPLICATE' },
-                { label: 'ERROR Only', value: 'ERROR' },
+                { label: 'ERROR / INVALID Only', value: 'INVALID' },
+                { label: 'Show All (Incl. Incomplete)', value: 'ALL_WITH_INCOMPLETE' },
               ]}
             />
           </div>
