@@ -28,22 +28,20 @@ def main():
     # 1. Clean previous partial jobs for DHE 23 using raw SQL
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cur = conn.cursor()
+    cur.execute("DELETE FROM records WHERE source_file = 'DHE 23.xlsx'")
+    conn.commit()
     cur.execute("""
-        DELETE FROM records WHERE job_id IN (
-            SELECT id FROM processing_jobs WHERE source_file_id IN (
-                SELECT id FROM source_files WHERE filename = 'DHE 23.xlsx'
-            )
-        ) OR source_file = 'DHE 23.xlsx';
-
         DELETE FROM processing_errors WHERE job_id IN (
             SELECT id FROM processing_jobs WHERE source_file_id IN (
                 SELECT id FROM source_files WHERE filename = 'DHE 23.xlsx'
             )
-        );
-
+        )
+    """)
+    conn.commit()
+    cur.execute("""
         DELETE FROM processing_jobs WHERE source_file_id IN (
             SELECT id FROM source_files WHERE filename = 'DHE 23.xlsx'
-        );
+        )
     """)
     conn.commit()
     cur.close()
