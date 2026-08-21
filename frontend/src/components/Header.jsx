@@ -71,30 +71,32 @@ export default function Header({ onRefresh, activeJob, searchQuery, setSearchQue
 
         <div className="h-4 w-[1px] bg-slate-500/20"></div>
 
-        {/* User Profile & Role Badge Container */}
-        <div className="flex items-center space-x-2.5 px-3 py-1.5 rounded-2xl neumorph-card border border-slate-300/80 dark:border-white/10 shadow-sm">
+        {/* User Profile & Role Badge */}
+        <div className="flex items-center space-x-2.5 px-3 py-1 rounded-xl bg-[var(--card-bg)] neumorph-button cursor-default select-none border border-slate-300/60 dark:border-white/5">
           {/* Avatar Icon */}
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-500/40 shadow-inner">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black bg-blue-600 text-white shadow-sm">
             {initials}
           </div>
           
           {/* Name and Role */}
-          <div className="hidden md:block text-left">
-            <p 
-              className="text-xs font-black leading-tight tracking-tight"
+          <div className="hidden md:flex flex-col text-left justify-center">
+            <span 
+              className="text-xs font-black leading-none"
               style={{ color: isDark ? '#F8FAFC' : '#0F172A' }}
             >
               {fullName}
-            </p>
-            <span className={`text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded-md border inline-block mt-0.5 tracking-wider shadow-xs ${
-              role === 'ADMIN'
-                ? 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-500/40'
-                : role === 'DATA_PROCESSOR'
-                ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-500/40'
-                : 'bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600'
-            }`}>
-              {role}
             </span>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className={`text-[8px] font-mono font-black uppercase px-1.5 py-0.5 rounded leading-none ${
+                role === 'ADMIN'
+                  ? 'bg-rose-500 text-white'
+                  : role === 'DATA_PROCESSOR'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-slate-600 text-white'
+              }`}>
+                {role}
+              </span>
+            </div>
           </div>
         </div>
 
