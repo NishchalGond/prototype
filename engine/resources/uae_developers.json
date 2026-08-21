@@ -1,0 +1,3416 @@
+[
+ {
+  "name": "Al Bateen",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Danah (Madinat Zayed)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic district",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Hosn / Al Markaziyah East",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Department of Culture & Tourism",
+  "dev_type": "Established/heritage district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Karamah",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Khalidiya",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Manhal",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Markaziyah West",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Mushrif",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Muroor",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Nahyan",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Rowdah (Al Rawdah)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Safarat (Diplomatic Area)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Government of Abu Dhabi",
+  "dev_type": "Established/embassy district",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Wahda",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Zahiyah (Tourist Club Area)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic district",
+  "confidence": "High"
+ },
+ {
+  "name": "Hadbat Al Zaafaran",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Matar (Al Bateen Airport area)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic/institutional area",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Rehan",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "Low"
+ },
+ {
+  "name": "Yas Island (overall)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Miral (destinations) / Aldar (residential)",
+  "dev_type": "Master-planned island district",
+  "confidence": "High"
+ },
+ {
+  "name": "Yas Acres",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Yas Park Gate",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Yas Golf Collection",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Water's Edge",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Mayan",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Ansam",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Yas Bay",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Miral",
+  "dev_type": "Master-planned mixed-use waterfront district",
+  "confidence": "High"
+ },
+ {
+  "name": "Saadiyat Island (overall)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties / DCT Abu Dhabi (museums)",
+  "dev_type": "Master-planned island district",
+  "confidence": "High"
+ },
+ {
+  "name": "Saadiyat Beach Villas & Residences",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Saadiyat Reserve",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Saadiyat Grove",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned mixed-use district",
+  "confidence": "High"
+ },
+ {
+  "name": "Saadiyat Lagoons",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Jawaher Saadiyat",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Nudra Saadiyat",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "IMKAN Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Mamsha Al Saadiyat",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned mixed-use district",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Reem Island (overall)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Multiple (Aldar, Modon, Tamouh, Gulf Related)",
+  "dev_type": "Master-planned island district (multi-developer)",
+  "confidence": "High"
+ },
+ {
+  "name": "Shams Abu Dhabi",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties (formerly Sorouh)",
+  "dev_type": "Master-planned district (Reem Island)",
+  "confidence": "High"
+ },
+ {
+  "name": "City of Lights",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Gulf Related",
+  "dev_type": "Master-planned district (Reem Island)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Najmat Abu Dhabi",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned district (Reem Island)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Marina Square",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Tamouh Investment",
+  "dev_type": "Master-planned district (Reem Island)",
+  "confidence": "High"
+ },
+ {
+  "name": "Reem Hills",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Modon Properties (formerly Q Properties)",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Makers District (Pixel)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "IMKAN Properties",
+  "dev_type": "Master-planned mixed-use district (Reem Island)",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Maryah Island",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Mubadala / ADQ",
+  "dev_type": "Master-planned financial free zone",
+  "confidence": "High"
+ },
+ {
+  "name": "The Wharf (Al Maryah)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Gulf Related",
+  "dev_type": "Master-planned mixed-use district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Raha Beach (overall)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned waterfront district",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Bandar (Al Raha Beach)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Muneera (Al Raha Beach)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Zeina (Al Raha Beach)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Raha Gardens",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Nareel Island",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned island community",
+  "confidence": "High"
+ },
+ {
+  "name": "Fahid Island",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Modon Properties (masterplan); IMKAN/Aldar (sub-projects)",
+  "dev_type": "Master-planned island district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Jubail Island",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Modon Properties",
+  "dev_type": "Master-planned island community",
+  "confidence": "High"
+ },
+ {
+  "name": "Hudayriyat Island (overall)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Modon Properties",
+  "dev_type": "Master-planned mega-island district",
+  "confidence": "High"
+ },
+ {
+  "name": "Bashayer (Hudayriyat)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Modon Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Nawayef (Hudayriyat)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Modon Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Naseem (Hudayriyat)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Modon Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Gardenia Bay",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Nurai Island",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Zaya (Nadia Zaal)",
+  "dev_type": "Master-planned private island resort community",
+  "confidence": "High"
+ },
+ {
+  "name": "Ramhan Island",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Q Properties / Modon",
+  "dev_type": "Master-planned island community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Ohana Island",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Ohana Development",
+  "dev_type": "Master-planned island community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Aryam Island",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Undeveloped/conservation island",
+  "confidence": "Low"
+ },
+ {
+  "name": "Khalifa City",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Multiple private landowners / Aldar sub-communities",
+  "dev_type": "Established mixed villa district (multi-developer)",
+  "confidence": "High"
+ },
+ {
+  "name": "Golf Gardens",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Rayyana",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Shakhbout City",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established villa district",
+  "confidence": "High"
+ },
+ {
+  "name": "Mohammed Bin Zayed City (MBZ City)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established mixed residential district",
+  "confidence": "High"
+ },
+ {
+  "name": "Mussafah (Community / Shabiya)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established mixed residential district",
+  "confidence": "High"
+ },
+ {
+  "name": "Mussafah Industrial Area",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "AD Ports Group / Government of Abu Dhabi",
+  "dev_type": "Industrial free zone",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Falah Community",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Reef",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Manazel Real Estate / Aldar (Al Reef Downtown)",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Shamkha",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Multiple (Aldar, Modon, private)",
+  "dev_type": "Master-planned mixed district (multi-developer)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Alreeman I",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Alreeman II",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Hydra Village",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Hydra Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Baniyas City (Bani Yas)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Government of Abu Dhabi / Aldar",
+  "dev_type": "Established mixed district",
+  "confidence": "High"
+ },
+ {
+  "name": "Bawabat Al Sharq (Gate of the East)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned mixed-use community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Wathba",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Government of Abu Dhabi / private",
+  "dev_type": "Established mixed district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Zayed City (Capital District)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Government of Abu Dhabi / Bloom Holding",
+  "dev_type": "Master-planned mega-district (multi-developer)",
+  "confidence": "High"
+ },
+ {
+  "name": "Bloom Living",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Bloom Holding",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Bloom Gardens",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Bloom Holding",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Shahama",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established mixed district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Bahia",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established mixed district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Samha",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "dev_type": "Established mixed district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Ghadeer",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi/Dubai border",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Bain Al Jesrain (Saraya)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Masdar City",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "Masdar (Mubadala)",
+  "dev_type": "Master-planned sustainable free-zone district",
+  "confidence": "High"
+ },
+ {
+  "name": "Khalifa Industrial Zone Abu Dhabi (KIZAD)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "AD Ports Group",
+  "dev_type": "Industrial free zone",
+  "confidence": "High"
+ },
+ {
+  "name": "twofour54 (Media Zone)",
+  "emirate": "Abu Dhabi",
+  "region": "Abu Dhabi City",
+  "developer": "twofour54 (Government of Abu Dhabi)",
+  "dev_type": "Free-zone media district",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Ain City (central)",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "dev_type": "Established organic city",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Jimi",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Muwaiji",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Zakher",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Yahar",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "dev_type": "Established/rural district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Foah",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Hili",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Sarooj",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Falaj Hazzaa",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Towayya",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Ain Industrial Area",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "developer": "Higher Corp. for Specialized Economic Zones",
+  "dev_type": "Industrial district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Sweihan",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "developer": "Government of Abu Dhabi",
+  "dev_type": "Rural/industrial district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Remah",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Al Faqa",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Al Wagan",
+  "emirate": "Abu Dhabi",
+  "region": "Al Ain Region",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Madinat Zayed (town)",
+  "emirate": "Abu Dhabi",
+  "region": "Al Dhafra Region",
+  "developer": "Government of Abu Dhabi",
+  "dev_type": "Established regional town",
+  "confidence": "High"
+ },
+ {
+  "name": "Ruwais",
+  "emirate": "Abu Dhabi",
+  "region": "Al Dhafra Region",
+  "developer": "ADNOC",
+  "dev_type": "Established industrial/company town",
+  "confidence": "High"
+ },
+ {
+  "name": "Ghayathi",
+  "emirate": "Abu Dhabi",
+  "region": "Al Dhafra Region",
+  "developer": "Government of Abu Dhabi",
+  "dev_type": "Established regional town",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Liwa (Liwa Oasis)",
+  "emirate": "Abu Dhabi",
+  "region": "Al Dhafra Region",
+  "dev_type": "Established rural oasis settlements",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Marfa",
+  "emirate": "Abu Dhabi",
+  "region": "Al Dhafra Region",
+  "developer": "Government of Abu Dhabi",
+  "dev_type": "Established coastal town",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Sila (Al Silaa)",
+  "emirate": "Abu Dhabi",
+  "region": "Al Dhafra Region",
+  "developer": "Government of Abu Dhabi",
+  "dev_type": "Established coastal town",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Dalma Island",
+  "emirate": "Abu Dhabi",
+  "region": "Al Dhafra Region",
+  "dev_type": "Established island town",
+  "confidence": "High"
+ },
+ {
+  "name": "Sir Bani Yas Island",
+  "emirate": "Abu Dhabi",
+  "region": "Al Dhafra Region",
+  "developer": "Government of Abu Dhabi / Anantara resorts",
+  "dev_type": "Nature reserve / resort island",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Ruwais Industrial Complex",
+  "emirate": "Abu Dhabi",
+  "region": "Al Dhafra Region",
+  "developer": "ADNOC",
+  "dev_type": "Industrial free zone",
+  "confidence": "High"
+ },
+ {
+  "name": "Academic City",
+  "emirate": "Dubai",
+  "developer": "TECOM Group (Dubai Holding)",
+  "dev_type": "Free-zone district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Athbah",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Aweer",
+  "emirate": "Dubai",
+  "dev_type": "Established organic area",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Badaa",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Barari",
+  "emirate": "Dubai",
+  "developer": "Al Barari LLC",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Barsha",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Eyas",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Fagaa",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Furjan",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Garhoud",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Hathmah",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Hebiah",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone (Dubailand)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Heliow",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Jaddaf",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties (area); multiple project developers",
+  "dev_type": "Established/mixed waterfront district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Jaffiliya",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Khail Gate",
+  "emirate": "Dubai",
+  "developer": "Union Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Khail Heights",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Khawaneej",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Kifaf",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Mixed-use master plan",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Layan",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Lusaily",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Al Maha",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert area",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Manara",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Marmoom",
+  "emirate": "Dubai",
+  "developer": "Dubai Municipality",
+  "dev_type": "Desert conservation reserve",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Merkadh",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Al Meryal",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Al Mina",
+  "emirate": "Dubai",
+  "dev_type": "Established organic area",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Mizhar",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Nahda",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Oshoosh",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Al Quoz",
+  "emirate": "Dubai",
+  "dev_type": "Established mixed industrial/residential area",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Qusais",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Qusais Industrial",
+  "emirate": "Dubai",
+  "dev_type": "Established industrial area",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Rashidiya",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Rega",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Al Ruwayyah",
+  "emirate": "Dubai",
+  "dev_type": "Rural/emerging cadastral zone",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Safa",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Satwa",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Sufouh",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding (area); mixed",
+  "dev_type": "Mixed master-planned district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Sufouh 1",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding (area); mixed",
+  "dev_type": "Mixed master-planned district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Sufouh 2",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding (area); mixed",
+  "dev_type": "Mixed master-planned district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Thanyah 2",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding (area)",
+  "dev_type": "Mixed master-planned district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Ttay",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone (Hatta)",
+  "confidence": "Low"
+ },
+ {
+  "name": "Al Twar",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Twar 1",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Twar 2",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Twar 3",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Twar 4",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Twar 5",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Waha",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Warqaa",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Warsan",
+  "emirate": "Dubai",
+  "dev_type": "Established/industrial mixed area",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Wasl",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Wohoosh",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Al Yelayiss",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone (Dubailand)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Yufrah",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Arabian Ranches",
+  "emirate": "Dubai",
+  "developer": "Emaar",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Arabian Ranches 2",
+  "emirate": "Dubai",
+  "developer": "Emaar",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Arabian Ranches 3",
+  "emirate": "Dubai",
+  "developer": "Emaar",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Arjan",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties (area); many building-level developers",
+  "dev_type": "Mixed master-planned district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Athlon By Aldar",
+  "emirate": "Dubai",
+  "developer": "Aldar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Azizi Milan",
+  "emirate": "Dubai",
+  "developer": "Azizi Developments",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Azizi Riviera",
+  "emirate": "Dubai",
+  "developer": "Azizi Developments",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Azizi Venice",
+  "emirate": "Dubai",
+  "developer": "Azizi Developments",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Badr",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Bahria Town",
+  "emirate": "Dubai",
+  "developer": "Bahria Town Dubai (Al Waha Real Estate)",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Barsha Heights",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding",
+  "dev_type": "Mixed master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "Barsha Heights (Tecom)",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding",
+  "dev_type": "Mixed master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "Bawadi",
+  "emirate": "Dubai",
+  "developer": "Dubai Holding (TECOM)",
+  "dev_type": "Planned mega-project (largely dormant)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Bianca",
+  "emirate": "Dubai",
+  "developer": "Reportage Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Binghatti City",
+  "emirate": "Dubai",
+  "developer": "Binghatti Developers",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Bluewaters Island",
+  "emirate": "Dubai",
+  "developer": "Meraas (Dubai Holding)",
+  "dev_type": "Master-planned island",
+  "confidence": "High"
+ },
+ {
+  "name": "Bu Kadra",
+  "emirate": "Dubai",
+  "dev_type": "Established/emerging mixed area",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Bukadra",
+  "emirate": "Dubai",
+  "dev_type": "Established/emerging mixed area",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Bur Dubai",
+  "emirate": "Dubai",
+  "dev_type": "Established organic district",
+  "confidence": "High"
+ },
+ {
+  "name": "Business Bay",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties (master developer); many tower developers",
+  "dev_type": "Mixed master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "California Village",
+  "emirate": "Dubai",
+  "dev_type": "Small villa community",
+  "confidence": "Low"
+ },
+ {
+  "name": "Cherrywoods",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "City Of Arabia",
+  "emirate": "Dubai",
+  "developer": "Al Khail Properties / Dubai Properties",
+  "dev_type": "Mixed master-planned district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "City Walk",
+  "emirate": "Dubai",
+  "developer": "Meraas (Dubai Holding)",
+  "dev_type": "Master-planned mixed-use district",
+  "confidence": "High"
+ },
+ {
+  "name": "DAMAC Hills",
+  "emirate": "Dubai",
+  "developer": "DAMAC Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "DAMAC Hills 2",
+  "emirate": "Dubai",
+  "developer": "DAMAC Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "DAMAC Islands",
+  "emirate": "Dubai",
+  "developer": "DAMAC Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "DAMAC Islands 2",
+  "emirate": "Dubai",
+  "developer": "DAMAC Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "DAMAC Lagoons",
+  "emirate": "Dubai",
+  "developer": "DAMAC Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "DAMAC Riverside",
+  "emirate": "Dubai",
+  "developer": "DAMAC Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "DAMAC Sun City",
+  "emirate": "Dubai",
+  "developer": "DAMAC Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "DIFC",
+  "emirate": "Dubai",
+  "developer": "DIFC Authority (Dubai Holding)",
+  "dev_type": "Master-planned financial free zone",
+  "confidence": "High"
+ },
+ {
+  "name": "DIFC Zabeel District",
+  "emirate": "Dubai",
+  "developer": "DIFC Authority (Dubai Holding)",
+  "dev_type": "Master-planned financial free zone extension",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Deira",
+  "emirate": "Dubai",
+  "dev_type": "Established organic district",
+  "confidence": "High"
+ },
+ {
+  "name": "Desert Rose City",
+  "emirate": "Dubai",
+  "developer": "Al Ahli Group (Desert Rose Real Estate)",
+  "dev_type": "Master-planned community",
+  "confidence": "Low"
+ },
+ {
+  "name": "Discovery Dunes",
+  "emirate": "Dubai",
+  "developer": "Discovery Land Company (DLC)",
+  "dev_type": "Master-planned ultra-luxury community",
+  "confidence": "High"
+ },
+ {
+  "name": "Discovery Gardens",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "District 11 - MBR City",
+  "emirate": "Dubai",
+  "developer": "Meydan Group / Dubai Holding",
+  "dev_type": "Master-planned district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "District 7 - MBR City",
+  "emirate": "Dubai",
+  "developer": "Meydan Group / Dubai Holding",
+  "dev_type": "Master-planned district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "District One - MBR City",
+  "emirate": "Dubai",
+  "developer": "Meydan Sobha (Meydan Group & Sobha JV)",
+  "dev_type": "Master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "District One West - MBR City",
+  "emirate": "Dubai",
+  "developer": "Meydan Group / Dubai Holding",
+  "dev_type": "Master-planned district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Downtown Dubai",
+  "emirate": "Dubai",
+  "developer": "Emaar",
+  "dev_type": "Master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "Downtown Jebel Ali",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Dragon City",
+  "emirate": "Dubai",
+  "developer": "Dragon Group International / Dubai Properties",
+  "dev_type": "Mixed master-planned district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Dubai Airport Freezone (DAFZA)",
+  "emirate": "Dubai",
+  "developer": "Dubai Airport Free Zone Authority",
+  "dev_type": "Free-zone district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Creek Club Residences",
+  "emirate": "Dubai",
+  "developer": "Emaar / Dubai Holding",
+  "dev_type": "Master-planned district",
+  "confidence": "Low"
+ },
+ {
+  "name": "Dubai Creek Harbour",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties (JV with Dubai Holding)",
+  "dev_type": "Master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Design District",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding",
+  "dev_type": "Master-planned free-zone district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Festival City",
+  "emirate": "Dubai",
+  "developer": "Al-Futtaim Group",
+  "dev_type": "Master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Harbour",
+  "emirate": "Dubai",
+  "developer": "Meraas (Dubai Holding)",
+  "dev_type": "Master-planned waterfront district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Healthcare City",
+  "emirate": "Dubai",
+  "developer": "Dubai Healthcare City Authority (Dubai Holding)",
+  "dev_type": "Master-planned free-zone district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Healthcare City 2",
+  "emirate": "Dubai",
+  "developer": "Dubai Healthcare City Authority (Dubai Holding)",
+  "dev_type": "Master-planned free-zone district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Heritage Vision",
+  "emirate": "Dubai",
+  "dev_type": "Emerging/planned district",
+  "confidence": "Low"
+ },
+ {
+  "name": "Dubai Hills Estate",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties (JV with Meraas/Dubai Holding)",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Industrial City",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding",
+  "dev_type": "Master-planned industrial district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai International Airport",
+  "emirate": "Dubai",
+  "developer": "Dubai Airports (Government of Dubai)",
+  "dev_type": "Infrastructure/airport district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Internet City",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding",
+  "dev_type": "Master-planned free-zone district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Investments Park",
+  "emirate": "Dubai",
+  "developer": "Dubai Investments PJSC",
+  "dev_type": "Master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Islands",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned island district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Land",
+  "emirate": "Dubai",
+  "developer": "Dubai Holding (umbrella); many sub-developers",
+  "dev_type": "Master-planned mega-district (Dubailand)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Dubai Lifestyle City",
+  "emirate": "Dubai",
+  "developer": "Dubai Lifestyle City LLC",
+  "dev_type": "Stalled/legacy project",
+  "confidence": "Low"
+ },
+ {
+  "name": "Dubai Logistics City",
+  "emirate": "Dubai",
+  "developer": "Dubai World / DP World",
+  "dev_type": "Master-planned logistics district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Marina",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Maritime City",
+  "emirate": "Dubai",
+  "developer": "Dubai Maritime City Authority",
+  "dev_type": "Master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Media City",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding",
+  "dev_type": "Master-planned free-zone district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Outsource City",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding",
+  "dev_type": "Master-planned free-zone district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Pearl",
+  "emirate": "Dubai",
+  "developer": "Al Fahim Group / Pearl Dubai FZ LLC",
+  "dev_type": "Long-delayed master-planned project",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Dubai Peninsula",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Dubai Production City",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding",
+  "dev_type": "Master-planned free-zone district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Residence Complex",
+  "emirate": "Dubai",
+  "developer": "Government of Dubai",
+  "dev_type": "Staff accommodation district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Dubai Science Park (DuBiotech)",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding",
+  "dev_type": "Master-planned free-zone district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Silicon Oasis",
+  "emirate": "Dubai",
+  "developer": "Dubai Silicon Oasis Authority (Govt of Dubai)",
+  "dev_type": "Master-planned free-zone district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai South",
+  "emirate": "Dubai",
+  "developer": "Dubai South (Govt of Dubai)",
+  "dev_type": "Master-planned mega-district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai South Residential District",
+  "emirate": "Dubai",
+  "developer": "Dubai South (Govt of Dubai)",
+  "dev_type": "Master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Sports City",
+  "emirate": "Dubai",
+  "developer": "Dubai Sports City LLC",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Dubai Studio City",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding",
+  "dev_type": "Master-planned free-zone district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dubai Water Canal",
+  "emirate": "Dubai",
+  "developer": "Dubai Municipality (infrastructure); Meraas (adjacent development)",
+  "dev_type": "Infrastructure corridor",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Dubai Waterfront",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Large-scale planned project (mostly shelved)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Dubai World Central",
+  "emirate": "Dubai",
+  "developer": "Dubai South (Dubai Aviation City Corp.)",
+  "dev_type": "Master-planned mega-district",
+  "confidence": "High"
+ },
+ {
+  "name": "Emaar Hills",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Emaar South",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Emirates Golf Club",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Golf course community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Emirates Hills",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Enkhali",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Expo City",
+  "emirate": "Dubai",
+  "developer": "Expo City Dubai (Govt of Dubai)",
+  "dev_type": "Master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "Falcon City Of Wonders",
+  "emirate": "Dubai",
+  "developer": "Falcon City of Wonders LLC (Dubai Properties Group)",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Food Tech Valley",
+  "emirate": "Dubai",
+  "developer": "Government of Dubai / Dubai Industrial City",
+  "dev_type": "Planned agritech district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Ghadeer Barashy",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Ghaf Woods",
+  "emirate": "Dubai",
+  "developer": "Majid Al Futtaim",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Global Village",
+  "emirate": "Dubai",
+  "developer": "Dubai Holding (Meraas)",
+  "dev_type": "Entertainment/retail park",
+  "confidence": "High"
+ },
+ {
+  "name": "Golf City",
+  "emirate": "Dubai",
+  "developer": "Benaa Development (Thani Investments)",
+  "dev_type": "Planned mega-project (largely dormant)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Grand Polo Club And Resort",
+  "emirate": "Dubai",
+  "developer": "DAMAC Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Grayteesah",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Green Community - DIP",
+  "emirate": "Dubai",
+  "developer": "Dubai Investments Real Estate",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Greenwood",
+  "emirate": "Dubai",
+  "developer": "DAMAC Properties",
+  "dev_type": "Sub-community",
+  "confidence": "Low"
+ },
+ {
+  "name": "Greenz By Danube",
+  "emirate": "Dubai",
+  "developer": "Danube Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Hadaeq Sheikh Mohammed Bin Rashid",
+  "emirate": "Dubai",
+  "developer": "Meydan Group / Dubai Holding",
+  "dev_type": "Master-planned district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Hatta",
+  "emirate": "Dubai",
+  "developer": "Dubai Municipality (Govt of Dubai)",
+  "dev_type": "Established mountain town",
+  "confidence": "High"
+ },
+ {
+  "name": "Haven",
+  "emirate": "Dubai",
+  "developer": "Aldar Properties (JV with Dubai Holding)",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Hefair",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Hessyan",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "International City",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "International City 2",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "International City Phase 3",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Jaddaf Waterfront",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned waterfront district",
+  "confidence": "High"
+ },
+ {
+  "name": "Jebel Ali",
+  "emirate": "Dubai",
+  "developer": "DP World / Government of Dubai",
+  "dev_type": "Established port/industrial town",
+  "confidence": "High"
+ },
+ {
+  "name": "Jebel Ali Hills",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Planned mega-project",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Jebel Ali Village",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Jumeirah",
+  "emirate": "Dubai",
+  "dev_type": "Established organic district",
+  "confidence": "High"
+ },
+ {
+  "name": "Jumeirah Bay Island",
+  "emirate": "Dubai",
+  "developer": "Meraas (Dubai Holding)",
+  "dev_type": "Master-planned island",
+  "confidence": "High"
+ },
+ {
+  "name": "Jumeirah Beach Residence",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "Jumeirah Central",
+  "emirate": "Dubai",
+  "developer": "Dubai Holding (Meraas)",
+  "dev_type": "Planned mega-project",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Jumeirah Garden City",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned redevelopment (Al Satwa)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Jumeirah Golf Estates",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Jumeirah Golf Estates 2",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Jumeirah Heights",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Jumeirah Island 2",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Jumeirah Islands",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Jumeirah Lakes Towers",
+  "emirate": "Dubai",
+  "developer": "DMCC",
+  "dev_type": "Master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "Jumeirah Park",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Jumeirah Village Circle",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Jumeirah Village Triangle",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Keturah Ardh",
+  "emirate": "Dubai",
+  "developer": "MAG Group (Master developer, JV with CITIC for construction)",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "La Mer",
+  "emirate": "Dubai",
+  "developer": "Meraas (Dubai Holding)",
+  "dev_type": "Master-planned waterfront district",
+  "confidence": "High"
+ },
+ {
+  "name": "Layan Community",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Le Hemaira",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Lehbab",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Living Legends",
+  "emirate": "Dubai",
+  "developer": "Legends Development LLC",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Liwan",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Liwan 2",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Lunaya",
+  "emirate": "Dubai",
+  "developer": "Zaya (Nadia Zaal), in partnership with FIVE Holdings",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Madinat Al Maktoum",
+  "emirate": "Dubai",
+  "developer": "Dubai South (Govt of Dubai)",
+  "dev_type": "Planned district",
+  "confidence": "Low"
+ },
+ {
+  "name": "Madinat Al Mataar",
+  "emirate": "Dubai",
+  "developer": "Dubai South (Govt of Dubai)",
+  "dev_type": "Planned district",
+  "confidence": "Low"
+ },
+ {
+  "name": "Madinat Hind",
+  "emirate": "Dubai",
+  "dev_type": "Planned district",
+  "confidence": "Low"
+ },
+ {
+  "name": "Madinat Jumeirah Living",
+  "emirate": "Dubai",
+  "developer": "Dubai Holding (Jumeirah Group)",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Madinat Latifa",
+  "emirate": "Dubai",
+  "dev_type": "Planned district",
+  "confidence": "Low"
+ },
+ {
+  "name": "Majan",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Margham",
+  "emirate": "Dubai",
+  "dev_type": "Rural/industrial cadastral zone",
+  "confidence": "Medium"
+ },
+ {
+  "name": "MeAisem",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding",
+  "dev_type": "Established mixed area",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Mena Jebel Ali",
+  "emirate": "Dubai",
+  "developer": "DP World / Nakheel",
+  "dev_type": "Established port-adjacent area",
+  "confidence": "Low"
+ },
+ {
+  "name": "Mereiyeel",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Meydan",
+  "emirate": "Dubai",
+  "developer": "Meydan Group (Dubai Holding)",
+  "dev_type": "Master-planned district",
+  "confidence": "High"
+ },
+ {
+  "name": "Meydan Horizon",
+  "emirate": "Dubai",
+  "developer": "Meydan Group (Dubai Holding)",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Mina Rashid Yachts And Marina",
+  "emirate": "Dubai",
+  "developer": "Meraas (Dubai Holding) / P&O Marinas",
+  "dev_type": "Master-planned waterfront district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Mirdif",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Mizin",
+  "emirate": "Dubai",
+  "dev_type": "Small village/area",
+  "confidence": "Low"
+ },
+ {
+  "name": "Mohammed Bin Rashid City",
+  "emirate": "Dubai",
+  "developer": "Dubai Holding / Meydan; Emaar (District One JV)",
+  "dev_type": "Master-planned mega-district",
+  "confidence": "High"
+ },
+ {
+  "name": "Motor City",
+  "emirate": "Dubai",
+  "developer": "Union Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Mudon",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Mugatrah",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Muhaisnah",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Muragab",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Murqquab",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Mushrif",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Nad Al Hamar",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Nad Al Sheba",
+  "emirate": "Dubai",
+  "developer": "Meydan Group (Dubai Holding)",
+  "dev_type": "Established/master-planned mixed area",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Nad Al Sheba Gardens",
+  "emirate": "Dubai",
+  "developer": "Meydan Group (Dubai Holding)",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Nad Shamma",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Naia Island",
+  "emirate": "Dubai",
+  "developer": "Shamal Holding",
+  "dev_type": "Master-planned island community",
+  "confidence": "High"
+ },
+ {
+  "name": "Nazwah",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Oud Al Muteena",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Pacific Village",
+  "emirate": "Dubai",
+  "dev_type": "Small master-planned community",
+  "confidence": "Low"
+ },
+ {
+  "name": "Palm Jebel Ali",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned island",
+  "confidence": "High"
+ },
+ {
+  "name": "Palm Jumeirah",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned island",
+  "confidence": "High"
+ },
+ {
+  "name": "Paradise Hills",
+  "emirate": "Dubai",
+  "dev_type": "Master-planned community",
+  "confidence": "Low"
+ },
+ {
+  "name": "Pearl Jumeirah",
+  "emirate": "Dubai",
+  "developer": "Meraas (Dubai Holding)",
+  "dev_type": "Master-planned peninsula",
+  "confidence": "High"
+ },
+ {
+  "name": "Ras Al Khor",
+  "emirate": "Dubai",
+  "developer": "Dubai Municipality",
+  "dev_type": "Established industrial/wildlife sanctuary area",
+  "confidence": "High"
+ },
+ {
+  "name": "Reem",
+  "emirate": "Dubai",
+  "dev_type": "Master-planned community",
+  "confidence": "Low"
+ },
+ {
+  "name": "Remah",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Remraam",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Reportage Hills",
+  "emirate": "Dubai",
+  "developer": "Reportage Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Reportage Village",
+  "emirate": "Dubai",
+  "developer": "Reportage Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Riverside",
+  "emirate": "Dubai",
+  "developer": "Gulf Properties / Gulf Developers",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Rukan",
+  "emirate": "Dubai",
+  "developer": "Reportage Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Saih Al Dahal",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Saih Al Danal",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Saih Al Salam",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Saih Shuaalah",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Saih Shuaib",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone (Jebel Ali corridor)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Sea Palace",
+  "emirate": "Dubai",
+  "dev_type": "Small development",
+  "confidence": "Low"
+ },
+ {
+  "name": "Serena",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Sheikh Zayed Road",
+  "emirate": "Dubai",
+  "dev_type": "Established commercial corridor",
+  "confidence": "High"
+ },
+ {
+  "name": "Sobha Central",
+  "emirate": "Dubai",
+  "developer": "Sobha Realty",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Sobha Elwood",
+  "emirate": "Dubai",
+  "developer": "Sobha Realty",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Sobha Hartland",
+  "emirate": "Dubai",
+  "developer": "Sobha Realty",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Sobha Hartland II",
+  "emirate": "Dubai",
+  "developer": "Sobha Realty",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Sobha One Community",
+  "emirate": "Dubai",
+  "developer": "Sobha Realty",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Sobha Reserve",
+  "emirate": "Dubai",
+  "developer": "Sobha Realty",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Sobha Sanctuary",
+  "emirate": "Dubai",
+  "developer": "Sobha Realty",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Taormina Village",
+  "emirate": "Dubai",
+  "dev_type": "Small themed villa community",
+  "confidence": "Low"
+ },
+ {
+  "name": "Tawi Al Muraqqab",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Technology Park",
+  "emirate": "Dubai",
+  "developer": "TECOM Group / Dubai Holding",
+  "dev_type": "Master-planned free-zone district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Teema",
+  "emirate": "Dubai",
+  "dev_type": "Master-planned community",
+  "confidence": "Low"
+ },
+ {
+  "name": "The Acres",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "The Gardens",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "The Greens",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "The Heights Country Club And Wellness",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Golf/country club community",
+  "confidence": "Low"
+ },
+ {
+  "name": "The Hills",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "The Island",
+  "emirate": "Dubai",
+  "dev_type": "Development",
+  "confidence": "Low"
+ },
+ {
+  "name": "The Lagoons",
+  "emirate": "Dubai",
+  "developer": "Dubai Holding / Meydan",
+  "dev_type": "Large-scale planned district (mostly shelved)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "The Lakes",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "The Meadows",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "The Oasis",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "The Palmarosa",
+  "emirate": "Dubai",
+  "developer": "Gulf Properties / Gulf Developers",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "The Springs",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "The Sustainable City",
+  "emirate": "Dubai",
+  "developer": "Diamond Developers",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "The Valley",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "The Views",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "The Villa",
+  "emirate": "Dubai",
+  "developer": "Emaar Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "The Wilds",
+  "emirate": "Dubai",
+  "developer": "Aldar Properties (JV with Dubai Holding)",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Tijara Town",
+  "emirate": "Dubai",
+  "dev_type": "Small commercial/rural zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Tilal Al Ghaf",
+  "emirate": "Dubai",
+  "developer": "Majid Al Futtaim",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Tilal Binghatti",
+  "emirate": "Dubai",
+  "developer": "Binghatti Developers",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Town Square",
+  "emirate": "Dubai",
+  "developer": "Nshama",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Trade Center 1",
+  "emirate": "Dubai",
+  "developer": "Dubai World Trade Centre Authority",
+  "dev_type": "Established commercial/govt district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Trade Center 2",
+  "emirate": "Dubai",
+  "developer": "Dubai World Trade Centre Authority",
+  "dev_type": "Established commercial/govt district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Um Al Sheif",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Um Esalay",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Um Hurair",
+  "emirate": "Dubai",
+  "dev_type": "Established organic district (Oud Metha area)",
+  "confidence": "High"
+ },
+ {
+  "name": "Um Nahad",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Umm Addamin",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Umm Al Daman",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Umm Al Momeneen",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Umm Eselay",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Umm Ramool",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Umm Suqeim",
+  "emirate": "Dubai",
+  "dev_type": "Established organic neighborhood",
+  "confidence": "High"
+ },
+ {
+  "name": "Uptown Dubai",
+  "emirate": "Dubai",
+  "developer": "DMCC",
+  "dev_type": "Master-planned mixed-use district",
+  "confidence": "High"
+ },
+ {
+  "name": "Villanova",
+  "emirate": "Dubai",
+  "developer": "Dubai Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Wadi Al Amardi",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Wadi Al Safa",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone (Dubailand)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Wasl Gate",
+  "emirate": "Dubai",
+  "developer": "Wasl Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Wasl1",
+  "emirate": "Dubai",
+  "developer": "Wasl Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "World Islands",
+  "emirate": "Dubai",
+  "developer": "Nakheel",
+  "dev_type": "Master-planned islands",
+  "confidence": "High"
+ },
+ {
+  "name": "Yaraah",
+  "emirate": "Dubai",
+  "dev_type": "Rural/desert cadastral zone",
+  "confidence": "Low"
+ },
+ {
+  "name": "Zabeel",
+  "emirate": "Dubai",
+  "developer": "Dubai Municipality / Meydan (area)",
+  "dev_type": "Established govt/mixed district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Aljada",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Arada",
+  "dev_type": "Master-planned mixed-use community",
+  "confidence": "High"
+ },
+ {
+  "name": "Masaar",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Arada",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Nasma Residences",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Arada / Sharjah Asset Management",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Mamsha",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Alef Group",
+  "dev_type": "Master-planned mixed-use community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Mamsha Hamsa",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Alef Group",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Olfah",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Alef Group",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Hayyan",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Alef Group",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Linar",
+  "emirate": "Sharjah",
+  "region": "Al Mamzar, Sharjah",
+  "developer": "Alef Group",
+  "dev_type": "Master-planned waterfront community",
+  "confidence": "High"
+ },
+ {
+  "name": "Maryam Island",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Eagle Hills Sharjah",
+  "dev_type": "Master-planned waterfront community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Zahia",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Majid Al Futtaim",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Tilal City",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Sharjah Investment and Development Authority (Shurooq) / Tilal Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Sharjah Sustainable City",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Sharjah Investment and Diamond Developers",
+  "dev_type": "Master-planned sustainable community",
+  "confidence": "High"
+ },
+ {
+  "name": "Heart of Sharjah",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Shurooq (Sharjah Investment and Development Authority)",
+  "dev_type": "Heritage redevelopment district",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Majaz Waterfront",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Shurooq",
+  "dev_type": "Public waterfront/leisure district",
+  "confidence": "High"
+ },
+ {
+  "name": "Kalba Waterfront",
+  "emirate": "Sharjah",
+  "region": "Kalba, Sharjah",
+  "developer": "Shurooq / Eagle Hills",
+  "dev_type": "Master-planned waterfront district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Muwaileh",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Multiple private developers",
+  "dev_type": "Established mixed residential district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Majaz",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "dev_type": "Established organic district",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Khan",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "dev_type": "Established organic district",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Nahda (Sharjah)",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "dev_type": "Established organic district",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Taawun",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "dev_type": "Established organic district",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Qasimia",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "dev_type": "Established organic district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Ajmal Makan City",
+  "emirate": "Sharjah",
+  "region": "Sharjah coast",
+  "developer": "Ajmal Makan Real Estate Development",
+  "dev_type": "Master-planned coastal city",
+  "confidence": "High"
+ },
+ {
+  "name": "District 11",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Al Marwan Developments",
+  "dev_type": "Master-planned mixed-use district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Suyoh",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "dev_type": "Established mixed district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Rahmaniya",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Multiple private developers",
+  "dev_type": "Established mixed villa district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "University City Sharjah",
+  "emirate": "Sharjah",
+  "region": "Sharjah City",
+  "developer": "Government of Sharjah",
+  "dev_type": "Institutional/education district",
+  "confidence": "High"
+ },
+ {
+  "name": "Khorfakkan",
+  "emirate": "Sharjah",
+  "region": "Sharjah (East Coast)",
+  "developer": "Government of Sharjah",
+  "dev_type": "Established coastal town",
+  "confidence": "High"
+ },
+ {
+  "name": "Kalba",
+  "emirate": "Sharjah",
+  "region": "Sharjah (East Coast)",
+  "developer": "Government of Sharjah",
+  "dev_type": "Established coastal town",
+  "confidence": "High"
+ },
+ {
+  "name": "Dibba Al-Hisn",
+  "emirate": "Sharjah",
+  "region": "Sharjah (East Coast)",
+  "developer": "Government of Sharjah",
+  "dev_type": "Established coastal town",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Marjan Island (overall)",
+  "emirate": "Ras Al Khaimah",
+  "region": "Ras Al Khaimah",
+  "developer": "Marjan (RAK Government master developer)",
+  "dev_type": "Master-planned island district",
+  "confidence": "High"
+ },
+ {
+  "name": "Wynn Al Marjan Island",
+  "emirate": "Ras Al Khaimah",
+  "region": "Al Marjan Island, RAK",
+  "developer": "Wynn Resorts / Marjan / RAK Hospitality Holding",
+  "dev_type": "Integrated resort (hospitality + branded residences)",
+  "confidence": "High"
+ },
+ {
+  "name": "Nikki Beach Residences RAK",
+  "emirate": "Ras Al Khaimah",
+  "region": "Al Marjan Island, RAK",
+  "developer": "Aldar Properties (with Nikki Beach Global)",
+  "dev_type": "Branded residential community",
+  "confidence": "High"
+ },
+ {
+  "name": "Sheraton Residences RAK",
+  "emirate": "Ras Al Khaimah",
+  "region": "Al Marjan Island, RAK",
+  "developer": "Atara Development",
+  "dev_type": "Branded residential community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Oceano by The Luxe Developers",
+  "emirate": "Ras Al Khaimah",
+  "region": "Al Marjan Island, RAK",
+  "developer": "The Luxe Developers",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Richmind Tower",
+  "emirate": "Ras Al Khaimah",
+  "region": "Al Marjan Island, RAK",
+  "developer": "Marjan / Zaha Hadid Architects (design)",
+  "dev_type": "Branded residential tower",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Mondrian Residences RAK",
+  "emirate": "Ras Al Khaimah",
+  "region": "Al Marjan Island, RAK",
+  "developer": "Marjan (with Mondrian Hotels brand)",
+  "dev_type": "Branded residential community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Waldorf Astoria Residences RAK",
+  "emirate": "Ras Al Khaimah",
+  "region": "Al Marjan Island, RAK",
+  "developer": "Marjan (with Hilton/Waldorf Astoria brand)",
+  "dev_type": "Branded residential community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Hamra Village",
+  "emirate": "Ras Al Khaimah",
+  "region": "Al Hamra, RAK",
+  "developer": "Al Hamra Real Estate",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Falcon Island",
+  "emirate": "Ras Al Khaimah",
+  "region": "Al Hamra, RAK",
+  "developer": "Al Hamra Real Estate",
+  "dev_type": "Master-planned island community",
+  "confidence": "High"
+ },
+ {
+  "name": "Royal Breeze",
+  "emirate": "Ras Al Khaimah",
+  "region": "Al Hamra, RAK",
+  "developer": "Al Hamra Real Estate",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Hamra Residence",
+  "emirate": "Ras Al Khaimah",
+  "region": "Al Hamra, RAK",
+  "developer": "Al Hamra Real Estate",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Mina Al Arab (overall)",
+  "emirate": "Ras Al Khaimah",
+  "region": "Ras Al Khaimah",
+  "developer": "RAK Properties",
+  "dev_type": "Master-planned waterfront district",
+  "confidence": "High"
+ },
+ {
+  "name": "Bay Residence (Mina Al Arab)",
+  "emirate": "Ras Al Khaimah",
+  "region": "Mina Al Arab, RAK",
+  "developer": "RAK Properties",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Hayat Island (Mina Al Arab)",
+  "emirate": "Ras Al Khaimah",
+  "region": "Mina Al Arab, RAK",
+  "developer": "RAK Properties",
+  "dev_type": "Master-planned island community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "One Central RAK",
+  "emirate": "Ras Al Khaimah",
+  "region": "Ras Al Khaimah City",
+  "developer": "Pantheon Development",
+  "dev_type": "Master-planned mixed-use district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "RAK Central",
+  "emirate": "Ras Al Khaimah",
+  "region": "Ras Al Khaimah",
+  "developer": "Marjan (RAK Government)",
+  "dev_type": "Planned Grade-A business district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Julphar Towers / RAK City",
+  "emirate": "Ras Al Khaimah",
+  "region": "Ras Al Khaimah City",
+  "dev_type": "Established organic city",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Khuzam",
+  "emirate": "Ras Al Khaimah",
+  "region": "Ras Al Khaimah City",
+  "dev_type": "Established organic district",
+  "confidence": "Low"
+ },
+ {
+  "name": "Digdaga",
+  "emirate": "Ras Al Khaimah",
+  "region": "Ras Al Khaimah",
+  "dev_type": "Rural/agricultural district",
+  "confidence": "Low"
+ },
+ {
+  "name": "Ajman Downtown",
+  "emirate": "Ajman",
+  "region": "Ajman City",
+  "developer": "Multiple (Sweet Homes, Aqaar, private)",
+  "dev_type": "Established mixed district (multi-developer)",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Ajman One (Phase 1 & 2)",
+  "emirate": "Ajman",
+  "region": "Ajman Downtown",
+  "developer": "Aqaar Properties (Ajman Properties Corporation)",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Corniche Ajman",
+  "emirate": "Ajman",
+  "region": "Ajman City",
+  "developer": "Multiple private developers",
+  "dev_type": "Established waterfront district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Zorah (overall)",
+  "emirate": "Ajman",
+  "region": "Ajman",
+  "developer": "Al Zorah Development (JV: Government of Ajman & Solidere International)",
+  "dev_type": "Master-planned waterfront/golf community",
+  "confidence": "High"
+ },
+ {
+  "name": "Sealine Residence (Al Zorah)",
+  "emirate": "Ajman",
+  "region": "Al Zorah, Ajman",
+  "developer": "Al Zorah Development",
+  "dev_type": "Master-planned community",
+  "confidence": "High"
+ },
+ {
+  "name": "Seaside Hills (Al Zorah)",
+  "emirate": "Ajman",
+  "region": "Al Zorah, Ajman",
+  "developer": "Solidere International",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Sea Glints Mansions (Al Zorah)",
+  "emirate": "Ajman",
+  "region": "Al Zorah, Ajman",
+  "developer": "Solidere International",
+  "dev_type": "Master-planned community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Creekside Residence (Al Zorah)",
+  "emirate": "Ajman",
+  "region": "Al Zorah, Ajman",
+  "developer": "Al Zorah Development",
+  "dev_type": "Master-planned waterfront community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Rashidiya (Ajman)",
+  "emirate": "Ajman",
+  "region": "Ajman City",
+  "dev_type": "Established organic district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Nuaimiya",
+  "emirate": "Ajman",
+  "region": "Ajman City",
+  "dev_type": "Established organic district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Rumailah",
+  "emirate": "Ajman",
+  "region": "Ajman City",
+  "developer": "Aqaar Properties",
+  "dev_type": "Established mixed district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Sawan",
+  "emirate": "Ajman",
+  "region": "Ajman City",
+  "developer": "Aqaar Properties",
+  "dev_type": "Established mixed district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Amerah",
+  "emirate": "Ajman",
+  "region": "Ajman City",
+  "developer": "GJ Properties",
+  "dev_type": "Master-planned mixed community",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Ajman Free Zone (Ajman Creek Towers area)",
+  "emirate": "Ajman",
+  "region": "Ajman",
+  "developer": "GJ Properties / Ajman Free Zone Authority",
+  "dev_type": "Free-zone mixed-use district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Hamidiya",
+  "emirate": "Ajman",
+  "region": "Ajman City",
+  "dev_type": "Established organic district",
+  "confidence": "Low"
+ },
+ {
+  "name": "Masfout",
+  "emirate": "Ajman",
+  "region": "Ajman (exclave)",
+  "dev_type": "Established rural/mountain enclave",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Manama (Ajman exclave)",
+  "emirate": "Ajman",
+  "region": "Ajman (exclave)",
+  "dev_type": "Established rural enclave",
+  "confidence": "Low"
+ },
+ {
+  "name": "Fujairah City (central)",
+  "emirate": "Fujairah",
+  "region": "Fujairah",
+  "dev_type": "Established organic city",
+  "confidence": "High"
+ },
+ {
+  "name": "Sakamkam",
+  "emirate": "Fujairah",
+  "region": "Fujairah",
+  "developer": "Multiple private developers",
+  "dev_type": "Established/emerging mixed district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Al Faseel",
+  "emirate": "Fujairah",
+  "region": "Fujairah",
+  "developer": "Multiple private developers",
+  "dev_type": "Established mixed villa district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Dibba Al-Fujairah",
+  "emirate": "Fujairah",
+  "region": "Fujairah",
+  "developer": "Multiple private developers",
+  "dev_type": "Established coastal town",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Downtown Fujairah",
+  "emirate": "Fujairah",
+  "region": "Fujairah",
+  "developer": "Multiple private developers",
+  "dev_type": "Established mixed district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Corniche Al Fujairah",
+  "emirate": "Fujairah",
+  "region": "Fujairah",
+  "developer": "Multiple private developers",
+  "dev_type": "Established waterfront district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Address Fujairah Beach Resort area",
+  "emirate": "Fujairah",
+  "region": "Fujairah",
+  "developer": "Emaar Hospitality (resort) / private residential",
+  "dev_type": "Resort/mixed residential area",
+  "confidence": "Low"
+ },
+ {
+  "name": "Al Hilal (Fujairah)",
+  "emirate": "Fujairah",
+  "region": "Fujairah",
+  "dev_type": "Established villa district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Fujairah Free Zone",
+  "emirate": "Fujairah",
+  "region": "Fujairah",
+  "developer": "Fujairah Free Zone Authority",
+  "dev_type": "Free-zone industrial/commercial district",
+  "confidence": "High"
+ },
+ {
+  "name": "Dibba Al-Fujairah Port area",
+  "emirate": "Fujairah",
+  "region": "Fujairah",
+  "developer": "Government of Fujairah",
+  "dev_type": "Institutional/port district",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Masafi",
+  "emirate": "Fujairah",
+  "region": "Fujairah",
+  "dev_type": "Established mountain town",
+  "confidence": "Medium"
+ },
+ {
+  "name": "Sobha Siniya Island",
+  "emirate": "Umm Al Quwain",
+  "region": "Al Siniya Island, UAQ",
+  "developer": "Sobha Realty (JV with Umm Al Quwain Properties)",
+  "dev_type": "Master-planned waterfront community",
+  "confidence": "High"
+ },
+ {
+  "name": "Downtown UAQ",
+  "emirate": "Umm Al Quwain",
+  "region": "Umm Al Quwain City",
+  "developer": "Sobha Realty",
+  "dev_type": "Master-planned mixed-use district",
+  "confidence": "High"
+ },
+ {
+  "name": "Umm Al Quwain City (central)",
+  "emirate": "Umm Al Quwain",
+  "region": "Umm Al Quwain",
+  "dev_type": "Established organic city",
+  "confidence": "High"
+ },
+ {
+  "name": "Al Salamah",
+  "emirate": "Umm Al Quwain",
+  "region": "Umm Al Quwain",
+  "dev_type": "Established residential district",
+  "confidence": "Low"
+ },
+ {
+  "name": "Falaj Al Mualla",
+  "emirate": "Umm Al Quwain",
+  "region": "Umm Al Quwain (interior)",
+  "dev_type": "Established rural town",
+  "confidence": "Medium"
+ }
+]
