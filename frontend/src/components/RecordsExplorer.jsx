@@ -341,22 +341,12 @@ export default function RecordsExplorer({ initialQuery = '' }) {
               <tr className="border-b border-slate-300/80 bg-[#eef0f4] text-slate-700 font-mono text-[11px] whitespace-nowrap sticky top-0 z-10 shadow-xs">
                 <th
                   onClick={() => handleHeaderSort('name')}
-                  className="px-4 py-3.5 font-bold cursor-pointer hover:text-blue-600 transition-colors select-none group whitespace-nowrap min-w-[180px] max-w-[220px]"
+                  className="px-4 py-3.5 font-bold cursor-pointer hover:text-blue-600 transition-colors select-none group whitespace-nowrap min-w-[200px] max-w-[240px]"
                   title="Click to sort A ➔ Z or Z ➔ A by Name"
                 >
                   <span className="flex items-center space-x-1.5">
                     <span>NAME</span>
                     {renderSortIndicator('name')}
-                  </span>
-                </th>
-                <th
-                  onClick={() => handleHeaderSort('status')}
-                  className="px-4 py-3.5 font-bold cursor-pointer hover:text-blue-600 transition-colors select-none group whitespace-nowrap min-w-[120px]"
-                  title="Click to sort by Status"
-                >
-                  <span className="flex items-center space-x-1.5">
-                    <span>STATUS</span>
-                    {renderSortIndicator('status')}
                   </span>
                 </th>
                 <th
@@ -434,7 +424,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
             <tbody className="divide-y divide-slate-300/60 font-sans">
               {loading ? (
                 <tr>
-                  <td colSpan="9" className="py-10 text-center text-slate-400 font-mono whitespace-nowrap">
+                  <td colSpan="8" className="py-10 text-center text-slate-400 font-mono whitespace-nowrap">
                     Searching records database...
                   </td>
                 </tr>
@@ -444,26 +434,38 @@ export default function RecordsExplorer({ initialQuery = '' }) {
                     key={r.id}
                     onClick={() => openRecordModal(r)}
                     className="hover:bg-[#e2e6ed] cursor-pointer transition-colors group"
-                    title="Click row to inspect full record details"
+                    title={`Click row to inspect full details • Status: ${r.status || 'VALID'}`}
                   >
-                    <td className="px-4 py-3.5 font-black text-slate-900 group-hover:text-blue-700 transition-colors max-w-[180px] truncate" title={r.name || 'N/A'}>
-                      {r.name || 'N/A'}
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-black uppercase tracking-wider border shadow-xs inline-flex items-center gap-1 ${
-                          r.status === 'DUPLICATE'
-                            ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40'
-                            : r.status === 'VALID'
-                            ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/40'
-                            : r.status === 'INCOMPLETE'
-                            ? 'bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border-indigo-500/30'
-                            : 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/40'
-                        }`}
-                      >
-                        {r.status === 'DUPLICATE' && '⚠️ '}
-                        {r.status || 'VALID'}
-                      </span>
+                    <td className="px-4 py-3.5 font-black text-slate-900 group-hover:text-blue-700 transition-colors max-w-[200px] truncate" title={r.name || 'N/A'}>
+                      <div className="flex items-center space-x-2.5">
+                        {/* Luminous Status Indicator Dot */}
+                        <span
+                          title={
+                            r.status === 'DUPLICATE'
+                              ? 'Duplicate Record (Preserved)'
+                              : r.status === 'VALID'
+                              ? 'Valid Outreach Ready'
+                              : r.status === 'INCOMPLETE'
+                              ? 'Incomplete (Missing Contact/Name)'
+                              : 'Invalid / Error'
+                          }
+                          className={`w-2.5 h-2.5 rounded-full shrink-0 shadow-xs ${
+                            r.status === 'DUPLICATE'
+                              ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)] animate-pulse'
+                              : r.status === 'VALID'
+                              ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
+                              : r.status === 'INCOMPLETE'
+                              ? 'bg-indigo-400 dark:bg-indigo-500'
+                              : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]'
+                          }`}
+                        />
+                        <span className="truncate">{r.name || 'N/A'}</span>
+                        {r.status === 'DUPLICATE' && (
+                          <span className="text-[9px] font-mono font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                            DUP
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 text-slate-700 font-semibold max-w-[160px] truncate" title={r.developer || 'N/A'}>
                       {r.developer || 'N/A'}
@@ -490,7 +492,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="9" className="py-10 text-center text-slate-500 font-mono">
+                  <td colSpan="8" className="py-10 text-center text-slate-500 font-mono">
                     No records found matching filters.
                   </td>
                 </tr>
