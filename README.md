@@ -62,21 +62,21 @@ Developer Reference Resolver maps naming variants (e.g. `EMAAR` → `Emaar Prope
 
 ## 🏗️ Architecture Overview
 
-```
-┌────────────────────────────────────────────┐
-│      React 18 + Vite Neumorphic Frontend    │
-│           http://localhost:3000             │
-└─────────────────────┬────────────────────────┘
-                       │  REST API / Async HTTP
-┌─────────────────────▼────────────────────────┐
-│         FastAPI Python 3.12 Backend          │
-│           http://127.0.0.1:8001              │
-└──────────┬─────────────────────┬──────────────┘
-           │                     │
-┌──────────▼─────────┐   ┌───────▼──────────────────┐
-│   Cleaning Engine   │   │   Supabase PostgreSQL DB │
-│  (Pandas / Regex)   │   │    Production Storage    │
-└──────────────────────┘   └───────────────────────────┘
+```mermaid
+flowchart TB
+    A["React 18 + Vite<br/>Neumorphic Frontend<br/>localhost:3000"]
+    B["FastAPI Python 3.12<br/>Backend<br/>127.0.0.1:8001"]
+    C["Cleaning Engine<br/>Pandas / Regex"]
+    D["Supabase PostgreSQL<br/>Production Storage"]
+
+    A -- "REST API / Async HTTP" --> B
+    B --> C
+    B --> D
+
+    style A fill:#EEF0F4,stroke:#1F2937,color:#1F2937
+    style B fill:#009688,stroke:#1F2937,color:#fff
+    style C fill:#EEF0F4,stroke:#1F2937,color:#1F2937
+    style D fill:#3ECF8E,stroke:#1F2937,color:#1F2937
 ```
 
 <br/>
@@ -202,7 +202,7 @@ prototype/
 
 ## 🔒 Copyright & License
 
-© 2026 **LPH** & **NG**. All rights reserved.
+© 2026 **LPH** & **Nishchal Gond**. All rights reserved.
 
 All intellectual property, source code, normalization algorithms, design systems, and software assets contained within this platform are proprietary and strictly owned by **LPH** and **Nishchal Gond**. Unauthorized copying, distribution, reverse engineering, or commercial deployment without explicit written authorization is strictly prohibited.
 
