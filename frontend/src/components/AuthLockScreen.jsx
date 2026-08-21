@@ -1,35 +1,65 @@
 import React, { useState } from 'react';
-import { Lock, Eye, EyeOff, KeyRound, ShieldCheck, Sun, Moon, ArrowRight, Sparkles } from 'lucide-react';
+import { Lock, Eye, EyeOff, KeyRound, ShieldCheck, Sun, Moon, ArrowRight, Sparkles, Mail, UserCheck } from 'lucide-react';
+import DataLinkLogo from './DataLinkLogo';
 
 export default function AuthLockScreen({ onAuthenticate, theme, toggleTheme }) {
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@datalink.ae');
+  const [password, setPassword] = useState('admin321');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isShaking, setIsShaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!password) {
-      setError('Please enter your access key');
+    if (!email || !password) {
+      setError('Please provide both email address and password.');
       return;
     }
 
     setIsLoading(true);
     setError('');
 
-    // Simulate swift verification
-    setTimeout(() => {
-      if (password === 'dev123') {
-        setIsLoading(false);
-        onAuthenticate();
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('datalink_token', data.access_token);
+        localStorage.setItem('datalink_user', JSON.stringify(data.user));
+        localStorage.setItem('datalink_auth', 'authenticated');
+        onAuthenticate(data.user);
       } else {
-        setIsLoading(false);
-        setError('Incorrect password. Access denied.');
+        const err = await res.json();
+        setError(err.detail || 'Authentication failed. Please check credentials.');
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 600);
       }
-    }, 300);
+    } catch (err) {
+      // Fallback for offline / direct prototype testing
+      if (password === 'admin321' || password === 'dev123') {
+        const mockUser = {
+          id: 1,
+          email: email || 'admin@datalink.ae',
+          full_name: 'Lead Data Administrator',
+          role: 'ADMIN',
+          can_export: true
+        };
+        localStorage.setItem('datalink_auth', 'authenticated');
+        localStorage.setItem('datalink_user', JSON.stringify(mockUser));
+        onAuthenticate(mockUser);
+      } else {
+        setError('Network error connecting to security authentication service.');
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 600);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const isDark = theme === 'dark';
@@ -54,7 +84,7 @@ export default function AuthLockScreen({ onAuthenticate, theme, toggleTheme }) {
           type="button"
           onClick={toggleTheme}
           title={`Switch to ${isDark ? 'Light' : 'Dark'} Mode`}
-          className="neumorph-button p-3 rounded-2xl flex items-center gap-2 text-xs font-bold transition-transform hover:scale-105 active:scale-95"
+          className="neumorph-button p-3 rounded-2xl flex items-center gap-2 text-xs font-bold transition-transform hover:scale-105 active:scale-95 cursor-pointer"
         >
           {isDark ? (
             <>
@@ -71,26 +101,15 @@ export default function AuthLockScreen({ onAuthenticate, theme, toggleTheme }) {
       </div>
 
       {/* Central Neumorphic Lock Box */}
-      <div className={`relative z-10 w-full max-w-[400px] mx-4 transition-all duration-300 ${isShaking ? 'animate-shake' : ''}`}>
-        <div className="neumorph-card p-8 sm:p-10 flex flex-col items-center text-center relative overflow-visible">
+      <div className={`relative z-10 w-full max-w-[420px] mx-4 transition-all duration-300 ${isShaking ? 'animate-shake' : ''}`}>
+        <div className="neumorph-card p-8 sm:p-10 flex flex-col items-center text-center relative overflow-visible shadow-2xl">
           
-          {/* Floating Profile / System Avatar Emblem */}
+          {/* Floating Logo Badge */}
           <div className="relative -mt-20 mb-6">
-            <div className="w-24 h-24 rounded-full overflow-hidden p-1 shadow-[0_0_25px_rgba(37,99,235,0.45)] border-2 border-blue-500/40 bg-[#1e232b] flex items-center justify-center transition-transform hover:scale-105">
-              <img 
-                src="/wallpaper.jpg" 
-                alt="System Emblem" 
-                className="w-full h-full object-cover rounded-full filter contrast-125"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
-              />
-              <div className="hidden w-full h-full rounded-full items-center justify-center bg-blue-600 text-white">
-                <Lock className="w-8 h-8" />
-              </div>
+            <div className="w-22 h-22 rounded-3xl bg-[var(--card-bg)] neumorph-inset flex items-center justify-center p-3.5 shadow-xl border border-blue-500/30">
+              <DataLinkLogo className="w-12 h-12" />
             </div>
-            <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-blue-600 text-white shadow-lg">
+            <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-blue-600 text-white shadow-md">
               <ShieldCheck className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -100,40 +119,71 @@ export default function AuthLockScreen({ onAuthenticate, theme, toggleTheme }) {
             <div className="flex items-center justify-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-blue-500" />
               <span className="text-[10px] font-mono font-black tracking-widest text-blue-600 uppercase">
-                SECURITY VERIFICATION
+                RBAC SECURITY GATE
               </span>
             </div>
-            <h1 className="text-2xl font-black tracking-tight">DATALINK ENGINE</h1>
-            <p className="text-xs text-slate-400 font-medium">Enter system access password to proceed</p>
+            <h1 className="text-2xl font-black tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+              DATALINK ENGINE
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Enterprise Real Estate Ingestion & Deduplication
+            </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="w-full space-y-4">
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                <KeyRound className="w-4 h-4 text-blue-500" />
+          <form onSubmit={handleSubmit} className="w-full space-y-3.5">
+            {/* Email Input */}
+            <div className="relative text-left">
+              <label className="block text-[10px] font-mono font-black text-slate-500 uppercase tracking-wider mb-1 ml-1">
+                Operator Email
+              </label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                  <Mail className="w-4 h-4 text-blue-500" />
+                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                  placeholder="name@company.com"
+                  autoFocus
+                  required
+                  className="w-full neumorph-inset rounded-2xl pl-11 pr-4 py-3 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none transition-all"
+                />
               </div>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                placeholder="Enter password..."
-                autoFocus
-                className="w-full neumorph-inset rounded-2xl pl-11 pr-11 py-3 text-sm font-medium focus:outline-none transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors p-1"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+            </div>
+
+            {/* Password Input */}
+            <div className="relative text-left">
+              <label className="block text-[10px] font-mono font-black text-slate-500 uppercase tracking-wider mb-1 ml-1">
+                Access Password
+              </label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                  <KeyRound className="w-4 h-4 text-blue-500" />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                  placeholder="Enter password..."
+                  required
+                  className="w-full neumorph-inset rounded-2xl pl-11 pr-11 py-3 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors p-1 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="text-xs font-semibold text-rose-500 bg-rose-500/10 border border-rose-500/20 py-2 px-3 rounded-xl animate-fade-in">
+              <div className="text-xs font-bold text-rose-500 bg-rose-500/10 border border-rose-500/30 py-2 px-3 rounded-xl animate-fade-in text-left">
                 {error}
               </div>
             )}
@@ -142,23 +192,28 @@ export default function AuthLockScreen({ onAuthenticate, theme, toggleTheme }) {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full neumorph-button-primary py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 group transition-all"
+              className="w-full neumorph-button-primary py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 group transition-all mt-2 cursor-pointer shadow-lg"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>Unlock System</span>
+                  <span>Authenticate Session</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
             </button>
           </form>
 
-          {/* System Footer Note */}
-          <div className="mt-8 pt-4 border-t border-slate-500/20 w-full flex items-center justify-between text-[11px] text-slate-400 font-mono">
-            <span>v2.4 Protected</span>
-            <span>Key: dev123</span>
+          {/* Quick Demo Credentials for Fast Testing */}
+          <div className="mt-5 pt-4 border-t border-slate-500/20 w-full space-y-2 text-left">
+            <span className="text-[10px] font-mono font-black text-slate-500 uppercase tracking-wider block">
+              Default Credentials:
+            </span>
+            <div className="flex items-center justify-between text-[11px] font-mono bg-blue-500/5 p-2 rounded-xl border border-blue-500/20">
+              <span className="text-slate-700 dark:text-slate-300 font-bold">admin@datalink.ae</span>
+              <span className="text-blue-600 dark:text-blue-400 font-black">admin321</span>
+            </div>
           </div>
 
         </div>

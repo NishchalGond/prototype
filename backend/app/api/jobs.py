@@ -336,6 +336,69 @@ def get_job_errors(
     )
 
 
+@router.get("/jobs/{job_id}/errors/aggregate")
+def get_job_errors_aggregate(job_id: int, db: Session = Depends(get_db)):
+    """Aggregate error code and sheet breakdowns to diagnose systematic mapping issues."""
+    job = db.get(ProcessingJob, job_id)
+    if not job:
+        raise HTTPException(404, f"Job {job_id} not found.")
+
+    # Breakdown by error code
+    by_code = dict(
+        db.execute(
+            select(ProcessingError.code, func.count(ProcessingError.id))
+            .where(ProcessingError.job_id == job_id)
+            .group_by(ProcessingError.code)
+            .order_by(func.count(ProcessingError.id).desc())
+        ).all()
+    )
+
+    # Breakdown by sheet
+    by_sheet = dict(
+        db.execute(
+            select(func.coalesce(ProcessingError.sheet_name, "File Level"), func.count(ProcessingError.id))
+            .where(ProcessingError.job_id == job_id)
+            .group_by(ProcessingError.sheet_name)
+            .order_by(func.count(ProcessingError.id).desc())
+        ).all()
+    )
+
+    # Breakdown by severity
+    by_severity = dict(
+        db.execute(
+            select(ProcessingError.severity, func.count(ProcessingError.id))
+            .where(ProcessingError.job_id == job_id)
+            .group_by(ProcessingError.severity)
+        ).all()
+    )
+
+    total = db.scalar(select(func.count(ProcessingError.id)).where(ProcessingError.job_id == job_id)) or 0
+
+    return {
+        "job_id": job_id,
+        "total_errors": total,
+        "by_code": by_code,
+        "by_sheet": by_sheet,
+        "by_severity": by_severity,
+    }
+
+
+@router.get("/errors/summary")
+def get_global_errors_summary(db: Session = Depends(get_db)):
+    """Global error summary across all ingested datasets to identify common column mismatches."""
+    by_code = dict(
+        db.execute(
+            select(ProcessingError.code, func.count(ProcessingError.id))
+            .group_by(ProcessingError.code)
+            .order_by(func.count(ProcessingError.id).desc())
+            .limit(20)
+        ).all()
+    )
+    total = db.scalar(select(func.count(ProcessingError.id))) or 0
+    return {"total_logged_errors": total, "top_error_codes": by_code}
+
+
+
 # --------------------------------------------------------------------------
 JOB_SIGNALS: dict[int, str] = {}
 

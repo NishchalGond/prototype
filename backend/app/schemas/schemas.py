@@ -199,6 +199,9 @@ class RecordOut(ORMModel):
     source_sheet: str | None
     source_row: int | None
     status: str
+    identity_hash: str | None = None
+    fuzzy_match_score: float | None = None
+    fuzzy_matched_id: int | None = None
     validation_flags: list[str] | None
     enriched_fields: list[str] | None
     extras: dict[str, Any] | None

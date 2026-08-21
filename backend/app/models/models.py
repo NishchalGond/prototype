@@ -15,6 +15,54 @@ class Base(DeclarativeBase):
     pass
 
 
+class UserRole:
+    ADMIN = "ADMIN"
+    DATA_PROCESSOR = "DATA_PROCESSOR"
+    VIEWER = "VIEWER"
+    ALL = (ADMIN, DATA_PROCESSOR, VIEWER)
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
+    hashed_password: Mapped[str] = mapped_column(String(255))
+    full_name: Mapped[str] = mapped_column(String(255))
+    role: Mapped[str] = mapped_column(String(32), default=UserRole.VIEWER, index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    can_export: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ExportAuditLog(Base):
+    __tablename__ = "export_audit_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    user_email: Mapped[str] = mapped_column(String(320), index=True)
+    format: Mapped[str] = mapped_column(String(16))
+    filter_criteria: Mapped[dict | None] = mapped_column(JSON)
+    row_count: Mapped[int] = mapped_column(Integer, default=0)
+    ip_address: Mapped[str | None] = mapped_column(String(64))
+    user_agent: Mapped[str | None] = mapped_column(String(512))
+    exported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class RecordEditAudit(Base):
+    __tablename__ = "record_edits_audit"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    record_id: Mapped[int] = mapped_column(ForeignKey("records.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    user_email: Mapped[str] = mapped_column(String(320), index=True)
+    field_name: Mapped[str] = mapped_column(String(64), index=True)
+    old_value: Mapped[str | None] = mapped_column(Text)
+    new_value: Mapped[str | None] = mapped_column(Text)
+    edited_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
 class JobStatus:
     UPLOADED = "UPLOADED"
     READING = "READING"
@@ -144,9 +192,11 @@ class Record(Base):
     source_sheet: Mapped[str | None] = mapped_column(String(255))
     source_row: Mapped[int | None] = mapped_column(Integer)
 
-    # --- quality ---------------------------------------------------------
+    # --- quality & dedup -------------------------------------------------
     status: Mapped[str] = mapped_column(String(24), default=RecordStatus.VALID, index=True)
     identity_hash: Mapped[str] = mapped_column(String(64), index=True)
+    fuzzy_match_score: Mapped[float | None] = mapped_column(Float)
+    fuzzy_matched_id: Mapped[int | None] = mapped_column(Integer)
     validation_flags: Mapped[list | None] = mapped_column(JSON)
     enriched_fields: Mapped[list | None] = mapped_column(JSON)
     owner_count: Mapped[int | None] = mapped_column(Integer)   # joint ownership size

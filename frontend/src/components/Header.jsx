@@ -1,8 +1,16 @@
 import React from 'react';
 import { Search, RefreshCw, Cloud, Sun, Moon, LogOut } from 'lucide-react';
 
-export default function Header({ onRefresh, activeJob, searchQuery, setSearchQuery, setActiveTab, theme, toggleTheme, onLogout }) {
+export default function Header({ onRefresh, activeJob, searchQuery, setSearchQuery, setActiveTab, theme, toggleTheme, onLogout, currentUser }) {
   const isDark = theme === 'dark';
+  const role = currentUser?.role || 'ADMIN';
+  const fullName = currentUser?.full_name || 'Admin Operator';
+  const initials = fullName
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || 'AD';
 
   return (
     <header className="h-16 bg-[var(--bg-main)] border-b border-slate-500/20 px-6 flex items-center justify-between sticky top-0 z-20 shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-colors duration-200">
@@ -19,7 +27,7 @@ export default function Header({ onRefresh, activeJob, searchQuery, setSearchQue
             }
           }}
           placeholder="Search Name, Community, Unit, Mobile..."
-          className="w-full neumorph-inset text-xs placeholder-slate-400 rounded-2xl pl-10 pr-4 py-2.5 focus:outline-none font-medium transition-all"
+          className="w-full neumorph-inset text-xs placeholder-slate-400 rounded-2xl pl-10 pr-4 py-2.5 focus:outline-none font-medium transition-all text-slate-800 dark:text-slate-100"
         />
       </div>
 
@@ -32,7 +40,7 @@ export default function Header({ onRefresh, activeJob, searchQuery, setSearchQue
       ) : (
         <div className="flex items-center space-x-2 bg-[var(--card-bg)] border border-emerald-500/30 px-3.5 py-1 rounded-full text-[11px] font-medium neumorph-inset">
           <Cloud className="w-3.5 h-3.5 text-emerald-500" />
-          <span className="font-mono text-emerald-500 font-bold">Supabase Cloud Engine Online</span>
+          <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">Supabase Cloud Engine Online</span>
         </div>
       )}
 
@@ -42,7 +50,7 @@ export default function Header({ onRefresh, activeJob, searchQuery, setSearchQue
         <button
           onClick={onRefresh}
           title="Sync Pipeline Stats"
-          className="neumorph-button px-3.5 py-2 text-xs flex items-center space-x-1.5 font-bold transition-transform hover:scale-105 active:scale-95"
+          className="neumorph-button px-3.5 py-2 text-xs flex items-center space-x-1.5 font-bold transition-transform hover:scale-105 active:scale-95 cursor-pointer text-slate-800 dark:text-slate-200"
         >
           <RefreshCw className="w-3.5 h-3.5 text-blue-500" />
           <span className="hidden sm:inline">Sync Data</span>
@@ -52,7 +60,7 @@ export default function Header({ onRefresh, activeJob, searchQuery, setSearchQue
         <button
           onClick={toggleTheme}
           title={`Switch to ${isDark ? 'Light' : 'Dark'} Mode`}
-          className="neumorph-button p-2 text-xs flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+          className="neumorph-button p-2 text-xs flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer"
         >
           {isDark ? (
             <Sun className="w-4 h-4 text-amber-400" />
@@ -63,22 +71,30 @@ export default function Header({ onRefresh, activeJob, searchQuery, setSearchQue
 
         <div className="h-4 w-[1px] bg-slate-500/20"></div>
 
-        {/* Admin Badge */}
+        {/* User Profile & Role Badge */}
         <div className="flex items-center space-x-2.5">
-          <div className="w-9 h-9 rounded-2xl bg-[var(--card-bg)] border border-white/10 flex items-center justify-center text-xs font-black text-blue-500 neumorph-inset">
-            AD
+          <div className="w-9 h-9 rounded-2xl bg-[var(--card-bg)] border border-blue-500/30 flex items-center justify-center text-xs font-black text-blue-600 dark:text-blue-400 neumorph-inset">
+            {initials}
           </div>
           <div className="hidden md:block text-left">
-            <p className="text-xs font-bold leading-tight">Admin Operator</p>
-            <p className="text-[10px] text-slate-400 font-mono">System Owner</p>
+            <p className="text-xs font-black leading-tight text-slate-900 dark:text-slate-100">{fullName}</p>
+            <span className={`text-[9px] font-mono font-black uppercase px-1.5 py-0.2 rounded-full border inline-block mt-0.5 ${
+              role === 'ADMIN'
+                ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30'
+                : role === 'DATA_PROCESSOR'
+                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                : 'bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30'
+            }`}>
+              {role}
+            </span>
           </div>
         </div>
 
         {/* Logout / Lock Button */}
         <button
           onClick={onLogout}
-          title="Lock App / Log Out"
-          className="neumorph-button p-2 text-rose-500 hover:text-rose-600 transition-transform hover:scale-105 active:scale-95"
+          title="Log Out Session"
+          className="neumorph-button p-2 text-rose-500 hover:text-rose-600 transition-transform hover:scale-105 active:scale-95 cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
         </button>

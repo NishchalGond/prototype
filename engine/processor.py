@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Callable
 
 from . import validation as V
+from .dedup import calculate_name_similarity, extract_property_key
 from .detection import UnreadableFile, open_source
 from .mapping import (apply_plan, build_plan, is_reference_sheet,
                       is_repeated_header, sheet_role)
@@ -36,6 +37,8 @@ class BatchOutcome:
 
 @dataclass
 class ProcessResult:
+    detected_format: str | None = None
+    sheet_count: int = 0
     total_rows: int = 0
     processed_rows: int = 0
     valid_rows: int = 0
@@ -44,8 +47,6 @@ class ProcessResult:
     skipped_rows: int = 0
     errors: list[dict] = field(default_factory=list)
     mapping_report: dict = field(default_factory=dict)
-    detected_format: str | None = None
-    sheet_count: int = 0
 
 
 class Processor:
@@ -70,6 +71,8 @@ class Processor:
     ) -> ProcessResult:
         result = ProcessResult()
         seen: set[str] = seen_hashes if seen_hashes is not None else set()
+        seen_properties: dict[str, dict] = {}
+        seen_phones: dict[str, dict] = {}
 
         fmt, sheets = open_source(path)          # raises UnreadableFile
         result.detected_format = fmt
@@ -83,7 +86,7 @@ class Processor:
         for sheet in sheets:
             result.sheet_count += 1
             try:
-                self._process_sheet(sheet, source_name, result, seen, on_batch, on_progress)
+                self._process_sheet(sheet, source_name, result, seen, seen_properties, seen_phones, on_batch, on_progress)
             except Exception as exc:                     # one bad sheet must not kill the job
                 log.exception("sheet failed: %s", sheet.name)
                 result.errors.append({
@@ -155,7 +158,7 @@ class Processor:
         return index
 
     # ------------------------------------------------------------------
-    def _process_sheet(self, sheet, source_name, result, seen, on_batch, on_progress):
+    def _process_sheet(self, sheet, source_name, result, seen, seen_properties, seen_phones, on_batch, on_progress):
         # sample the first rows so overloaded headers (AREA / TYPE) resolve on values
         sample_rows: list[list] = []
         row_iter = sheet.rows
@@ -340,7 +343,45 @@ class Processor:
                         on_progress(result, sheet.name)
                 return
 
+            # --- Fuzzy Near-Duplicate Check (Tier 2) ---
+            prop_key = extract_property_key(row)
+            is_fuzzy_dup = False
+            fuzzy_score = 0.0
+
+            if prop_key and prop_key in seen_properties:
+                prev_record = seen_properties[prop_key]
+                sim = calculate_name_similarity(row.get("name"), prev_record.get("name"))
+                if sim >= 0.85:
+                    is_fuzzy_dup = True
+                    fuzzy_score = round(sim, 3)
+                    flags.append(f"fuzzy_duplicate_property_match_{int(sim*100)}pct")
+
+            if not is_fuzzy_dup and row.get("mobile_1") and row.get("mobile_1") in seen_phones:
+                prev_record = seen_phones[row["mobile_1"]]
+                sim = calculate_name_similarity(row.get("name"), prev_record.get("name"))
+                if sim >= 0.85:
+                    is_fuzzy_dup = True
+                    fuzzy_score = round(sim, 3)
+                    flags.append(f"fuzzy_duplicate_phone_match_{int(sim*100)}pct")
+
+            if is_fuzzy_dup:
+                row["status"] = "DUPLICATE"
+                row["fuzzy_match_score"] = fuzzy_score
+                row["validation_flags"] = flags
+                result.duplicate_rows += 1
+                batch.append(row)
+                if len(batch) >= self.batch_size:
+                    flush()
+                    if on_progress:
+                        on_progress(result, sheet.name)
+                return
+
             seen.add(row["identity_hash"])
+            if prop_key and row.get("name"):
+                seen_properties[prop_key] = {"name": row["name"], "hash": row["identity_hash"]}
+            if row.get("mobile_1") and row.get("name"):
+                seen_phones[row["mobile_1"]] = {"name": row["name"], "hash": row["identity_hash"]}
+
             # Check outreach readiness: record must have BOTH name and at least one contact detail (phone or email)
             has_name = bool(row.get("name") and str(row.get("name")).strip())
             has_contact = bool(row.get("mobile_1") or row.get("email_address"))

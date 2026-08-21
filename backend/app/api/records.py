@@ -4,18 +4,22 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database.session import get_db
+from ..core.security import get_current_user_optional, require_export_permission, require_role
 from ..models.models import (
-    ProcessingError, ProcessingJob, Record, RecordStatus, SourceFile,
+    ExportAuditLog, ProcessingError, ProcessingJob, Record, RecordEditAudit,
+    RecordStatus, SourceFile, User, UserRole,
 )
 from ..schemas.schemas import (
     AliasRequest, ColumnMappingOut, DashboardStats, FilterOptions, JobOut, Page, RecordOut,
 )
+from engine import cleaning as C
+from engine import validation as V
 
 router = APIRouter()
 
@@ -159,6 +163,8 @@ def export_records(
     sort_by: str = Query("id"),
     sort_dir: str = Query("desc", pattern="^(asc|desc)$"),
     limit: int = Query(50000, ge=1, le=100000),
+    request: Request = None,
+    current_user: User | None = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
     """Export filtered dataset to CSV or Excel (.xlsx). Exactly respects active search and filters."""
@@ -224,6 +230,27 @@ def export_records(
         ]
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+
+    # Record export audit log
+    client_ip = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+    user_id = current_user.id if current_user else None
+    user_email = current_user.email if current_user else "anonymous_operator@datalink.local"
+
+    audit_entry = ExportAuditLog(
+        user_id=user_id,
+        user_email=user_email,
+        format=format.upper(),
+        filter_criteria={
+            "q": q, "community": community, "property_type": property_type,
+            "bedroom": bedroom, "developer": developer, "status": effective_status,
+        },
+        row_count=len(rows),
+        ip_address=client_ip,
+        user_agent=user_agent,
+    )
+    db.add(audit_entry)
+    db.commit()
 
     if format == "xlsx":
         import openpyxl
@@ -318,16 +345,121 @@ def get_record(record_id: int, db: Session = Depends(get_db)):
     return RecordOut.model_validate(rec)
 
 
+@router.get("/records/{record_id}/audits")
+def get_record_audits(record_id: int, db: Session = Depends(get_db)):
+    """Retrieve complete audit history for manual edits to this record."""
+    audits = db.scalars(
+        select(RecordEditAudit)
+        .where(RecordEditAudit.record_id == record_id)
+        .order_by(RecordEditAudit.edited_at.desc())
+    ).all()
+    return [
+        {
+            "id": a.id,
+            "field_name": a.field_name,
+            "old_value": a.old_value,
+            "new_value": a.new_value,
+            "user_email": a.user_email,
+            "edited_at": a.edited_at.isoformat(),
+        }
+        for a in audits
+    ]
+
+
 @router.put("/records/{record_id}", response_model=RecordOut)
-def update_record(record_id: int, body: RecordUpdate, db: Session = Depends(get_db)):
+def update_record(
+    record_id: int,
+    body: RecordUpdate,
+    request: Request,
+    current_user: User | None = Depends(get_current_user_optional),
+    db: Session = Depends(get_db)
+):
+    """Hardened update endpoint: cleans fields, re-validates, re-hashes, and logs audit trail."""
     rec = db.get(Record, record_id)
     if not rec:
         raise HTTPException(404, f"Record {record_id} not found.")
 
+    user_id = current_user.id if current_user else None
+    user_email = current_user.email if current_user else "lead_operator@datalink.local"
+
     update_data = body.model_dump(exclude_unset=True)
+    
+    # Whitelist of editable business fields
+    EDITABLE_FIELDS = {
+        "name", "community", "sub_community", "building_cluster", "unit_number",
+        "plot_number", "plot_reg_no", "dmno", "dmsubno", "bedroom", "party_type",
+        "mobile_1", "mobile_2", "mobile_3", "email_address", "pi_number",
+        "nationality", "property_type", "procedure_value", "size", "developer", "project"
+    }
+
+    changes: list[RecordEditAudit] = []
+
     for field, value in update_data.items():
-        if hasattr(rec, field):
-            setattr(rec, field, value)
+        if field in EDITABLE_FIELDS:
+            # Clean individual field with engine cleaning rules
+            cleaned_val = value
+            if field == "name":
+                cleaned_val = C.clean_name(value)
+            elif field == "community":
+                cleaned_val = C.clean_community(value)
+            elif field in ("sub_community", "building_cluster", "dmno", "dmsubno", "pi_number", "property_type", "developer", "project", "plot_reg_no"):
+                cleaned_val = C.clean_text(value)
+            elif field in ("unit_number", "plot_number"):
+                cleaned_val = C.clean_unit(value)
+            elif field in ("mobile_1", "mobile_2", "mobile_3"):
+                cleaned_val, _ = C.clean_phone(value)
+            elif field == "email_address":
+                cleaned_val, _ = C.clean_email(value)
+            elif field == "bedroom":
+                cleaned_val, _ = C.clean_bedroom(value)
+            elif field == "party_type":
+                cleaned_val = C.clean_party_type(value)
+            elif field == "nationality":
+                cleaned_val = C.clean_nationality(value)
+            elif field == "procedure_value":
+                cleaned_val = C.clean_number(value)
+            elif field == "size":
+                cleaned_val = C.clean_size(value)
+
+            old_val = getattr(rec, field)
+            if old_val != cleaned_val:
+                changes.append(
+                    RecordEditAudit(
+                        record_id=rec.id,
+                        user_id=user_id,
+                        user_email=user_email,
+                        field_name=field,
+                        old_value=str(old_val) if old_val is not None else None,
+                        new_value=str(cleaned_val) if cleaned_val is not None else None,
+                    )
+                )
+                setattr(rec, field, cleaned_val)
+
+    # Re-validate status
+    row_dict = {
+        "name": rec.name,
+        "mobile_1": rec.mobile_1,
+        "email_address": rec.email_address,
+        "community": rec.community,
+        "building_cluster": rec.building_cluster,
+        "unit_number": rec.unit_number,
+        "plot_number": rec.plot_number,
+        "pi_number": rec.pi_number,
+    }
+    is_valid, flags = V.validate(row_dict)
+    
+    if not is_valid:
+        rec.status = RecordStatus.INVALID
+    elif rec.name and (rec.mobile_1 or rec.email_address):
+        rec.status = RecordStatus.VALID
+    else:
+        rec.status = "INCOMPLETE"
+
+    rec.identity_hash = V.identity_hash(row_dict)
+    rec.validation_flags = flags
+
+    for audit in changes:
+        db.add(audit)
 
     db.commit()
     db.refresh(rec)

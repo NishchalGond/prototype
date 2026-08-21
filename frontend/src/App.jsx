@@ -15,6 +15,15 @@ export default function App() {
     return localStorage.getItem('datalink_auth') === 'authenticated';
   });
 
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('datalink_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('datalink_theme') || 'dark';
   });
@@ -39,13 +48,20 @@ export default function App() {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  const handleAuthenticate = () => {
+  const handleAuthenticate = (user) => {
     localStorage.setItem('datalink_auth', 'authenticated');
+    if (user) {
+      setCurrentUser(user);
+      localStorage.setItem('datalink_user', JSON.stringify(user));
+    }
     setIsAuthenticated(true);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('datalink_auth');
+    localStorage.removeItem('datalink_token');
+    localStorage.removeItem('datalink_user');
+    setCurrentUser(null);
     setIsAuthenticated(false);
   };
 
@@ -114,6 +130,7 @@ export default function App() {
             theme={theme}
             toggleTheme={toggleTheme}
             onLogout={handleLogout}
+            currentUser={currentUser}
           />
 
           {/* Active View Container */}

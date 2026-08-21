@@ -17,9 +17,11 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))          # make `engine` importable
 
-from backend.app.api import jobs, records                     # noqa: E402
+from backend.app.api import auth, jobs, records              # noqa: E402
 from backend.app.config import settings                       # noqa: E402
-from backend.app.database.session import init_db              # noqa: E402
+from backend.app.database.session import SessionLocal, init_db  # noqa: E402
+from backend.app.models.models import User, UserRole          # noqa: E402
+from backend.app.core.security import hash_password           # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,6 +35,29 @@ log = logging.getLogger("app")
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
+    
+    # Auto-seed default admin if database has no admin
+    db = SessionLocal()
+    try:
+        from sqlalchemy import select
+        has_admin = db.scalar(select(User).where(User.role == UserRole.ADMIN))
+        if not has_admin:
+            admin = User(
+                email="admin@datalink.ae",
+                hashed_password=hash_password("admin321"),
+                full_name="Lead Data Administrator",
+                role=UserRole.ADMIN,
+                is_active=True,
+                can_export=True,
+            )
+            db.add(admin)
+            db.commit()
+            log.info("Initialized default administrator account (admin@datalink.ae / admin321)")
+    except Exception as e:
+        log.warning("Could not auto-seed admin: %s", e)
+    finally:
+        db.close()
+
     log.info("database ready: %s", settings.DATABASE_URL.split("://")[0])
     log.info("batch size=%s grain=%s enrichment=%s",
              settings.BATCH_SIZE, settings.RECORD_GRAIN, settings.ENABLE_ENRICHMENT)
@@ -73,5 +98,6 @@ def health():
     return {"status": "ok", "version": app.version}
 
 
+app.include_router(auth.router, prefix=settings.API_PREFIX, tags=["auth"])
 app.include_router(jobs.router, prefix=settings.API_PREFIX, tags=["jobs"])
 app.include_router(records.router, prefix=settings.API_PREFIX, tags=["records"])
