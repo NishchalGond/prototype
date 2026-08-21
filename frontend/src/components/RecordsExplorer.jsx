@@ -502,39 +502,49 @@ export default function RecordsExplorer({ initialQuery = '' }) {
         </div>
 
         {/* Pagination Footer & Status Color Legend */}
-        <div className="p-3.5 px-5 border-t border-slate-300/80 flex flex-col md:flex-row items-center justify-between gap-3 font-mono text-xs text-slate-600 dark:text-slate-400 bg-[var(--card-bg)]">
+        <div className="p-3.5 px-5 border-t border-slate-300/80 flex flex-col md:flex-row items-center justify-between gap-3 font-mono text-xs bg-[var(--card-bg)]">
           {/* Status Color Legend */}
           <div className="flex flex-wrap items-center gap-4 text-[11px]">
-            <span className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Status Key:</span>
+            <span style={{ color: '#0F172A' }} className="dark:text-slate-200 font-black uppercase tracking-wider text-[11px]">
+              Status Key:
+            </span>
             <div className="flex items-center space-x-1.5" title="Has verified name and contact info (phone or email)">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)] shrink-0" />
-              <span className="text-slate-800 dark:text-slate-200 font-bold">Valid (Outreach Ready)</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)] shrink-0" />
+              <span style={{ color: '#065F46' }} className="dark:text-emerald-300 font-black">
+                Valid (Outreach Ready)
+              </span>
             </div>
             <div className="flex items-center space-x-1.5" title="Matching SHA-256 identity hash across records">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.6)] animate-pulse shrink-0" />
-              <span className="text-amber-800 dark:text-amber-300 font-bold">Duplicate (Preserved)</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.8)] animate-pulse shrink-0" />
+              <span style={{ color: '#92400E' }} className="dark:text-amber-300 font-black">
+                Duplicate (Preserved)
+              </span>
             </div>
             <div className="flex items-center space-x-1.5" title="Property/Owner details exist but phone and email were blank">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 dark:bg-indigo-500 shrink-0" />
-              <span className="text-slate-700 dark:text-slate-300 font-medium">Incomplete (No Contact)</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 dark:bg-indigo-400 shrink-0" />
+              <span style={{ color: '#3730A3' }} className="dark:text-indigo-300 font-black">
+                Incomplete (No Contact)
+              </span>
             </div>
             <div className="flex items-center space-x-1.5" title="Failed critical structural validation">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.6)] shrink-0" />
-              <span className="text-rose-700 dark:text-rose-400 font-medium">Invalid / Error</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.7)] shrink-0" />
+              <span style={{ color: '#9F1239' }} className="dark:text-rose-400 font-black">
+                Invalid / Error
+              </span>
             </div>
           </div>
 
           {/* Page Counter & Controls */}
           <div className="flex items-center space-x-4">
-            <div>
-              Page <strong className="text-slate-900 dark:text-white font-bold">{page}</strong> of{' '}
-              <strong className="text-slate-900 dark:text-white font-bold">{totalPages}</strong> ({totalRecords.toLocaleString()} records)
+            <div style={{ color: '#0F172A' }} className="dark:text-slate-200 font-bold">
+              Page <span className="text-blue-600 dark:text-blue-400 font-black">{page}</span> of{' '}
+              <span className="text-blue-600 dark:text-blue-400 font-black">{totalPages}</span> ({totalRecords.toLocaleString()} records)
             </div>
             <div className="flex items-center space-x-1.5">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="neumorph-button p-2 text-slate-700 dark:text-slate-300 disabled:opacity-30 cursor-pointer"
+                className="neumorph-button p-2 text-slate-900 dark:text-slate-100 disabled:opacity-30 cursor-pointer font-black"
                 title="Previous Page"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -542,7 +552,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="neumorph-button p-2 text-slate-700 dark:text-slate-300 disabled:opacity-30 cursor-pointer"
+                className="neumorph-button p-2 text-slate-900 dark:text-slate-100 disabled:opacity-30 cursor-pointer font-black"
                 title="Next Page"
               >
                 <ChevronRight className="w-4 h-4" />
