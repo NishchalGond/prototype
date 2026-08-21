@@ -82,7 +82,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
       if (community) params.append('community', community);
       if (propertyType) params.append('property_type', propertyType);
       if (bedroom) params.append('bedroom', bedroom);
-      if (status) params.append('record_status', status);
+      if (status) params.append('status', status);
       if (sourceFile) params.append('source_file', sourceFile);
 
       const res = await fetch(`/api/records?${params.toString()}`);

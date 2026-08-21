@@ -105,7 +105,8 @@ def list_records(
     nationality: str | None = None,
     source_file: str | None = None,
     job_id: int | None = None,
-    record_status: str | None = Query(None, alias="status"),
+    status: str | None = None,
+    record_status: str | None = None,
     has_mobile: bool | None = None,
     has_email: bool | None = None,
     sort_by: str = Query("id"),
@@ -117,11 +118,12 @@ def list_records(
     if sort_by not in SORTABLE:
         raise HTTPException(400, f"sort_by must be one of {sorted(SORTABLE)}")
 
+    effective_status = status or record_status
     stmt = _build_records_query(
         q=q, community=community, sub_community=sub_community,
         building_cluster=building_cluster, property_type=property_type,
         bedroom=bedroom, developer=developer, nationality=nationality,
-        source_file=source_file, job_id=job_id, record_status=record_status,
+        source_file=source_file, job_id=job_id, record_status=effective_status,
         has_mobile=has_mobile, has_email=has_email,
     )
 
@@ -150,7 +152,8 @@ def export_records(
     nationality: str | None = None,
     source_file: str | None = None,
     job_id: int | None = None,
-    record_status: str | None = Query(None, alias="status"),
+    status: str | None = None,
+    record_status: str | None = None,
     has_mobile: bool | None = None,
     has_email: bool | None = None,
     sort_by: str = Query("id"),
@@ -167,11 +170,12 @@ def export_records(
     if sort_by not in SORTABLE:
         sort_by = "id"
 
+    effective_status = status or record_status
     stmt = _build_records_query(
         q=q, community=community, sub_community=sub_community,
         building_cluster=building_cluster, property_type=property_type,
         bedroom=bedroom, developer=developer, nationality=nationality,
-        source_file=source_file, job_id=job_id, record_status=record_status,
+        source_file=source_file, job_id=job_id, record_status=effective_status,
         has_mobile=has_mobile, has_email=has_email,
     )
 
