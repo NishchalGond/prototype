@@ -71,19 +71,27 @@ export default function Header({ onRefresh, activeJob, searchQuery, setSearchQue
 
         <div className="h-4 w-[1px] bg-slate-500/20"></div>
 
-        {/* User Profile & Role Badge */}
-        <div className="flex items-center space-x-2.5">
-          <div className="w-9 h-9 rounded-2xl bg-[var(--card-bg)] border border-blue-500/30 flex items-center justify-center text-xs font-black text-blue-600 dark:text-blue-400 neumorph-inset">
+        {/* User Profile & Role Badge Container */}
+        <div className="flex items-center space-x-2.5 px-3 py-1.5 rounded-2xl neumorph-card border border-slate-300/80 dark:border-white/10 shadow-sm">
+          {/* Avatar Icon */}
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-500/40 shadow-inner">
             {initials}
           </div>
+          
+          {/* Name and Role */}
           <div className="hidden md:block text-left">
-            <p className="text-xs font-black leading-tight text-slate-900 dark:text-slate-100">{fullName}</p>
-            <span className={`text-[9px] font-mono font-black uppercase px-1.5 py-0.2 rounded-full border inline-block mt-0.5 ${
+            <p 
+              className="text-xs font-black leading-tight tracking-tight"
+              style={{ color: isDark ? '#F8FAFC' : '#0F172A' }}
+            >
+              {fullName}
+            </p>
+            <span className={`text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded-md border inline-block mt-0.5 tracking-wider shadow-xs ${
               role === 'ADMIN'
-                ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30'
+                ? 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-500/40'
                 : role === 'DATA_PROCESSOR'
-                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
-                : 'bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30'
+                ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-500/40'
+                : 'bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600'
             }`}>
               {role}
             </span>
