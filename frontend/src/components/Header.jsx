@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, RefreshCw, Cloud, Sun, Moon, LogOut, ShieldCheck, Menu } from 'lucide-react';
+import { Search, RefreshCw, Cloud, Sun, Moon, LogOut, ShieldCheck } from 'lucide-react';
 import DataLinkLogo from './DataLinkLogo';
 
 export default function Header({ 
@@ -11,8 +11,7 @@ export default function Header({
   theme, 
   toggleTheme, 
   onLogout, 
-  currentUser,
-  onToggleMobileMenu 
+  currentUser 
 }) {
   const isDark = theme === 'dark';
   const role = currentUser?.role || 'ADMIN';
@@ -20,20 +19,10 @@ export default function Header({
 
   return (
     <header className="h-16 bg-[var(--bg-main)] border-b border-slate-500/20 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-20 shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-colors duration-200">
-      {/* Left: Mobile Hamburger & Search Input */}
+      {/* Left: Search Input */}
       <div className="flex items-center space-x-2 sm:space-x-3 flex-1 max-w-md">
-        {/* Mobile Hamburger Button */}
-        <button
-          onClick={onToggleMobileMenu}
-          className="md:hidden neumorph-button p-2 text-slate-800 dark:text-slate-200 transition-transform active:scale-95 shrink-0"
-          aria-label="Open Navigation Drawer"
-          title="Open Menu"
-        >
-          <Menu className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-        </button>
-
         {/* Debossed Neumorphic Search Input */}
-        <div className="relative w-full max-w-[200px] sm:max-w-xs md:w-80">
+        <div className="relative w-full max-w-[220px] sm:max-w-xs md:w-80">
           <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-600" />
           <input
             type="text"

@@ -28,7 +28,6 @@ export default function App() {
     return localStorage.getItem('datalink_theme') || 'light';
   });
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState(null);
   const [activeJobId, setActiveJobId] = useState(null);
@@ -112,14 +111,12 @@ export default function App() {
 
       {/* Fixed Full Screen Layout */}
       <div className="relative z-10 flex w-full h-full overflow-hidden">
-        {/* Desktop Sidebar & Mobile Drawer */}
+        {/* Desktop Persistent Sidebar */}
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           activeJob={activeJobId ? { id: activeJobId, status: 'RUNNING' } : null}
           theme={theme}
-          mobileOpen={mobileMenuOpen}
-          setMobileOpen={setMobileMenuOpen}
         />
 
         {/* Fixed Content Panel */}
@@ -134,7 +131,6 @@ export default function App() {
             toggleTheme={toggleTheme}
             onLogout={handleLogout}
             currentUser={currentUser}
-            onToggleMobileMenu={() => setMobileMenuOpen((prev) => !prev)}
           />
 
           {/* Active View Container (with bottom padding on mobile for the bottom nav) */}
