@@ -450,7 +450,14 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
                     <FileSpreadsheet className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-bold text-slate-800 truncate max-w-xs sm:max-w-md">{item.name}</p>
+                    <div className="flex items-center space-x-2 flex-wrap">
+                      <p className="font-bold text-slate-800 truncate max-w-xs sm:max-w-md">{item.name}</p>
+                      {item.name.toLowerCase().includes('consolidated') && (
+                        <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-700 text-[10px] font-bold border border-amber-300">
+                          Pre-Consolidated File
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-slate-500">
                       {(item.size / 1024).toFixed(1)} KB | Status: <span className="text-slate-900 font-bold">{item.status}</span>
                       {item.totalRows > 0 && ` | ${item.totalRows.toLocaleString()} rows`}

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ChevronLeft, ChevronRight, X, ArrowUpDown, ArrowUp, ArrowDown, Edit3, Save, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, X, ArrowUpDown, ArrowUp, ArrowDown, Edit3, Save, CheckCircle2, AlertCircle, Download, FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
 import CustomSelect from './CustomSelect';
 
 export default function RecordsExplorer({ initialQuery = '' }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(null); // 'csv' | 'xlsx' | null
   const [search, setSearch] = useState(initialQuery);
   const [community, setCommunity] = useState('');
   const [propertyType, setPropertyType] = useState('');
@@ -171,6 +172,44 @@ export default function RecordsExplorer({ initialQuery = '' }) {
     }
   };
 
+  const handleExport = async (format) => {
+    if (isExporting) return;
+    setIsExporting(format);
+    try {
+      const params = new URLSearchParams({
+        format: format,
+        sort_by: sortBy,
+        sort_dir: sortDir,
+      });
+      if (search) params.append('q', search);
+      if (community) params.append('community', community);
+      if (propertyType) params.append('property_type', propertyType);
+      if (bedroom) params.append('bedroom', bedroom);
+      if (status) params.append('status', status);
+      if (sourceFile) params.append('source_file', sourceFile);
+
+      const res = await fetch(`/api/records/export?${params.toString()}`);
+      if (!res.ok) {
+        throw new Error('Export failed. Please check your query or try again.');
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `datalink_records_export_${new Date().toISOString().slice(0, 10)}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error:', err);
+      alert('Failed to export data: ' + err.message);
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
   return (
     <div className="p-6 h-full w-full max-w-[1450px] mx-auto flex flex-col min-h-0 overflow-hidden space-y-4">
       {/* Top Header & Filter Controls (Fixed, non-scrolling) */}
@@ -181,6 +220,37 @@ export default function RecordsExplorer({ initialQuery = '' }) {
             <p className="text-xs text-slate-600 mt-1 font-medium">
               Search, filter, and inspect normalized records across all ingested builder registers ({totalRecords.toLocaleString()} records). Click any row to view or edit.
             </p>
+          </div>
+
+          {/* Export Action Buttons */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              onClick={() => handleExport('xlsx')}
+              disabled={isExporting !== null}
+              className="neumorph-btn px-4 py-2.5 rounded-2xl flex items-center space-x-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 active:scale-95 transition-all shadow-xs disabled:opacity-50"
+              title="Download filtered records as an Excel spreadsheet (.xlsx)"
+            >
+              {isExporting === 'xlsx' ? (
+                <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+              ) : (
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+              )}
+              <span>{isExporting === 'xlsx' ? 'Exporting Excel...' : 'Export Excel (.xlsx)'}</span>
+            </button>
+
+            <button
+              onClick={() => handleExport('csv')}
+              disabled={isExporting !== null}
+              className="neumorph-btn px-4 py-2.5 rounded-2xl flex items-center space-x-2 text-xs font-bold text-blue-600 hover:text-blue-700 active:scale-95 transition-all shadow-xs disabled:opacity-50"
+              title="Download filtered records as a CSV file (.csv)"
+            >
+              {isExporting === 'csv' ? (
+                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+              ) : (
+                <FileText className="w-4 h-4 text-blue-600" />
+              )}
+              <span>{isExporting === 'csv' ? 'Exporting CSV...' : 'Export CSV (.csv)'}</span>
+            </button>
           </div>
         </div>
 

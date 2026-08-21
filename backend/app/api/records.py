@@ -35,9 +35,8 @@ SEARCHABLE = (Record.name, Record.community, Record.sub_community,
               Record.developer)
 
 
-@router.get("/records", response_model=Page[RecordOut])
-def list_records(
-    q: str | None = Query(None, description="Free-text search across name, location, contact."),
+def _build_records_query(
+    q: str | None = None,
     community: str | None = None,
     sub_community: str | None = None,
     building_cluster: str | None = None,
@@ -47,18 +46,10 @@ def list_records(
     nationality: str | None = None,
     source_file: str | None = None,
     job_id: int | None = None,
-    record_status: str | None = Query(None, alias="status"),
+    record_status: str | None = None,
     has_mobile: bool | None = None,
     has_email: bool | None = None,
-    sort_by: str = Query("id"),
-    sort_dir: str = Query("desc", pattern="^(asc|desc)$"),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(settings.DEFAULT_PAGE_SIZE, ge=1, le=settings.MAX_PAGE_SIZE),
-    db: Session = Depends(get_db),
 ):
-    if sort_by not in SORTABLE:
-        raise HTTPException(400, f"sort_by must be one of {sorted(SORTABLE)}")
-
     stmt = select(Record)
     if q:
         like = f"%{q.strip()}%"
@@ -99,6 +90,41 @@ def list_records(
     elif has_email is False:
         stmt = stmt.where(Record.email_address.is_(None))
 
+    return stmt
+
+
+@router.get("/records", response_model=Page[RecordOut])
+def list_records(
+    q: str | None = Query(None, description="Free-text search across name, location, contact."),
+    community: str | None = None,
+    sub_community: str | None = None,
+    building_cluster: str | None = None,
+    property_type: str | None = None,
+    bedroom: str | None = None,
+    developer: str | None = None,
+    nationality: str | None = None,
+    source_file: str | None = None,
+    job_id: int | None = None,
+    record_status: str | None = Query(None, alias="status"),
+    has_mobile: bool | None = None,
+    has_email: bool | None = None,
+    sort_by: str = Query("id"),
+    sort_dir: str = Query("desc", pattern="^(asc|desc)$"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(settings.DEFAULT_PAGE_SIZE, ge=1, le=settings.MAX_PAGE_SIZE),
+    db: Session = Depends(get_db),
+):
+    if sort_by not in SORTABLE:
+        raise HTTPException(400, f"sort_by must be one of {sorted(SORTABLE)}")
+
+    stmt = _build_records_query(
+        q=q, community=community, sub_community=sub_community,
+        building_cluster=building_cluster, property_type=property_type,
+        bedroom=bedroom, developer=developer, nationality=nationality,
+        source_file=source_file, job_id=job_id, record_status=record_status,
+        has_mobile=has_mobile, has_email=has_email,
+    )
+
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     col = SORTABLE[sort_by]
     order_clause = col.desc().nullslast() if sort_dir == "desc" else col.asc().nullslast()
@@ -109,6 +135,152 @@ def list_records(
         items=[RecordOut.model_validate(r) for r in rows], total=total, page=page,
         page_size=page_size, total_pages=pages, has_next=page < pages, has_prev=page > 1,
     )
+
+
+@router.get("/records/export")
+def export_records(
+    format: str = Query("csv", pattern="^(csv|xlsx)$"),
+    q: str | None = None,
+    community: str | None = None,
+    sub_community: str | None = None,
+    building_cluster: str | None = None,
+    property_type: str | None = None,
+    bedroom: str | None = None,
+    developer: str | None = None,
+    nationality: str | None = None,
+    source_file: str | None = None,
+    job_id: int | None = None,
+    record_status: str | None = Query(None, alias="status"),
+    has_mobile: bool | None = None,
+    has_email: bool | None = None,
+    sort_by: str = Query("id"),
+    sort_dir: str = Query("desc", pattern="^(asc|desc)$"),
+    limit: int = Query(50000, ge=1, le=100000),
+    db: Session = Depends(get_db),
+):
+    """Export filtered dataset to CSV or Excel (.xlsx). Exactly respects active search and filters."""
+    import csv
+    import io
+    from datetime import datetime, timezone
+    from fastapi.responses import StreamingResponse
+
+    if sort_by not in SORTABLE:
+        sort_by = "id"
+
+    stmt = _build_records_query(
+        q=q, community=community, sub_community=sub_community,
+        building_cluster=building_cluster, property_type=property_type,
+        bedroom=bedroom, developer=developer, nationality=nationality,
+        source_file=source_file, job_id=job_id, record_status=record_status,
+        has_mobile=has_mobile, has_email=has_email,
+    )
+
+    col = SORTABLE[sort_by]
+    order_clause = col.desc().nullslast() if sort_dir == "desc" else col.asc().nullslast()
+    stmt = stmt.order_by(order_clause, Record.id.desc()).limit(limit)
+    rows = db.scalars(stmt).all()
+
+    headers = [
+        "Record ID", "Name", "Community", "Sub-Community", "Building / Cluster",
+        "Unit Number", "Plot Number", "Plot Reg. No", "DMNO", "DMsubno",
+        "Bedroom", "Property Type", "Developer", "Project", "Party Type (Buyer/Seller)",
+        "Size (Sq.Ft)", "Procedure Value (AED)",
+        "Mobile 1 (Primary)", "Mobile 2", "Mobile 3", "Email Address",
+        "Nationality", "PI Number", "Status", "Source File", "Record Date",
+    ]
+
+    def extract_row_values(r: Record) -> list:
+        return [
+            r.id,
+            r.name or "",
+            r.community or "",
+            r.sub_community or "",
+            r.building_cluster or "",
+            r.unit_number or "",
+            r.plot_number or "",
+            r.plot_reg_no or "",
+            r.dmno or "",
+            r.dmsubno or "",
+            r.bedroom or "",
+            r.property_type or "",
+            r.developer or "",
+            r.project or "",
+            r.party_type or "",
+            r.size if r.size is not None else "",
+            r.procedure_value if r.procedure_value is not None else "",
+            r.mobile_1 or "",
+            r.mobile_2 or "",
+            r.mobile_3 or "",
+            r.email_address or "",
+            r.nationality or "",
+            r.pi_number or "",
+            r.status or "",
+            r.source_file or "",
+            r.record_date.strftime("%Y-%m-%d") if r.record_date else "",
+        ]
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+
+    if format == "xlsx":
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Datalink Export"
+
+        # Header styling
+        header_fill = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
+        header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+        header_align = Alignment(horizontal="center", vertical="center")
+
+        ws.append(headers)
+        for col_num in range(1, len(headers) + 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = header_align
+
+        # Append data rows
+        for r in rows:
+            ws.append(extract_row_values(r))
+
+        # Auto-adjust column widths
+        for col in ws.columns:
+            max_len = max(len(str(cell.value or "")) for cell in col)
+            col_letter = openpyxl.utils.get_column_letter(col[0].column)
+            ws.column_dimensions[col_letter].width = min(max(max_len + 3, 10), 45)
+
+        ws.freeze_panes = "A2"
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        filename = f"datalink_records_{stamp}.xlsx"
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    else:
+        # CSV Export with UTF-8 BOM for Excel compatibility
+        output = io.StringIO()
+        output.write("\ufeff")  # UTF-8 BOM
+        writer = csv.writer(output)
+        writer.writerow(headers)
+
+        for r in rows:
+            writer.writerow(extract_row_values(r))
+
+        output.seek(0)
+        filename = f"datalink_records_{stamp}.csv"
+        return StreamingResponse(
+            io.BytesIO(output.getvalue().encode("utf-8-sig")),
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
 
 
 @router.get("/records/filters", response_model=FilterOptions)
