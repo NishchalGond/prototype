@@ -58,7 +58,9 @@ export default function RecordsExplorer({ initialQuery = '' }) {
         const data = await res.json();
         setFilterOptions((prev) => ({
           ...prev,
-          communities: data.communities || prev.communities,
+          communities: (data.communities || prev.communities).filter(
+            (c) => c && !c.toLowerCase().includes('owner detail') && !c.toLowerCase().includes('total owner')
+          ),
           property_types: data.property_types || prev.property_types,
           bedroom_types: data.bedrooms || data.bedroom_types || prev.bedroom_types,
           source_files: data.source_files || prev.source_files,
@@ -96,7 +98,9 @@ export default function RecordsExplorer({ initialQuery = '' }) {
 
         if (data.filter_options) {
           setFilterOptions({
-            communities: data.filter_options.communities || [],
+            communities: (data.filter_options.communities || []).filter(
+              (c) => c && !c.toLowerCase().includes('owner detail') && !c.toLowerCase().includes('total owner')
+            ),
             property_types: data.filter_options.property_types || [],
             bedroom_types: data.filter_options.bedrooms || data.filter_options.bedroom_types || [],
             source_files: data.filter_options.source_files || [],

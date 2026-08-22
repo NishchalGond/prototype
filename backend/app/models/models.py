@@ -82,6 +82,7 @@ class RecordStatus:
     VALID = "VALID"
     INVALID = "INVALID"
     DUPLICATE = "DUPLICATE"
+    INCOMPLETE = "INCOMPLETE"
     QUARANTINED = "QUARANTINED"   # parsed but failed a hard business rule
 
 

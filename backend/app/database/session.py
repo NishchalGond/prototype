@@ -53,7 +53,22 @@ if _is_sqlite:
         cur.execute("PRAGMA busy_timeout=60000")
         cur.close()
 
+read_db_url = _clean_url(settings.READ_DATABASE_URL or settings.DATABASE_URL)
+_is_read_sqlite = read_db_url.startswith("sqlite")
+
+read_engine = create_engine(
+    read_db_url,
+    echo=False,
+    future=True,
+    poolclass=NullPool if _is_read_sqlite else None,
+    pool_pre_ping=not _is_read_sqlite,
+    **({} if _is_read_sqlite else {"pool_size": 25, "max_overflow": 50, "pool_timeout": 30}),
+    connect_args={"check_same_thread": False, "timeout": 60}
+    if _is_read_sqlite else {},
+)
+
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+ReadSessionLocal = sessionmaker(bind=read_engine, autoflush=False, expire_on_commit=False)
 
 
 def init_db() -> None:
@@ -62,6 +77,14 @@ def init_db() -> None:
 
 def get_db() -> Iterator[Session]:
     db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def get_read_db() -> Iterator[Session]:
+    db = ReadSessionLocal()
     try:
         yield db
     finally:

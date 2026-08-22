@@ -9,7 +9,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from ..database.session import get_db
+from ..database.session import get_db, get_read_db
 from ..core.security import get_current_user_optional, require_export_permission, require_role
 from ..models.models import (
     ExportAuditLog, ProcessingError, ProcessingJob, Record, RecordEditAudit,
@@ -117,7 +117,7 @@ def list_records(
     sort_dir: str = Query("desc", pattern="^(asc|desc)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(settings.DEFAULT_PAGE_SIZE, ge=1, le=settings.MAX_PAGE_SIZE),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_read_db),
 ):
     if sort_by not in SORTABLE:
         raise HTTPException(400, f"sort_by must be one of {sorted(SORTABLE)}")
@@ -315,15 +315,26 @@ def export_records(
 
 
 @router.get("/records/filters", response_model=FilterOptions)
-def filter_options(db: Session = Depends(get_db)):
+def filter_options(db: Session = Depends(get_read_db)):
     """Distinct values for the dashboard filter dropdowns."""
-    def distinct(col, limit=500):
-        return [v for (v,) in db.execute(
+    def distinct(col, limit=500, is_community=False):
+        raw_vals = [v for (v,) in db.execute(
             select(col).where(col.is_not(None)).distinct().order_by(col).limit(limit)
         ).all() if v]
+        if is_community:
+            valid_comms = []
+            for v in raw_vals:
+                s_low = str(v).lower()
+                if "total owner" in s_low or "owner detail" in s_low or "owners data" in s_low:
+                    continue
+                cleaned = C.clean_community(v)
+                if cleaned and "total owner" not in cleaned.lower() and cleaned not in valid_comms:
+                    valid_comms.append(cleaned)
+            return sorted(valid_comms)
+        return raw_vals
 
     return FilterOptions(
-        communities=distinct(Record.community),
+        communities=distinct(Record.community, is_community=True),
         sub_communities=distinct(Record.sub_community),
         property_types=distinct(Record.property_type),
         bedrooms=distinct(Record.bedroom),
@@ -338,7 +349,7 @@ from ..schemas.schemas import (
 )
 
 @router.get("/records/{record_id}", response_model=RecordOut)
-def get_record(record_id: int, db: Session = Depends(get_db)):
+def get_record(record_id: int, db: Session = Depends(get_read_db)):
     rec = db.get(Record, record_id)
     if not rec:
         raise HTTPException(404, f"Record {record_id} not found.")
@@ -346,7 +357,7 @@ def get_record(record_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/records/{record_id}/audits")
-def get_record_audits(record_id: int, db: Session = Depends(get_db)):
+def get_record_audits(record_id: int, db: Session = Depends(get_read_db)):
     """Retrieve complete audit history for manual edits to this record."""
     audits = db.scalars(
         select(RecordEditAudit)
@@ -439,18 +450,31 @@ def update_record(
     row_dict = {
         "name": rec.name,
         "mobile_1": rec.mobile_1,
+        "mobile_2": rec.mobile_2,
+        "mobile_3": rec.mobile_3,
         "email_address": rec.email_address,
         "community": rec.community,
+        "sub_community": rec.sub_community,
         "building_cluster": rec.building_cluster,
         "unit_number": rec.unit_number,
         "plot_number": rec.plot_number,
         "pi_number": rec.pi_number,
+        "developer": rec.developer,
+        "project": rec.project,
+        "bedroom": rec.bedroom,
+        "procedure_value": rec.procedure_value,
+        "property_type": rec.property_type,
+        "party_type": rec.party_type,
     }
     is_valid, flags = V.validate(row_dict)
-    
+
+    has_property = V.is_valid_property_context(row_dict)
+    has_contact = bool(rec.mobile_1 or rec.email_address)
+    has_name = bool(rec.name and str(rec.name).strip())
+
     if not is_valid:
         rec.status = RecordStatus.INVALID
-    elif rec.name and (rec.mobile_1 or rec.email_address):
+    elif has_name and has_contact and has_property:
         rec.status = RecordStatus.VALID
     else:
         rec.status = "INCOMPLETE"
@@ -468,7 +492,7 @@ def update_record(
 
 # --------------------------------------------------------------------------
 @router.get("/dashboard/stats", response_model=DashboardStats)
-def dashboard_stats(db: Session = Depends(get_db)):
+def dashboard_stats(db: Session = Depends(get_read_db)):
     total_records = db.scalar(select(func.count(Record.id))) or 0
 
     by_status = dict(db.execute(

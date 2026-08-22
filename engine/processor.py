@@ -382,11 +382,12 @@ class Processor:
             if row.get("mobile_1") and row.get("name"):
                 seen_phones[row["mobile_1"]] = {"name": row["name"], "hash": row["identity_hash"]}
 
-            # Check outreach readiness: record must have BOTH name and at least one contact detail (phone or email)
+            # Check outreach readiness: record must have name, contact detail, AND valid property context
             has_name = bool(row.get("name") and str(row.get("name")).strip())
             has_contact = bool(row.get("mobile_1") or row.get("email_address"))
+            has_property = V.is_valid_property_context(row)
 
-            if has_name and has_contact:
+            if has_name and has_contact and has_property:
                 row["status"] = "VALID"
                 result.valid_rows += 1
             else:
@@ -397,6 +398,8 @@ class Processor:
                     flags.append("incomplete_missing_name")
                 elif not has_contact:
                     flags.append("incomplete_missing_contact")
+                elif not has_property:
+                    flags.append("incomplete_missing_property_info")
                 row["validation_flags"] = flags
 
             batch.append(row)

@@ -121,12 +121,63 @@ def identity_hash(row: dict) -> str:
     return hashlib.sha256("|".join(parts).encode("utf8")).hexdigest()
 
 
+def is_valid_property_context(row: dict) -> bool:
+    """A record has valid real estate property context if:
+    1. It has a Unit Number, Plot Number, or PI Number.
+    2. OR it has BOTH a valid Developer AND a valid Community.
+    3. OR it has BOTH a Building/Cluster AND a valid Community.
+    4. OR it has BOTH a Developer AND a Project.
+    """
+    comm = C.clean_community(row.get("community"))
+    dev = C.clean_text(row.get("developer"))
+    unit = C.clean_unit(row.get("unit_number"))
+    plot = C.clean_unit(row.get("plot_number"))
+    pi = C.clean_text(row.get("pi_number"))
+    bldg = C.clean_text(row.get("building_cluster"))
+    proj = C.clean_text(row.get("project"))
+
+    if unit or plot or pi:
+        return True
+    if dev and comm:
+        return True
+    if bldg and comm:
+        return True
+    if dev and proj:
+        return True
+    return False
+
+
+def count_populated_fields(row: dict) -> int:
+    """Count non-null, non-N/A business fields on a record."""
+    fields_to_check = [
+        "name", "mobile_1", "mobile_2", "mobile_3", "email_address",
+        "community", "sub_community", "building_cluster", "unit_number",
+        "plot_number", "bedroom", "procedure_value", "developer", "project",
+        "property_type", "party_type"
+    ]
+    count = 0
+    for f in fields_to_check:
+        val = row.get(f)
+        if val is not None and str(val).strip() != "":
+            if f == "community":
+                comm = C.clean_community(val)
+                if comm:
+                    count += 1
+            else:
+                count += 1
+    return count
+
+
 def validate(row: dict) -> tuple[bool, list[str]]:
     """A record must identify a person OR a property. Both empty = useless."""
     flags: list[str] = []
     has_person = bool(row.get("name") or row.get("mobile_1") or row.get("email_address"))
+
+    comm = C.clean_community(row.get("community"))
+
     has_property = bool(row.get("unit_number") or row.get("plot_number")
-                        or row.get("building_cluster") or row.get("pi_number"))
+                        or row.get("building_cluster") or row.get("pi_number")
+                        or comm or row.get("developer") or row.get("project"))
 
     if not has_person and not has_property:
         return False, ["empty_record"]
@@ -137,3 +188,4 @@ def validate(row: dict) -> tuple[bool, list[str]]:
     if not row.get("mobile_1") and not row.get("email_address"):
         flags.append("uncontactable")
     return True, flags
+

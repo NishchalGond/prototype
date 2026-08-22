@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # before Postgres is installed locally; schema is identical (JSON column
     # maps to JSONB on PG, TEXT on SQLite).
     DATABASE_URL: str = f"sqlite:///{(ROOT / 'prototype.db').as_posix()}"
+    READ_DATABASE_URL: str | None = None
 
     # --- processing -----------------------------------------------------
     BATCH_SIZE: int = 1000

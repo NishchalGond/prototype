@@ -172,7 +172,7 @@ def test_export_audit_logging():
 
 
 # --------------------------------------------------------------------------
-# 5. AGGREGATE ERROR SUMMARY TESTS
+# 5. AGGREGATE ERROR SUMMARY & STATUS CLASSIFICATION TESTS
 # --------------------------------------------------------------------------
 def test_aggregate_error_summary():
     res = client.get("/api/errors/summary")
@@ -180,3 +180,59 @@ def test_aggregate_error_summary():
     data = res.json()
     assert "total_logged_errors" in data
     assert "top_error_codes" in data
+
+
+def test_status_classification_rules():
+    db = SessionLocal()
+    try:
+        # Record with Name & Mobile but NO property details -> INCOMPLETE
+        sparse_rec = Record(
+            name="Sparse Contact",
+            mobile_1="+971501112233",
+            community="Total Owner Details",  # Generic placeholder
+            status=RecordStatus.VALID,
+            identity_hash="test_sparse_hash_001",
+            source_file="test_sheet.xlsx",
+            job_id=1
+        )
+        db.add(sparse_rec)
+        db.commit()
+        db.refresh(sparse_rec)
+
+        # Trigger record update validation via endpoint
+        res1 = client.put(f"/api/records/{sparse_rec.id}", json={"name": "Sparse Contact"})
+        assert res1.status_code == 200
+        assert res1.json()["status"] == "INCOMPLETE"
+
+        # Record WITH property details and 5+ fields -> VALID
+        complete_rec = Record(
+            name="Complete Lead",
+            mobile_1="+971509998877",
+            community="Dubai Hills Estate",
+            building_cluster="The One Hotel",
+            unit_number="1204",
+            status=RecordStatus.INCOMPLETE,
+            identity_hash="test_complete_hash_002",
+            source_file="test_sheet.xlsx",
+            job_id=1
+        )
+        db.add(complete_rec)
+        db.commit()
+        db.refresh(complete_rec)
+
+        res2 = client.put(f"/api/records/{complete_rec.id}", json={"unit_number": "1204"})
+        assert res2.status_code == 200
+        assert res2.json()["status"] == "VALID"
+
+    finally:
+        db.close()
+
+
+def test_total_owner_details_community_cleaning():
+    from engine.cleaning import clean_community
+    assert clean_community("Total Owner Details") is None
+    assert clean_community("OWNER DETAILS") is None
+    assert clean_community("Owners Data") is None
+    assert clean_community("Dubai Hills Estate") == "Dubai Hills Estate"
+
+

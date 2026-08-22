@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 
 # --------------------------------------------------------------------------
 NULL_TOKENS = {"", "-", "--", "—", ".", "..", "n/a", "na", "null", "none", "nil",
-               "#n/a", "unknown", "not available", "0"}
+               "#n/a", "unknown", "not available", "0", "total owner details",
+               "owner details", "owners data", "total owners", "owner detail"}
 
 _ID_PREFIX_RE = re.compile(r"^\[[A-Za-z0-9]+\]\s*")
 _WS_RE = re.compile(r"\s+")
@@ -323,9 +324,17 @@ _COMMUNITY_CANON_MAP = {
 }
 
 
+_COMMUNITY_HEADER_NOISE_RE = re.compile(
+    r"^(total\s+owners?(\s+details)?|owners?\s+details?|owners?\s+data|owner\s+details)(\s*#\d+)?$", re.I
+)
+
+
 def clean_community(v) -> str | None:
     s = clean_text(v)
     if not s:
+        return None
+
+    if _COMMUNITY_HEADER_NOISE_RE.match(s.strip()):
         return None
 
     # Strip trailing plot/sub-location numbers attached to community names (e.g. DAMAC HILLS 1044 -> DAMAC HILLS)
