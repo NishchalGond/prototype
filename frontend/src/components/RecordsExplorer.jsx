@@ -13,8 +13,8 @@ export default function RecordsExplorer({ initialQuery = '' }) {
   const [bedroom, setBedroom] = useState('');
   const [status, setStatus] = useState('');
   const [sourceFile, setSourceFile] = useState('');
-  const [sortBy, setSortBy] = useState('procedure_value');
-  const [sortDir, setSortDir] = useState('desc');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
   const [totalPages, setTotalPages] = useState(1);
@@ -366,12 +366,11 @@ export default function RecordsExplorer({ initialQuery = '' }) {
             <CustomSelect
               value={status}
               onChange={(val) => { setStatus(val); setPage(1); }}
-              placeholder="All Complete Records"
+              placeholder="All Valid Records"
               options={[
-                { label: 'All Complete Records (Default)', value: '' },
-                { label: 'All Valid Records (Outreach-Ready)', value: 'VALID' },
+                { label: 'All Valid Records (Default)', value: '' },
                 { label: 'DUPLICATE Only (Preserved Duplicates)', value: 'DUPLICATE' },
-                { label: 'INCOMPLETE (Missing Columns / Phone)', value: 'INCOMPLETE' },
+                { label: 'INCOMPLETE (Missing Contact / Info)', value: 'INCOMPLETE' },
                 { label: 'ERROR / INVALID Only', value: 'INVALID' },
                 { label: 'Show All (Valid + Duplicates + Incomplete)', value: 'ALL' },
               ]}

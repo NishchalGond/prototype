@@ -93,24 +93,6 @@ def _build_records_query(
         )
     )
 
-    # Complete records filter: all table columns (name, community, building, unit/plot, bedroom, mobile) populated
-    complete_columns_filter = and_(
-        Record.name.is_not(None),
-        Record.name != "",
-        Record.community.is_not(None),
-        Record.community != "",
-        Record.building_cluster.is_not(None),
-        Record.building_cluster != "",
-        or_(
-            and_(Record.unit_number.is_not(None), Record.unit_number != ""),
-            and_(Record.plot_number.is_not(None), Record.plot_number != ""),
-        ),
-        Record.bedroom.is_not(None),
-        Record.bedroom != "",
-        Record.bedroom != "N/A",
-        valid_mobile_filter,
-    )
-
     if record_status:
         st_upper = record_status.upper()
         if st_upper in ("ALL", "ALL_RECORDS", "ALL_WITH_INCOMPLETE", "SHOW_ALL"):
@@ -123,19 +105,16 @@ def _build_records_query(
                     ~valid_mobile_filter,
                 )
             )
-        elif st_upper == "VALID":
+        elif st_upper in ("VALID", "COMPLETE"):
             # All valid records (outreach-ready with standard valid phone)
             stmt = stmt.where(Record.status == "VALID")
             stmt = stmt.where(valid_mobile_filter)
-        elif st_upper == "COMPLETE":
-            stmt = stmt.where(Record.status == "VALID")
-            stmt = stmt.where(complete_columns_filter)
         else:
             stmt = stmt.where(Record.status == st_upper)
     else:
-        # Default: show records which have all data in all columns populated (no N/A values across row)
+        # Default: show all valid outreach-ready records (with verified valid phone)
         stmt = stmt.where(Record.status == "VALID")
-        stmt = stmt.where(complete_columns_filter)
+        stmt = stmt.where(valid_mobile_filter)
 
     if property_type:
         stmt = stmt.where(Record.property_type.ilike(property_type))
