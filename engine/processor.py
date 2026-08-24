@@ -382,9 +382,9 @@ class Processor:
             if row.get("mobile_1") and row.get("name"):
                 seen_phones[row["mobile_1"]] = {"name": row["name"], "hash": row["identity_hash"]}
 
-            # Check outreach readiness: record must have name, contact detail, AND valid property context
+            # Check outreach readiness: record must have name, valid phone contact, AND valid property context
             has_name = bool(row.get("name") and str(row.get("name")).strip())
-            has_contact = bool(row.get("mobile_1") or row.get("email_address"))
+            has_contact = V.is_valid_contact(row)
             has_property = V.is_valid_property_context(row)
 
             if has_name and has_contact and has_property:

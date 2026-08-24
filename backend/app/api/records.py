@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from ..config import settings
@@ -79,13 +79,18 @@ def _build_records_query(
             )
         )
 
-    # Valid phone pattern: +9715X (9 digits), +971 landline (8 digits), or international (10-15 digits)
-    # Excludes truncated numbers like +55240883 or 055240883
-    valid_contact_filter = or_(
-        Record.mobile_1.op("~")("^\\+9715[024568][0-9]{7}$"),
-        Record.mobile_1.op("~")("^\\+971[234679][0-9]{7}$"),
-        Record.mobile_1.op("~")("^\\+[1-9][0-9]{9,14}$"),
-        Record.email_address.is_not(None),
+    # Valid phone pattern: must have non-null, non-N/A mobile_1 that matches valid standard format
+    # Excludes N/A, empty, and truncated numbers like +55240883 or 055240883
+    valid_mobile_filter = and_(
+        Record.mobile_1.is_not(None),
+        Record.mobile_1 != "",
+        Record.mobile_1 != "N/A",
+        Record.mobile_1 != "n/a",
+        or_(
+            Record.mobile_1.op("~")("^\\+9715[024568][0-9]{7}$"),
+            Record.mobile_1.op("~")("^\\+971[234679][0-9]{7}$"),
+            Record.mobile_1.op("~")("^\\+[1-9][0-9]{9,14}$"),
+        )
     )
 
     if record_status:
@@ -97,18 +102,18 @@ def _build_records_query(
                 or_(
                     Record.status == "INCOMPLETE",
                     Record.mobile_1.is_(None),
-                    ~valid_contact_filter
+                    ~valid_mobile_filter,
                 )
             )
         elif st_upper == "VALID":
             stmt = stmt.where(Record.status == "VALID")
-            stmt = stmt.where(valid_contact_filter)
+            stmt = stmt.where(valid_mobile_filter)
         else:
             stmt = stmt.where(Record.status == st_upper)
     else:
-        # Default: show only VALID (outreach-ready with verified standard phone or email)
+        # Default: show only VALID outreach-ready records that have a valid standard mobile number shown
         stmt = stmt.where(Record.status == "VALID")
-        stmt = stmt.where(valid_contact_filter)
+        stmt = stmt.where(valid_mobile_filter)
 
     if property_type:
         stmt = stmt.where(Record.property_type.ilike(property_type))
