@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, ShieldCheck, Plus, Trash2, Tag, Search, Sparkles } from 'lucide-react';
 import Tilt3DCard from './Tilt3DCard';
+import { apiFetch } from '../lib/api';
 
 export default function ColumnMappingInspector() {
   const [mappingData, setMappingData] = useState(null);
@@ -16,7 +17,7 @@ export default function ColumnMappingInspector() {
 
   const fetchMapping = async () => {
     try {
-      const res = await fetch('/api/column-mappings');
+      const res = await apiFetch('/api/column-mappings');
       if (res.ok) {
         const data = await res.json();
         setMappingData(data);
@@ -51,7 +52,7 @@ export default function ColumnMappingInspector() {
 
     setIsSavingAlias(true);
     try {
-      const res = await fetch('/api/column-mappings/alias', {
+      const res = await apiFetch('/api/column-mappings/alias', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target_field: targetField, alias: aliasVal }),
@@ -70,7 +71,7 @@ export default function ColumnMappingInspector() {
 
   const handleRemoveAlias = async (targetField, aliasVal) => {
     try {
-      const res = await fetch('/api/column-mappings/alias', {
+      const res = await apiFetch('/api/column-mappings/alias', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target_field: targetField, alias: aliasVal }),

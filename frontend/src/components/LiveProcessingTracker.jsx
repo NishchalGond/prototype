@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Activity, Terminal, RefreshCw, ArrowRight } from 'lucide-react';
 import Tilt3DCard from './Tilt3DCard';
+import { apiFetch } from '../lib/api';
 
 export default function LiveProcessingTracker({ jobId, onJobCompleted, setActiveTab }) {
   const [jobState, setJobState] = useState(null);
@@ -12,7 +13,7 @@ export default function LiveProcessingTracker({ jobId, onJobCompleted, setActive
 
     const pollInterval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/jobs/${jobId}`);
+        const res = await apiFetch(`/api/jobs/${jobId}`);
         if (res.ok) {
           const data = await res.json();
           setJobState(data);
@@ -42,7 +43,7 @@ export default function LiveProcessingTracker({ jobId, onJobCompleted, setActive
 
   const fetchErrors = async () => {
     try {
-      const res = await fetch(`/api/jobs/${jobId}/errors`);
+      const res = await apiFetch(`/api/jobs/${jobId}/errors`);
       if (res.ok) {
         const data = await res.json();
         setErrorLogs(data.errors || []);

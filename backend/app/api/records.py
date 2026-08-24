@@ -6,11 +6,13 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from ..config import settings
 from ..database.session import get_db, get_read_db
-from ..core.security import get_current_user_optional, require_export_permission, require_role
+from ..core.security import (
+    get_current_user, require_export_permission, require_role,
+)
 from ..models.models import (
     ExportAuditLog, ProcessingError, ProcessingJob, Record, RecordEditAudit,
     RecordStatus, SourceFile, User, UserRole,
@@ -117,6 +119,7 @@ def list_records(
     sort_dir: str = Query("desc", pattern="^(asc|desc)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(settings.DEFAULT_PAGE_SIZE, ge=1, le=settings.MAX_PAGE_SIZE),
+    _user: User = Depends(get_current_user),
     db: Session = Depends(get_read_db),
 ):
     if sort_by not in SORTABLE:
@@ -164,7 +167,7 @@ def export_records(
     sort_dir: str = Query("desc", pattern="^(asc|desc)$"),
     limit: int = Query(50000, ge=1, le=100000),
     request: Request = None,
-    current_user: User | None = Depends(get_current_user_optional),
+    current_user: User = Depends(require_export_permission),
     db: Session = Depends(get_db),
 ):
     """Export filtered dataset to CSV or Excel (.xlsx). Exactly respects active search and filters."""
@@ -188,7 +191,12 @@ def export_records(
     col = SORTABLE[sort_by]
     order_clause = col.desc().nullslast() if sort_dir == "desc" else col.asc().nullslast()
     stmt = stmt.order_by(order_clause, Record.id.desc()).limit(limit)
-    rows = db.scalars(stmt).all()
+
+    # yield_per streams the result in chunks instead of materialising up to
+    # `limit` (100k) ORM objects at once, which was hundreds of MB of resident
+    # memory per concurrent export and the most likely cause of an OOM kill.
+    def iter_rows():
+        yield from db.scalars(stmt.execution_options(yield_per=1000))
 
     headers = [
         "Record ID", "Name", "Community", "Sub-Community", "Building / Cluster",
@@ -234,8 +242,15 @@ def export_records(
     # Record export audit log
     client_ip = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("user-agent", "unknown")
-    user_id = current_user.id if current_user else None
-    user_email = current_user.email if current_user else "anonymous_operator@datalink.local"
+    user_id = current_user.id
+    user_email = current_user.email
+
+    # Written before a single byte leaves, so an aborted or interrupted download
+    # still leaves a record that this data was requested. The row count comes
+    # from a COUNT over the same filtered statement, since the rows themselves
+    # are now streamed rather than materialised.
+    row_count = db.scalar(
+        select(func.count()).select_from(stmt.order_by(None).subquery())) or 0
 
     audit_entry = ExportAuditLog(
         user_id=user_id,
@@ -245,7 +260,7 @@ def export_records(
             "q": q, "community": community, "property_type": property_type,
             "bedroom": bedroom, "developer": developer, "status": effective_status,
         },
-        row_count=len(rows),
+        row_count=row_count,
         ip_address=client_ip,
         user_agent=user_agent,
     )
@@ -254,35 +269,38 @@ def export_records(
 
     if format == "xlsx":
         import openpyxl
-        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.cell import WriteOnlyCell
+        from openpyxl.styles import Alignment, Font, PatternFill
+        from openpyxl.utils import get_column_letter
 
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Datalink Export"
+        # write_only holds one row at a time and spools the rest to a temp file.
+        # An xlsx is a zip archive so it must still be complete before sending,
+        # but peak memory no longer scales with the export size.
+        wb = openpyxl.Workbook(write_only=True)
+        ws = wb.create_sheet("Datalink Export")
 
-        # Header styling
         header_fill = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
         header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
         header_align = Alignment(horizontal="center", vertical="center")
 
-        ws.append(headers)
-        for col_num in range(1, len(headers) + 1):
-            cell = ws.cell(row=1, column=col_num)
+        # In write_only mode column widths must be set before any row is
+        # appended, so they are derived from the header text instead of from a
+        # post-hoc scan of every cell. Same 10..45 clamp as before.
+        for i, h in enumerate(headers, start=1):
+            ws.column_dimensions[get_column_letter(i)].width = min(max(len(h) + 3, 10), 45)
+        ws.freeze_panes = "A2"
+
+        styled_header = []
+        for h in headers:
+            cell = WriteOnlyCell(ws, value=h)
             cell.fill = header_fill
             cell.font = header_font
             cell.alignment = header_align
+            styled_header.append(cell)
+        ws.append(styled_header)
 
-        # Append data rows
-        for r in rows:
+        for r in iter_rows():
             ws.append(extract_row_values(r))
-
-        # Auto-adjust column widths
-        for col in ws.columns:
-            max_len = max(len(str(cell.value or "")) for cell in col)
-            col_letter = openpyxl.utils.get_column_letter(col[0].column)
-            ws.column_dimensions[col_letter].width = min(max(max_len + 3, 10), 45)
-
-        ws.freeze_panes = "A2"
 
         output = io.BytesIO()
         wb.save(output)
@@ -296,26 +314,36 @@ def export_records(
         )
 
     else:
-        # CSV Export with UTF-8 BOM for Excel compatibility
-        output = io.StringIO()
-        output.write("\ufeff")  # UTF-8 BOM
-        writer = csv.writer(output)
-        writer.writerow(headers)
+        # Streamed a chunk at a time: memory stays flat regardless of row count
+        # and the download starts immediately instead of after a full build.
+        # Byte-for-byte the same output as before (BOM, header, same rows).
+        def csv_chunks():
+            buf = io.StringIO()
+            buf.write("\ufeff")  # UTF-8 BOM, keeps Excel happy with UTF-8
+            writer = csv.writer(buf)
+            writer.writerow(headers)
+            for r in iter_rows():
+                writer.writerow(extract_row_values(r))
+                if buf.tell() > 64 * 1024:
+                    yield buf.getvalue().encode("utf-8")
+                    buf.seek(0)
+                    buf.truncate(0)
+            if buf.tell():
+                yield buf.getvalue().encode("utf-8")
 
-        for r in rows:
-            writer.writerow(extract_row_values(r))
-
-        output.seek(0)
         filename = f"datalink_records_{stamp}.csv"
         return StreamingResponse(
-            io.BytesIO(output.getvalue().encode("utf-8-sig")),
+            csv_chunks(),
             media_type="text/csv; charset=utf-8",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
 
 
 @router.get("/records/filters", response_model=FilterOptions)
-def filter_options(db: Session = Depends(get_read_db)):
+def filter_options(
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_read_db),
+):
     """Distinct values for the dashboard filter dropdowns."""
     def distinct(col, limit=500, is_community=False):
         raw_vals = [v for (v,) in db.execute(
@@ -349,7 +377,11 @@ from ..schemas.schemas import (
 )
 
 @router.get("/records/{record_id}", response_model=RecordOut)
-def get_record(record_id: int, db: Session = Depends(get_read_db)):
+def get_record(
+    record_id: int,
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_read_db),
+):
     rec = db.get(Record, record_id)
     if not rec:
         raise HTTPException(404, f"Record {record_id} not found.")
@@ -357,7 +389,11 @@ def get_record(record_id: int, db: Session = Depends(get_read_db)):
 
 
 @router.get("/records/{record_id}/audits")
-def get_record_audits(record_id: int, db: Session = Depends(get_read_db)):
+def get_record_audits(
+    record_id: int,
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_read_db),
+):
     """Retrieve complete audit history for manual edits to this record."""
     audits = db.scalars(
         select(RecordEditAudit)
@@ -382,7 +418,8 @@ def update_record(
     record_id: int,
     body: RecordUpdate,
     request: Request,
-    current_user: User | None = Depends(get_current_user_optional),
+    current_user: User = Depends(
+        require_role([UserRole.ADMIN, UserRole.DATA_PROCESSOR])),
     db: Session = Depends(get_db)
 ):
     """Hardened update endpoint: cleans fields, re-validates, re-hashes, and logs audit trail."""
@@ -390,8 +427,8 @@ def update_record(
     if not rec:
         raise HTTPException(404, f"Record {record_id} not found.")
 
-    user_id = current_user.id if current_user else None
-    user_email = current_user.email if current_user else "lead_operator@datalink.local"
+    user_id = current_user.id
+    user_email = current_user.email
 
     update_data = body.model_dump(exclude_unset=True)
     
@@ -492,7 +529,10 @@ def update_record(
 
 # --------------------------------------------------------------------------
 @router.get("/dashboard/stats", response_model=DashboardStats)
-def dashboard_stats(db: Session = Depends(get_read_db)):
+def dashboard_stats(
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_read_db),
+):
     total_records = db.scalar(select(func.count(Record.id))) or 0
 
     by_status = dict(db.execute(
@@ -507,26 +547,39 @@ def dashboard_stats(db: Session = Depends(get_read_db)):
         .group_by(Record.community).order_by(func.count(Record.id).desc()).limit(10)
     ).all()]
 
+    # Field completeness in a single pass. This used to issue one
+    # `COUNT(*) WHERE col IS NOT NULL` per field -- 17 sequential scans of the
+    # whole records table on every dashboard poll. count(col) already ignores
+    # NULLs, so all 17 collapse into one scan with 17 aggregates.
+    COMPLETENESS_FIELDS = (
+        ("name", Record.name), ("community", Record.community),
+        ("sub_community", Record.sub_community),
+        ("building_cluster", Record.building_cluster),
+        ("unit_number", Record.unit_number), ("size", Record.size),
+        ("bedroom", Record.bedroom), ("mobile_1", Record.mobile_1),
+        ("email_address", Record.email_address), ("developer", Record.developer),
+        ("project", Record.project), ("nationality", Record.nationality),
+        ("property_type", Record.property_type), ("record_date", Record.record_date),
+        ("procedure_value", Record.procedure_value),
+        ("party_type", Record.party_type), ("pi_number", Record.pi_number),
+    )
+
     completeness: dict[str, float] = {}
     if total_records:
-        for label, col in (
-            ("name", Record.name), ("community", Record.community),
-            ("sub_community", Record.sub_community),
-            ("building_cluster", Record.building_cluster),
-            ("unit_number", Record.unit_number), ("size", Record.size),
-            ("bedroom", Record.bedroom), ("mobile_1", Record.mobile_1),
-            ("email_address", Record.email_address), ("developer", Record.developer),
-            ("project", Record.project), ("nationality", Record.nationality),
-            ("property_type", Record.property_type), ("record_date", Record.record_date),
-            ("procedure_value", Record.procedure_value),
-            ("party_type", Record.party_type), ("pi_number", Record.pi_number),
-        ):
-            n = db.scalar(select(func.count()).select_from(Record)
-                          .where(col.is_not(None))) or 0
-            completeness[label] = round(100.0 * n / total_records, 1)
+        counts = db.execute(
+            select(*[func.count(col) for _, col in COMPLETENESS_FIELDS])
+        ).one()
+        completeness = {
+            label: round(100.0 * n / total_records, 1)
+            for (label, _), n in zip(COMPLETENESS_FIELDS, counts)
+        }
 
+    # selectinload: _job_out/JobOut reads job.source_file.filename, which
+    # lazy-loads one SELECT per job without this.
     recent = db.scalars(
-        select(ProcessingJob).order_by(ProcessingJob.id.desc()).limit(10)).all()
+        select(ProcessingJob)
+        .options(selectinload(ProcessingJob.source_file))
+        .order_by(ProcessingJob.id.desc()).limit(10)).all()
     recent_out: list[JobOut] = []
     for j in recent:
         o = JobOut.model_validate(j)
@@ -559,7 +612,7 @@ def dashboard_stats(db: Session = Depends(get_read_db)):
 
 
 @router.get("/column-mappings", response_model=ColumnMappingOut)
-def column_mappings():
+def column_mappings(_user: User = Depends(get_current_user)):
     """Expose the mapping layer so the dashboard can show why a column landed where."""
     from engine.mapping import FIELD_TO_COLUMN
 
@@ -596,7 +649,10 @@ def _sync_alias_files(cfg: dict) -> None:
 
 
 @router.post("/column-mappings/alias", response_model=ColumnMappingOut)
-def add_alias(body: AliasRequest):
+def add_alias(
+    body: AliasRequest,
+    _user: User = Depends(require_role([UserRole.ADMIN])),
+):
     """Add a new custom header alias for a target field and persist permanently."""
     path = Path(__file__).resolve().parents[3] / "engine" / "resources" / "column_mapping.json"
     cfg = json.loads(path.read_text(encoding="utf8"))
@@ -619,7 +675,10 @@ def add_alias(body: AliasRequest):
 
 
 @router.delete("/column-mappings/alias", response_model=ColumnMappingOut)
-def remove_alias(body: AliasRequest):
+def remove_alias(
+    body: AliasRequest,
+    _user: User = Depends(require_role([UserRole.ADMIN])),
+):
     """Remove a custom header alias permanently."""
     path = Path(__file__).resolve().parents[3] / "engine" / "resources" / "column_mapping.json"
     cfg = json.loads(path.read_text(encoding="utf8"))

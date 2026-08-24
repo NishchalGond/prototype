@@ -2,19 +2,21 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import (
     APIRouter, BackgroundTasks, Depends, HTTPException, Query, UploadFile, File, status,
 )
-from sqlalchemy import delete, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy import delete, func, or_, select
+from sqlalchemy.orm import Session, selectinload
 
 from ..config import settings
+from ..core.security import get_current_user, require_role
 from ..database.session import WRITE_LOCK, SessionLocal, get_db
 from ..models.models import (
-    JobStatus, ProcessingError, ProcessingJob, Record, SourceFile,
+    JobSignal, JobStatus, ProcessingError, ProcessingJob, Record, SourceFile,
+    User, UserRole,
 )
 from ..schemas.schemas import (
     JobDetail, JobOut, Page, ProcessingErrorOut, SheetInfoOut, UploadResponse,
@@ -25,6 +27,10 @@ router = APIRouter()
 
 _ALLOWED_SUFFIX = {".xlsx", ".xlsm", ".xls", ".csv"}
 
+# Ingestion is a write path: uploading, starting, pausing and cancelling all
+# change stored data, so viewers get read access only.
+_OPERATOR = require_role([UserRole.ADMIN, UserRole.DATA_PROCESSOR])
+
 
 def _job_out(job: ProcessingJob) -> JobOut:
     data = JobOut.model_validate(job)
@@ -34,7 +40,10 @@ def _job_out(job: ProcessingJob) -> JobOut:
 
 # --------------------------------------------------------------------------
 @router.post("/upload/inspect")
-async def inspect_file_endpoint(file: UploadFile = File(...)):
+async def inspect_file_endpoint(
+    file: UploadFile = File(...),
+    _user: User = Depends(_OPERATOR),
+):
     """Inspect file column headers without registering a job."""
     from engine.inspection import inspect_source
     from engine.mapping import build_plan
@@ -103,6 +112,7 @@ async def upload_file(
     batch_size: int | None = Query(None, ge=1, le=100000),
     autostart: bool = Query(False, description="Begin processing immediately."),
     force: bool = Query(False, description="Re-ingest even if this exact file was already processed."),
+    _user: User = Depends(_OPERATOR),
     db: Session = Depends(get_db),
 ):
     """Accept an Excel/CSV upload, register it, and (by default) start processing."""
@@ -230,6 +240,7 @@ def start_job(
     batch_size: int | None = Query(None, ge=1, le=100000),
     force: bool = Query(False, description="Reprocess even if the job already "
                                            "completed successfully."),
+    _user: User = Depends(_OPERATOR),
     db: Session = Depends(get_db),
 ):
     """Start (or restart) processing.
@@ -260,6 +271,7 @@ def start_job(
     if batch_size:
         job.batch_size = batch_size
     job.status = JobStatus.UPLOADED
+    job.control_signal = None
     job.message = None
     job.valid_rows = job.invalid_rows = job.duplicate_rows = 0
     job.skipped_rows = job.processed_rows = job.error_count = 0
@@ -271,7 +283,12 @@ def start_job(
 
 
 @router.post("/jobs/{job_id}/mapping-overrides")
-def set_mapping_overrides(job_id: int, payload: dict, db: Session = Depends(get_db)):
+def set_mapping_overrides(
+    job_id: int,
+    payload: dict,
+    _user: User = Depends(_OPERATOR),
+    db: Session = Depends(get_db),
+):
     job = db.get(ProcessingJob, job_id)
     if not job:
         raise HTTPException(404, f"Job {job_id} not found")
@@ -284,14 +301,18 @@ def list_jobs(
     status_filter: str | None = Query(None, alias="status"),
     page: int = Query(1, ge=1),
     page_size: int = Query(settings.DEFAULT_PAGE_SIZE, ge=1, le=settings.MAX_PAGE_SIZE),
+    _user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     stmt = select(ProcessingJob)
     if status_filter:
         stmt = stmt.where(ProcessingJob.status == status_filter.upper())
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    # _job_out touches job.source_file; without selectinload a 50-row page
+    # costs 51 queries.
     rows = db.scalars(
-        stmt.order_by(ProcessingJob.id.desc())
+        stmt.options(selectinload(ProcessingJob.source_file))
+        .order_by(ProcessingJob.id.desc())
         .offset((page - 1) * page_size).limit(page_size)
     ).all()
     pages = (total + page_size - 1) // page_size
@@ -302,8 +323,13 @@ def list_jobs(
 
 
 @router.get("/jobs/{job_id}", response_model=JobDetail)
-def get_job(job_id: int, db: Session = Depends(get_db)):
-    job = db.get(ProcessingJob, job_id)
+def get_job(
+    job_id: int,
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    job = db.get(ProcessingJob, job_id,
+                 options=[selectinload(ProcessingJob.source_file)])
     if not job:
         raise HTTPException(404, f"Job {job_id} not found.")
     out = JobDetail.model_validate(job)
@@ -317,6 +343,7 @@ def get_job_errors(
     severity: str | None = Query(None, pattern="^(ERROR|WARNING)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(settings.DEFAULT_PAGE_SIZE, ge=1, le=settings.MAX_PAGE_SIZE),
+    _user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     if not db.get(ProcessingJob, job_id):
@@ -337,7 +364,11 @@ def get_job_errors(
 
 
 @router.get("/jobs/{job_id}/errors/aggregate")
-def get_job_errors_aggregate(job_id: int, db: Session = Depends(get_db)):
+def get_job_errors_aggregate(
+    job_id: int,
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Aggregate error code and sheet breakdowns to diagnose systematic mapping issues."""
     job = db.get(ProcessingJob, job_id)
     if not job:
@@ -384,7 +415,10 @@ def get_job_errors_aggregate(job_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/errors/summary")
-def get_global_errors_summary(db: Session = Depends(get_db)):
+def get_global_errors_summary(
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Global error summary across all ingested datasets to identify common column mismatches."""
     by_code = dict(
         db.execute(
@@ -400,48 +434,98 @@ def get_global_errors_summary(db: Session = Depends(get_db)):
 
 
 # --------------------------------------------------------------------------
-JOB_SIGNALS: dict[int, str] = {}
+# Job control
+#
+# Signals live on the job row, not in process memory. A dict only reaches the
+# worker when the control request happens to be served by the same process that
+# is running the job -- with more than one uvicorn worker that is a coin flip,
+# and it is always lost on restart.
+# --------------------------------------------------------------------------
+def _signal(job_id: int, signal: str, new_status: str, db: Session) -> ProcessingJob:
+    job = db.get(ProcessingJob, job_id)
+    if not job:
+        raise HTTPException(404, f"Job {job_id} not found.")
+    if job.status in JobStatus.TERMINAL:
+        raise HTTPException(
+            409, f"Job {job_id} is already {job.status} and cannot be {signal.lower()}d.")
+    job.control_signal = signal
+    job.status = new_status
+    if signal == JobSignal.CANCEL:
+        job.message = "Job cancelled by user."
+        job.finished_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(job)
+    return job
 
 
 @router.post("/jobs/{job_id}/pause", response_model=JobOut)
-def pause_job(job_id: int, db: Session = Depends(get_db)):
+def pause_job(
+    job_id: int,
+    _user: User = Depends(_OPERATOR),
+    db: Session = Depends(get_db),
+):
     """Pause an actively running processing job."""
-    job = db.get(ProcessingJob, job_id)
-    if not job:
-        raise HTTPException(404, f"Job {job_id} not found.")
-    JOB_SIGNALS[job_id] = "PAUSE"
-    job.status = JobStatus.PAUSED
-    db.commit()
-    db.refresh(job)
-    return _job_out(job)
+    return _job_out(_signal(job_id, JobSignal.PAUSE, JobStatus.PAUSED, db))
 
 
 @router.post("/jobs/{job_id}/resume", response_model=JobOut)
-def resume_job(job_id: int, db: Session = Depends(get_db)):
+def resume_job(
+    job_id: int,
+    _user: User = Depends(_OPERATOR),
+    db: Session = Depends(get_db),
+):
     """Resume a paused processing job."""
-    job = db.get(ProcessingJob, job_id)
-    if not job:
-        raise HTTPException(404, f"Job {job_id} not found.")
-    JOB_SIGNALS[job_id] = "RESUME"
-    job.status = JobStatus.PROCESSING
-    db.commit()
-    db.refresh(job)
-    return _job_out(job)
+    return _job_out(_signal(job_id, JobSignal.RESUME, JobStatus.PROCESSING, db))
 
 
 @router.post("/jobs/{job_id}/cancel", response_model=JobOut)
-def cancel_job(job_id: int, db: Session = Depends(get_db)):
+def cancel_job(
+    job_id: int,
+    _user: User = Depends(_OPERATOR),
+    db: Session = Depends(get_db),
+):
     """Cancel a running or paused processing job."""
-    job = db.get(ProcessingJob, job_id)
-    if not job:
-        raise HTTPException(404, f"Job {job_id} not found.")
-    JOB_SIGNALS[job_id] = "CANCEL"
-    job.status = JobStatus.CANCELLED
-    job.message = "Job cancelled by user."
-    job.finished_at = datetime.now(timezone.utc)
-    db.commit()
-    db.refresh(job)
-    return _job_out(job)
+    return _job_out(_signal(job_id, JobSignal.CANCEL, JobStatus.CANCELLED, db))
+
+
+def reap_stale_jobs() -> int:
+    """Fail jobs whose worker is gone. Called once at startup.
+
+    A redeploy, OOM kill or crash leaves rows in an ACTIVE status with nothing
+    left to advance them; the dashboard then polls a job that will never move
+    again. Anything whose heartbeat predates the cutoff is closed out as FAILED
+    so the state is at least truthful.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=settings.JOB_STALE_MINUTES)
+    db = SessionLocal()
+    try:
+        stale = db.scalars(
+            select(ProcessingJob).where(
+                ProcessingJob.status.in_(JobStatus.ACTIVE),
+                or_(ProcessingJob.heartbeat_at.is_(None),
+                    ProcessingJob.heartbeat_at < cutoff),
+            )
+        ).all()
+        for job in stale:
+            job.status = JobStatus.FAILED
+            job.control_signal = None
+            job.finished_at = datetime.now(timezone.utc)
+            job.message = (
+                "Processing stopped unexpectedly (the worker did not report in "
+                f"for over {settings.JOB_STALE_MINUTES} minutes, usually a restart "
+                "or a crash). Start the job again to reprocess it."
+            )
+            job.error_count = (job.error_count or 0) + 1
+            db.add(ProcessingError(job_id=job.id, severity="ERROR",
+                                   code="WORKER_LOST",
+                                   message="Job abandoned by a stopped worker."))
+        if stale:
+            db.commit()
+            log.warning("reaped %d stale job(s): %s",
+                        len(stale), [j.id for j in stale])
+        return len(stale)
+    finally:
+        db.close()
 
 
 # --------------------------------------------------------------------------
@@ -453,7 +537,6 @@ def run_job(job_id: int) -> None:
     from engine.detection import UnreadableFile
     from engine.processor import Processor
 
-    JOB_SIGNALS[job_id] = "RUN"
     db = SessionLocal()
     try:
         job = db.get(ProcessingJob, job_id)
@@ -462,8 +545,25 @@ def run_job(job_id: int) -> None:
         src = db.get(SourceFile, job.source_file_id)
         job.status = JobStatus.READING
         job.started_at = datetime.now(timezone.utc)
+        job.heartbeat_at = datetime.now(timezone.utc)
+        job.control_signal = None
         job.progress_percent = 0.0
         db.commit()
+
+        def read_signal() -> str | None:
+            """Current control request, read fresh from the row.
+
+            Deliberately a narrow SELECT rather than db.refresh(job): the job
+            object is mid-transaction with counters the worker owns, and
+            refreshing it would clobber them with stale values.
+            """
+            return db.scalar(select(ProcessingJob.control_signal)
+                             .where(ProcessingJob.id == job_id))
+
+        def clear_signal() -> None:
+            db.query(ProcessingJob).filter(ProcessingJob.id == job_id).update(
+                {ProcessingJob.control_signal: None})
+            db.commit()
 
         processor = Processor(
             batch_size=job.batch_size or settings.BATCH_SIZE,
@@ -474,14 +574,20 @@ def run_job(job_id: int) -> None:
 
         def on_batch(rows: list[dict]) -> int:
             """One transaction per batch: a failure rolls back only this batch."""
-            sig = JOB_SIGNALS.get(job_id)
-            if sig == "CANCEL":
+            sig = read_signal()
+            if sig == JobSignal.CANCEL:
                 raise InterruptedError("Job cancelled by user.")
-            while sig == "PAUSE":
+            while sig == JobSignal.PAUSE:
                 time.sleep(0.5)
-                sig = JOB_SIGNALS.get(job_id)
-                if sig == "CANCEL":
+                # keep reporting in, so a paused job is not mistaken for a dead one
+                db.query(ProcessingJob).filter(ProcessingJob.id == job_id).update(
+                    {ProcessingJob.heartbeat_at: datetime.now(timezone.utc)})
+                db.commit()
+                sig = read_signal()
+                if sig == JobSignal.CANCEL:
                     raise InterruptedError("Job cancelled by user.")
+            if sig == JobSignal.RESUME:
+                clear_signal()
 
             for r in rows:
                 r["job_id"] = job_id
@@ -495,11 +601,12 @@ def run_job(job_id: int) -> None:
             return len(rows)
 
         def on_progress(res, sheet_name: str) -> None:
-            sig = JOB_SIGNALS.get(job_id)
-            if sig == "CANCEL":
+            sig = read_signal()
+            if sig == JobSignal.CANCEL:
                 raise InterruptedError("Job cancelled by user.")
 
-            job.status = JobStatus.PAUSED if sig == "PAUSE" else JobStatus.PROCESSING
+            job.heartbeat_at = datetime.now(timezone.utc)
+            job.status = JobStatus.PAUSED if sig == JobSignal.PAUSE else JobStatus.PROCESSING
             job.current_sheet = sheet_name
             job.total_rows = res.total_rows
             job.processed_rows = res.processed_rows
@@ -543,6 +650,7 @@ def run_job(job_id: int) -> None:
                       if (hard or job.invalid_rows) else JobStatus.COMPLETED)
         job.finished_at = datetime.now(timezone.utc)
         job.current_sheet = None
+        job.control_signal = None
         db.commit()
 
     except InterruptedError as exc:
@@ -552,6 +660,7 @@ def run_job(job_id: int) -> None:
             job.status = JobStatus.CANCELLED
             job.message = "Job stopped by user."
             job.finished_at = datetime.now(timezone.utc)
+            job.control_signal = None
             db.commit()
     except UnreadableFile as exc:
         db.rollback()
@@ -560,6 +669,7 @@ def run_job(job_id: int) -> None:
             job.status = JobStatus.FAILED
             job.message = str(exc)
             job.finished_at = datetime.now(timezone.utc)
+            job.control_signal = None
             job.error_count = (job.error_count or 0) + 1
             db.add(ProcessingError(job_id=job_id, severity="ERROR",
                                    code="UNREADABLE_FILE", message=str(exc)))
@@ -572,10 +682,10 @@ def run_job(job_id: int) -> None:
             job.status = JobStatus.FAILED
             job.message = f"{type(exc).__name__}: {exc}"
             job.finished_at = datetime.now(timezone.utc)
+            job.control_signal = None
             job.error_count = (job.error_count or 0) + 1
             db.add(ProcessingError(job_id=job_id, severity="ERROR",
                                    code="JOB_CRASHED", message=str(exc)[:2000]))
             db.commit()
     finally:
-        JOB_SIGNALS.pop(job_id, None)
         db.close()

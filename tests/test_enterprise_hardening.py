@@ -6,6 +6,10 @@ Tests:
 3. Hardened PUT /api/records/{id} with re-cleaning, re-validation, and audit logging.
 4. Export audit logging.
 5. Ingestion error aggregate analysis.
+
+All /api routes except /api/auth/login now require a Bearer token, so the
+request helpers below attach an admin one. Tests that previously called these
+endpoints anonymously were asserting behaviour that no longer exists.
 """
 import pytest
 from fastapi.testclient import TestClient
@@ -19,11 +23,38 @@ from engine.dedup import calculate_name_similarity, normalize_name_tokens, extra
 
 client = TestClient(app)
 
+TEST_ADMIN_EMAIL = "pytest-admin@datalink.ae"
+TEST_ADMIN_PASSWORD = "pytest-admin-pw-2026"
+
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_database():
-    """Ensure database tables are initialized."""
+    """Ensure database tables exist and a known admin is available."""
     init_db()
+    db = SessionLocal()
+    try:
+        existing = db.scalar(select(User).where(User.email == TEST_ADMIN_EMAIL))
+        if not existing:
+            db.add(User(
+                email=TEST_ADMIN_EMAIL,
+                hashed_password=hash_password(TEST_ADMIN_PASSWORD),
+                full_name="Pytest Administrator",
+                role=UserRole.ADMIN,
+                is_active=True,
+                can_export=True,
+            ))
+            db.commit()
+    finally:
+        db.close()
+
+
+@pytest.fixture(scope="module")
+def auth_headers(setup_database):
+    """Bearer header for an admin, used by every authenticated request below."""
+    res = client.post("/api/auth/login",
+                      json={"email": TEST_ADMIN_EMAIL, "password": TEST_ADMIN_PASSWORD})
+    assert res.status_code == 200, res.text
+    return {"Authorization": f"Bearer {res.json()['access_token']}"}
 
 
 # --------------------------------------------------------------------------
@@ -47,28 +78,51 @@ def test_jwt_token_lifecycle():
     assert decoded["role"] == "ADMIN"
 
 
-def test_admin_seed_and_login():
-    # Trigger admin seed endpoint
-    seed_res = client.post("/api/auth/seed-admin")
-    assert seed_res.status_code == 200
-
-    # Login with valid admin credentials
+def test_admin_login(setup_database):
     login_res = client.post(
         "/api/auth/login",
-        json={"email": "admin@datalink.ae", "password": "admin321"}
+        json={"email": TEST_ADMIN_EMAIL, "password": TEST_ADMIN_PASSWORD}
     )
     assert login_res.status_code == 200
     token_data = login_res.json()
     assert "access_token" in token_data
-    assert token_data["user"]["email"] == "admin@datalink.ae"
+    assert token_data["user"]["email"] == TEST_ADMIN_EMAIL
     assert token_data["user"]["role"] == "ADMIN"
 
     # Login with invalid password
     bad_login = client.post(
         "/api/auth/login",
-        json={"email": "admin@datalink.ae", "password": "wrong_password"}
+        json={"email": TEST_ADMIN_EMAIL, "password": "wrong_password"}
     )
     assert bad_login.status_code == 401
+
+
+def test_public_seed_admin_endpoint_is_gone():
+    """It created an ADMIN and returned the password to any caller."""
+    assert client.post("/api/auth/seed-admin").status_code == 404
+
+
+def test_data_endpoints_reject_anonymous_callers():
+    """The records API holds owner names, phone numbers and emails."""
+    for method, path in (
+        ("get", "/api/records"),
+        ("get", "/api/records/export"),
+        ("get", "/api/dashboard/stats"),
+        ("get", "/api/records/filters"),
+        ("get", "/api/jobs"),
+        ("get", "/api/column-mappings"),
+    ):
+        res = getattr(client, method)(path)
+        assert res.status_code == 401, f"{method.upper()} {path} -> {res.status_code}"
+
+
+def test_tokens_signed_with_the_old_hardcoded_key_are_rejected():
+    import jwt
+    forged = jwt.encode({"sub": "1", "role": "ADMIN"},
+                        "datalink-enterprise-jwt-super-secret-key-2026",
+                        algorithm="HS256")
+    res = client.get("/api/auth/me", headers={"Authorization": f"Bearer {forged}"})
+    assert res.status_code == 401
 
 
 # --------------------------------------------------------------------------
@@ -101,7 +155,7 @@ def test_property_key_extraction():
 # --------------------------------------------------------------------------
 # 3. RECORD UPDATE & AUDIT TRAIL TESTS
 # --------------------------------------------------------------------------
-def test_hardened_record_update_and_audit():
+def test_hardened_record_update_and_audit(auth_headers):
     db = SessionLocal()
     try:
         # Create a test record
@@ -126,7 +180,7 @@ def test_hardened_record_update_and_audit():
             "mobile_1": "050-999-8877", # Should be cleaned to +971509998877
             "bedroom": "2 BR"
         }
-        res = client.put(f"/api/records/{rec_id}", json=update_payload)
+        res = client.put(f"/api/records/{rec_id}", json=update_payload, headers=auth_headers)
         assert res.status_code == 200
         updated = res.json()
         assert updated["name"] == "Jonathan Doe"
@@ -134,7 +188,7 @@ def test_hardened_record_update_and_audit():
         assert updated["bedroom"] == "2 BR"
 
         # Check audit log trail
-        audits_res = client.get(f"/api/records/{rec_id}/audits")
+        audits_res = client.get(f"/api/records/{rec_id}/audits", headers=auth_headers)
         assert audits_res.status_code == 200
         audits = audits_res.json()
         assert len(audits) >= 2 # name and mobile_1 changed
@@ -150,7 +204,7 @@ def test_hardened_record_update_and_audit():
 # --------------------------------------------------------------------------
 # 4. EXPORT AUDIT LOGGING TESTS
 # --------------------------------------------------------------------------
-def test_export_audit_logging():
+def test_export_audit_logging(auth_headers):
     db = SessionLocal()
     try:
         initial_count = db.scalar(select(func.count(ExportAuditLog.id))) or 0
@@ -158,7 +212,7 @@ def test_export_audit_logging():
         db.close()
 
     # Trigger a CSV export
-    res = client.get("/api/records/export?format=csv&limit=10")
+    res = client.get("/api/records/export?format=csv&limit=10", headers=auth_headers)
     assert res.status_code == 200
 
     db = SessionLocal()
@@ -174,15 +228,15 @@ def test_export_audit_logging():
 # --------------------------------------------------------------------------
 # 5. AGGREGATE ERROR SUMMARY & STATUS CLASSIFICATION TESTS
 # --------------------------------------------------------------------------
-def test_aggregate_error_summary():
-    res = client.get("/api/errors/summary")
+def test_aggregate_error_summary(auth_headers):
+    res = client.get("/api/errors/summary", headers=auth_headers)
     assert res.status_code == 200
     data = res.json()
     assert "total_logged_errors" in data
     assert "top_error_codes" in data
 
 
-def test_status_classification_rules():
+def test_status_classification_rules(auth_headers):
     db = SessionLocal()
     try:
         # Record with Name & Mobile but NO property details -> INCOMPLETE
@@ -200,7 +254,8 @@ def test_status_classification_rules():
         db.refresh(sparse_rec)
 
         # Trigger record update validation via endpoint
-        res1 = client.put(f"/api/records/{sparse_rec.id}", json={"name": "Sparse Contact"})
+        res1 = client.put(f"/api/records/{sparse_rec.id}", json={"name": "Sparse Contact"},
+                          headers=auth_headers)
         assert res1.status_code == 200
         assert res1.json()["status"] == "INCOMPLETE"
 
@@ -220,7 +275,8 @@ def test_status_classification_rules():
         db.commit()
         db.refresh(complete_rec)
 
-        res2 = client.put(f"/api/records/{complete_rec.id}", json={"unit_number": "1204"})
+        res2 = client.put(f"/api/records/{complete_rec.id}", json={"unit_number": "1204"},
+                          headers=auth_headers)
         assert res2.status_code == 200
         assert res2.json()["status"] == "VALID"
 
