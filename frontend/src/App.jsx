@@ -9,6 +9,7 @@ import JobDetailsView from './components/JobDetailsView';
 import ColumnMappingInspector from './components/ColumnMappingInspector';
 import Spatial3DCanvas from './components/Spatial3DCanvas';
 import AuthLockScreen from './components/AuthLockScreen';
+import { apiFetch, clearSession } from './lib/api';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -58,12 +59,22 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('datalink_auth');
-    localStorage.removeItem('datalink_token');
-    localStorage.removeItem('datalink_user');
+    clearSession();
     setCurrentUser(null);
     setIsAuthenticated(false);
   };
+
+  // apiFetch emits this when the API rejects the token (expired, revoked, or
+  // the user was deactivated). Without it a stale session keeps rendering the
+  // dashboard shell while every request underneath it fails.
+  useEffect(() => {
+    const onUnauthorized = () => {
+      setCurrentUser(null);
+      setIsAuthenticated(false);
+    };
+    window.addEventListener('datalink:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('datalink:unauthorized', onUnauthorized);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -73,7 +84,7 @@ export default function App() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('/api/dashboard/stats');
+      const res = await apiFetch('/api/dashboard/stats');
       if (res.ok) {
         const data = await res.json();
         setStats(data);

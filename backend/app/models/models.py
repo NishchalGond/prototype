@@ -77,6 +77,26 @@ class JobStatus:
     ALL = (UPLOADED, READING, PROCESSING, VALIDATING, SAVING, PAUSED, CANCELLED,
            COMPLETED, COMPLETED_WITH_ERRORS, FAILED)
 
+    # States that imply a worker should be actively advancing the job. A row
+    # sitting in one of these with a stale heartbeat means its worker died.
+    ACTIVE = (READING, PROCESSING, VALIDATING, SAVING, PAUSED)
+
+    # Terminal states: no worker will touch these again.
+    TERMINAL = (CANCELLED, COMPLETED, COMPLETED_WITH_ERRORS, FAILED)
+
+
+class JobSignal:
+    """Out-of-band control requests, stored on the job row.
+
+    Previously these lived in a module-level dict, which only worked when the
+    request that set the signal happened to land on the same process running
+    the job. Persisting them means pause/cancel behave identically with any
+    number of workers, and survive a restart.
+    """
+    PAUSE = "PAUSE"
+    RESUME = "RESUME"
+    CANCEL = "CANCEL"
+
 
 class RecordStatus:
     VALID = "VALID"
@@ -123,6 +143,14 @@ class ProcessingJob(Base):
 
     # what the mapper decided, surfaced so the UI can show provenance
     mapping_report: Mapped[dict | None] = mapped_column(JSON)
+
+    # Pause/resume/cancel requested by an operator; read by the worker between
+    # batches. NULL means "no pending request".
+    control_signal: Mapped[str | None] = mapped_column(String(16))
+
+    # Touched by the worker on every progress tick. The startup reaper uses it
+    # to tell a genuinely running job from one whose process is gone.
+    heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -188,7 +216,11 @@ class Record(Base):
     project: Mapped[str | None] = mapped_column(String(255), index=True)
 
     # --- provenance ------------------------------------------------------
-    job_id: Mapped[int] = mapped_column(ForeignKey("processing_jobs.id"), index=True)
+    # ON DELETE CASCADE: ProcessingError already cascaded, Record did not, so
+    # deleting a job left its rows behind pointing at a job id that no longer
+    # exists.
+    job_id: Mapped[int] = mapped_column(
+        ForeignKey("processing_jobs.id", ondelete="CASCADE"), index=True)
     source_file: Mapped[str] = mapped_column(String(512), index=True)
     source_sheet: Mapped[str | None] = mapped_column(String(255))
     source_row: Mapped[int | None] = mapped_column(Integer)
@@ -208,4 +240,9 @@ class Record(Base):
     __table_args__ = (
         Index("ix_records_location", "community", "building_cluster", "unit_number"),
         Index("ix_records_job_status", "job_id", "status"),
+        # run_job preloads every identity_hash already stored for the file it is
+        # about to ingest; without this the lookup scans the whole table.
+        # Deliberately NOT unique: the pipeline records DUPLICATE-status rows on
+        # purpose, and a unique constraint would reject them at insert.
+        Index("ix_records_sourcefile_identity", "source_file", "identity_hash"),
     )

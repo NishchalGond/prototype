@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, RefreshCw, Activity } from 'lucide-react';
 import Tilt3DCard from './Tilt3DCard';
+import { apiFetch } from '../lib/api';
 
 export default function JobDetailsView({ selectedJobId, setSelectedJobId }) {
   const [jobs, setJobs] = useState([]);
@@ -20,7 +21,7 @@ export default function JobDetailsView({ selectedJobId, setSelectedJobId }) {
 
   const fetchJobsList = async () => {
     try {
-      const res = await fetch('/api/jobs');
+      const res = await apiFetch('/api/jobs');
       if (res.ok) {
         const data = await res.json();
         const jobList = data.items || data.jobs || [];
@@ -38,8 +39,8 @@ export default function JobDetailsView({ selectedJobId, setSelectedJobId }) {
     setLoading(true);
     try {
       const [statusRes, errorRes] = await Promise.all([
-        fetch(`/api/jobs/${jobId}`),
-        fetch(`/api/jobs/${jobId}/errors`)
+        apiFetch(`/api/jobs/${jobId}`),
+        apiFetch(`/api/jobs/${jobId}/errors`)
       ]);
 
       if (statusRes.ok) {

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import Tilt3DCard from './Tilt3DCard';
 import CustomSelect from './CustomSelect';
+import { apiFetch } from '../lib/api';
 
 export default function UploadSection({ onUploadComplete, activeJob }) {
   const [fileQueue, setFileQueue] = useState([]);
@@ -63,7 +64,7 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
 
   const fetchMappingSchema = async () => {
     try {
-      const res = await fetch('/api/column-mappings');
+      const res = await apiFetch('/api/column-mappings');
       if (res.ok) {
         const data = await res.json();
         setTargetFieldsList(data.target_fields || []);
@@ -214,7 +215,7 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
     const formData = new FormData();
     formData.append('file', item.file);
 
-    const res = await fetch('/api/upload/inspect', {
+    const res = await apiFetch('/api/upload/inspect', {
       method: 'POST',
       body: formData,
     });
@@ -296,7 +297,7 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
       const formData = new FormData();
       formData.append('file', queueItem.file);
 
-      const uploadRes = await fetch(`/api/upload?batch_size=${batchSize}`, {
+      const uploadRes = await apiFetch(`/api/upload?batch_size=${batchSize}`, {
         method: 'POST',
         body: formData,
       });
@@ -314,14 +315,14 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
       );
 
       if (Object.keys(columnOverrides).length > 0 && selectedFileForRemap?.id === queueItem.id) {
-        await fetch(`/api/jobs/${jobId}/mapping-overrides`, {
+        await apiFetch(`/api/jobs/${jobId}/mapping-overrides`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ overrides: columnOverrides }),
         });
       }
 
-      const startRes = await fetch(`/api/jobs/${jobId}/start`, { method: 'POST' });
+      const startRes = await apiFetch(`/api/jobs/${jobId}/start`, { method: 'POST' });
       if (!startRes.ok) {
         const errData = await startRes.json();
         throw new Error(errData.detail || 'Failed to start processing job');
@@ -330,7 +331,7 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
       let isFinished = false;
       while (!isFinished) {
         await new Promise((r) => setTimeout(r, 1000));
-        const statusRes = await fetch(`/api/jobs/${jobId}`);
+        const statusRes = await apiFetch(`/api/jobs/${jobId}`);
         if (statusRes.ok) {
           const sData = await statusRes.json();
           setFileQueue((prev) =>
@@ -393,7 +394,7 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
   const handlePauseJob = async (jobId) => {
     if (!jobId) return;
     try {
-      await fetch(`/api/jobs/${jobId}/pause`, { method: 'POST' });
+      await apiFetch(`/api/jobs/${jobId}/pause`, { method: 'POST' });
       setFileQueue((prev) =>
         prev.map((f) => (f.jobId === jobId ? { ...f, status: 'PAUSED' } : f))
       );
@@ -405,7 +406,7 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
   const handleResumeJob = async (jobId) => {
     if (!jobId) return;
     try {
-      await fetch(`/api/jobs/${jobId}/resume`, { method: 'POST' });
+      await apiFetch(`/api/jobs/${jobId}/resume`, { method: 'POST' });
       setFileQueue((prev) =>
         prev.map((f) => (f.jobId === jobId ? { ...f, status: 'PROCESSING' } : f))
       );
@@ -417,7 +418,7 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
   const handleCancelJob = async (jobId) => {
     if (!jobId) return;
     try {
-      await fetch(`/api/jobs/${jobId}/cancel`, { method: 'POST' });
+      await apiFetch(`/api/jobs/${jobId}/cancel`, { method: 'POST' });
       setFileQueue((prev) =>
         prev.map((f) => (f.jobId === jobId ? { ...f, status: 'CANCELLED', error: 'Job stopped by user' } : f))
       );

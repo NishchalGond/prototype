@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, KeyRound, ShieldCheck, Sun, Moon, ArrowRight, Sparkles, Mail, UserCheck } from 'lucide-react';
 import DataLinkLogo from './DataLinkLogo';
+import { setSession } from '../lib/api';
 
 export default function AuthLockScreen({ onAuthenticate, theme, toggleTheme }) {
-  const [email, setEmail] = useState('admin@datalink.ae');
-  const [password, setPassword] = useState('admin321');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isShaking, setIsShaking] = useState(false);
@@ -20,20 +21,16 @@ export default function AuthLockScreen({ onAuthenticate, theme, toggleTheme }) {
     setIsLoading(true);
     setError('');
 
-    const effectivePassword = (password === 'dev123') ? 'admin321' : password;
-
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password: effectivePassword })
+        body: JSON.stringify({ email: email.trim(), password })
       });
 
       if (res.ok) {
         const data = await res.json();
-        localStorage.setItem('datalink_token', data.access_token);
-        localStorage.setItem('datalink_user', JSON.stringify(data.user));
-        localStorage.setItem('datalink_auth', 'authenticated');
+        setSession(data.access_token, data.user);
         onAuthenticate(data.user);
       } else {
         const err = await res.json().catch(() => ({}));
@@ -42,22 +39,13 @@ export default function AuthLockScreen({ onAuthenticate, theme, toggleTheme }) {
         setTimeout(() => setIsShaking(false), 600);
       }
     } catch (err) {
-      if (password === 'admin321' || password === 'dev123') {
-        const mockUser = {
-          id: 1,
-          email: email || 'admin@datalink.ae',
-          full_name: 'Lead Data Administrator',
-          role: 'ADMIN',
-          can_export: true
-        };
-        localStorage.setItem('datalink_auth', 'authenticated');
-        localStorage.setItem('datalink_user', JSON.stringify(mockUser));
-        onAuthenticate(mockUser);
-      } else {
-        setError('Network error connecting to security authentication service.');
-        setIsShaking(true);
-        setTimeout(() => setIsShaking(false), 600);
-      }
+      // A network failure must not grant access. The previous fallback signed
+      // the user in locally as ADMIN whenever the request threw, which meant
+      // anyone could reach the dashboard by taking the API offline -- and the
+      // session it created had no token, so every later call would 401 anyway.
+      setError('Cannot reach the authentication service. Check your connection and try again.');
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 600);
     } finally {
       setIsLoading(false);
     }
@@ -205,17 +193,6 @@ export default function AuthLockScreen({ onAuthenticate, theme, toggleTheme }) {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Credentials for Fast Testing */}
-          <div className="mt-5 pt-4 border-t border-slate-500/20 w-full space-y-2 text-left">
-            <span className="text-[10px] font-mono font-black text-slate-500 uppercase tracking-wider block">
-              Default Credentials:
-            </span>
-            <div className="flex items-center justify-between text-[11px] font-mono bg-blue-500/5 p-2 rounded-xl border border-blue-500/20">
-              <span className="text-slate-700 dark:text-slate-300 font-bold">admin@datalink.ae</span>
-              <span className="text-blue-600 dark:text-blue-400 font-black">admin321</span>
-            </div>
-          </div>
 
         </div>
       </div>

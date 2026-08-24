@@ -5,11 +5,13 @@ Run:  uvicorn backend.app.main:app --reload --port 8000   (from the project root
 from __future__ import annotations
 
 import logging
+import secrets
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
+from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -36,27 +38,65 @@ log = logging.getLogger("app")
 async def lifespan(_: FastAPI):
     init_db()
     
-    # Auto-seed default admin if database has no admin
+    # Bootstrap an administrator only when the database has none. The password
+    # is never a literal in the source: a shipped default is a published
+    # credential the moment the repo is readable.
     db = SessionLocal()
     try:
         from sqlalchemy import select
         has_admin = db.scalar(select(User).where(User.role == UserRole.ADMIN))
-        if not has_admin:
-            admin = User(
-                email="admin@datalink.ae",
-                hashed_password=hash_password("admin321"),
+        if has_admin:
+            pass
+        elif settings.ADMIN_PASSWORD:
+            db.add(User(
+                email=settings.ADMIN_EMAIL.lower().strip(),
+                hashed_password=hash_password(settings.ADMIN_PASSWORD),
                 full_name="Lead Data Administrator",
                 role=UserRole.ADMIN,
                 is_active=True,
                 can_export=True,
-            )
-            db.add(admin)
+            ))
             db.commit()
-            log.info("Initialized default administrator account (admin@datalink.ae / admin321)")
+            log.info("Bootstrapped administrator %s from ADMIN_PASSWORD.",
+                     settings.ADMIN_EMAIL)
+        elif not settings.is_production:
+            # Dev only: keep the app usable with zero configuration, but with a
+            # password that is unique per machine and printed once, not guessable.
+            generated = secrets.token_urlsafe(16)
+            db.add(User(
+                email=settings.ADMIN_EMAIL.lower().strip(),
+                hashed_password=hash_password(generated),
+                full_name="Lead Data Administrator",
+                role=UserRole.ADMIN,
+                is_active=True,
+                can_export=True,
+            ))
+            db.commit()
+            log.warning(
+                "No admin found and ADMIN_PASSWORD is unset. Created a development "
+                "administrator:\n    email:    %s\n    password: %s\n"
+                "This is shown once. Set ADMIN_PASSWORD to choose your own.",
+                settings.ADMIN_EMAIL, generated,
+            )
+        else:
+            log.error(
+                "No administrator exists and ADMIN_PASSWORD is not set, so none was "
+                "created. Set ADMIN_PASSWORD and redeploy, or run "
+                "`python scripts/create_admin.py` against this database."
+            )
     except Exception as e:
-        log.warning("Could not auto-seed admin: %s", e)
+        log.warning("Could not bootstrap admin: %s", e)
     finally:
         db.close()
+
+    # Close out jobs whose worker died with the previous process, so the
+    # dashboard never polls a job that nothing is advancing any more.
+    try:
+        reaped = jobs.reap_stale_jobs()
+        if reaped:
+            log.warning("marked %d abandoned job(s) as FAILED at startup", reaped)
+    except Exception as e:
+        log.warning("Could not reap stale jobs: %s", e)
 
     log.info("database ready: %s", settings.DATABASE_URL.split("://")[0])
     log.info("batch size=%s grain=%s enrichment=%s",
@@ -95,7 +135,27 @@ async def unhandled(request: Request, exc: Exception):
 
 @app.get("/health", tags=["meta"])
 def health():
-    return {"status": "ok", "version": app.version}
+    """Liveness + database reachability.
+
+    A health check that only proves the process is running will report OK while
+    every request underneath it fails, which lets a platform keep routing
+    traffic to an instance that cannot serve anything. Returns 503 when the
+    database is unreachable so restarts and alerts actually fire.
+    """
+    try:
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT 1"))
+        finally:
+            db.close()
+    except Exception as exc:
+        log.warning("health check failed: %s", exc)
+        return JSONResponse(
+            status_code=503,
+            content={"status": "degraded", "version": app.version,
+                     "database": "unreachable"},
+        )
+    return {"status": "ok", "version": app.version, "database": "ok"}
 
 
 app.include_router(auth.router, prefix=settings.API_PREFIX, tags=["auth"])

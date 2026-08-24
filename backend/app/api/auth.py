@@ -22,6 +22,28 @@ from backend.app.models.models import User, UserRole
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+# bcrypt hashes at most 72 bytes and raises above that; silently truncating
+# would make "<72 chars>" and "<72 chars>extra" the same password, so long
+# inputs are rejected outright instead.
+MIN_PASSWORD_LEN = 10
+MAX_PASSWORD_BYTES = 72
+
+
+def _validate_password(password: str) -> str:
+    pw = (password or "").strip()
+    if len(pw) < MIN_PASSWORD_LEN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Password must be at least {MIN_PASSWORD_LEN} characters.",
+        )
+    if len(pw.encode("utf-8")) > MAX_PASSWORD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Password must be at most {MAX_PASSWORD_BYTES} bytes.",
+        )
+    return pw
+
+
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -100,32 +122,6 @@ def get_me(current_user: Annotated[User, Depends(get_current_user)]):
     return UserOut.model_validate(current_user)
 
 
-@router.post("/seed-admin")
-def seed_admin(db: Annotated[Session, Depends(get_db)]):
-    """Idempotently seed default admin account if none exists."""
-    existing_admin = db.scalar(select(User).where(User.role == UserRole.ADMIN))
-    if existing_admin:
-        return {"status": "exists", "email": existing_admin.email}
-
-    admin = User(
-        email="admin@datalink.ae",
-        hashed_password=hash_password("admin321"),
-        full_name="Lead Data Administrator",
-        role=UserRole.ADMIN,
-        is_active=True,
-        can_export=True,
-    )
-    db.add(admin)
-    db.commit()
-    db.refresh(admin)
-
-    return {
-        "status": "created",
-        "email": admin.email,
-        "message": "Default admin account initialized. Password: admin321",
-    }
-
-
 @router.get("/users", response_model=list[UserOut])
 def list_users(
     current_user: Annotated[User, Depends(require_role([UserRole.ADMIN]))],
@@ -158,7 +154,7 @@ def create_user(
 
     new_user = User(
         email=req.email.lower().strip(),
-        hashed_password=hash_password(req.password),
+        hashed_password=hash_password(_validate_password(req.password)),
         full_name=req.full_name.strip(),
         role=req.role,
         is_active=True,
@@ -196,7 +192,7 @@ def update_user(
     if req.can_export is not None:
         user.can_export = req.can_export
     if req.password:
-        user.hashed_password = hash_password(req.password)
+        user.hashed_password = hash_password(_validate_password(req.password))
 
     db.commit()
     db.refresh(user)

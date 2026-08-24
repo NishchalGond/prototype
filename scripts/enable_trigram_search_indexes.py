@@ -1,3 +1,14 @@
+"""DEPRECATED - kept only for one-off manual use.
+
+These indexes are now created by the Alembic migration
+`7ba9686c4678_dedup_lookup_index`, which runs automatically on deploy. Relying
+on someone remembering to run this script by hand meant production search could
+silently be missing its indexes. Prefer:
+
+    alembic upgrade head
+
+This remains safe to run (every statement is IF NOT EXISTS) but is redundant.
+"""
 import os
 import sys
 from dotenv import load_dotenv

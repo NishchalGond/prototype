@@ -21,10 +21,12 @@ from backend.app.config import settings
 from backend.app.database.session import get_db
 from backend.app.models.models import User, UserRole
 
-# Default secret key from settings or secure fallback
-SECRET_KEY = getattr(settings, "SECRET_KEY", "datalink-enterprise-jwt-super-secret-key-2026")
+# Read straight off settings: config._finalise guarantees a value is present
+# (mandatory in production, random-per-boot in development), so there is no
+# fallback literal here that could be used to forge tokens.
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 security_scheme = HTTPBearer(auto_error=False)
 
@@ -64,6 +66,22 @@ def decode_access_token(token: str) -> dict | None:
         return None
 
 
+def _subject_id(payload: dict) -> int | None:
+    """Extract the numeric user id from a token subject.
+
+    The claim is attacker-supplied, so a non-numeric `sub` is an authentication
+    failure, not a crash: int() on e.g. "admin" raises ValueError, which without
+    this guard escaped the dependency as an unhandled 500.
+    """
+    raw = payload.get("sub")
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
 def get_current_user_optional(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security_scheme)],
     db: Annotated[Session, Depends(get_db)],
@@ -76,11 +94,11 @@ def get_current_user_optional(
     if not payload:
         return None
 
-    user_id = payload.get("sub")
-    if not user_id:
+    user_id = _subject_id(payload)
+    if user_id is None:
         return None
 
-    user = db.scalar(select(User).where(User.id == int(user_id), User.is_active.is_(True)))
+    user = db.scalar(select(User).where(User.id == user_id, User.is_active.is_(True)))
     return user
 
 
@@ -104,14 +122,14 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user_id = payload.get("sub")
-    if not user_id:
+    user_id = _subject_id(payload)
+    if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Malformed token payload.",
         )
 
-    user = db.scalar(select(User).where(User.id == int(user_id)))
+    user = db.scalar(select(User).where(User.id == user_id))
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

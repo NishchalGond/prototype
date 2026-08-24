@@ -126,12 +126,14 @@ source venv/bin/activate
 pip install -r backend/requirements.txt
 ```
 
-Create a `.env` file in the project root (never commit this file — it's already covered by `.gitignore`):
+Create a `.env` file in the project root (never commit this file — it's already covered by `.gitignore`). Start from `.env.example`, which documents every setting:
 
 ```env
 DATABASE_URL=postgresql://<user>:<password>@<host>:5432/postgres
-ENVIRONMENT=development
+APP_ENV=development
 ```
+
+In development `SECRET_KEY` may be omitted — a random one is generated per boot (logins simply don't survive a restart). In production it is **required**.
 
 Run the backend:
 
@@ -140,6 +142,56 @@ python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8001 --reload
 ```
 
 API docs will be live at **`http://127.0.0.1:8001/docs`**.
+
+#### First login
+
+There is no default password. On first boot with an empty database:
+
+- **Development** — an admin is created and its generated password is printed **once** in the startup logs.
+- **Production** — set `ADMIN_PASSWORD` before the first deploy, or create one at any time:
+
+```bash
+python scripts/create_admin.py --generate
+```
+
+### Database migrations
+
+Schema changes are managed by Alembic and applied automatically on startup
+(`run.py` calls `alembic upgrade head` before serving). A database created
+before Alembic was introduced is adopted automatically: it is stamped at the
+baseline revision and only newer migrations run, so existing rows are untouched.
+
+To apply migrations manually:
+
+```bash
+alembic upgrade head
+```
+
+After changing a model, generate a migration — never rely on `create_all`, which
+ignores changed columns:
+
+```bash
+alembic revision --autogenerate -m "describe the change"
+```
+
+### Production environment
+
+`APP_ENV=production` enables startup checks that fail fast rather than running
+in an unsafe state:
+
+| Variable | Required | Notes |
+|---|---|---|
+| `SECRET_KEY` | **yes** | Min 32 chars. Signs JWTs; app refuses to start without it |
+| `DATABASE_URL` | **yes** | Must be PostgreSQL — SQLite is rejected as it is ephemeral on container hosts |
+| `ADMIN_PASSWORD` | first deploy | Otherwise no admin is created; use `scripts/create_admin.py` |
+| `UPLOAD_DIR` | recommended | Point at a mounted volume so uploads survive a redeploy |
+
+### API authentication
+
+Every `/api` route except `/api/auth/login` requires a `Bearer` token.
+Roles: `VIEWER` reads, `DATA_PROCESSOR` also ingests and edits records, `ADMIN`
+additionally manages users and column mappings. Export additionally requires the
+`can_export` flag (implicit for admins).
 
 ### 3. Frontend Setup
 

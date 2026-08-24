@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, ChevronLeft, ChevronRight, X, ArrowUpDown, ArrowUp, ArrowDown, Edit3, Save, CheckCircle2, AlertCircle, Download, FileSpreadsheet, FileText, Loader2, SlidersHorizontal, RotateCcw, Filter } from 'lucide-react';
 import CustomSelect from './CustomSelect';
+import { apiFetch } from '../lib/api';
 
 export default function RecordsExplorer({ initialQuery = '' }) {
   const [records, setRecords] = useState([]);
@@ -53,7 +54,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
 
   const fetchFilterOptions = async () => {
     try {
-      const res = await fetch('/api/records/filters');
+      const res = await apiFetch('/api/records/filters');
       if (res.ok) {
         const data = await res.json();
         setFilterOptions((prev) => ({
@@ -88,7 +89,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
       if (status) params.append('status', status);
       if (sourceFile) params.append('source_file', sourceFile);
 
-      const res = await fetch(`/api/records?${params.toString()}`);
+      const res = await apiFetch(`/api/records?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         const items = data.items || data.records || [];
@@ -149,7 +150,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
     setSaveSuccess(false);
 
     try {
-      const res = await fetch(`/api/records/${selectedRecord.id}`, {
+      const res = await apiFetch(`/api/records/${selectedRecord.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm)
@@ -193,7 +194,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
       if (status) params.append('status', status);
       if (sourceFile) params.append('source_file', sourceFile);
 
-      const res = await fetch(`/api/records/export?${params.toString()}`);
+      const res = await apiFetch(`/api/records/export?${params.toString()}`);
       if (!res.ok) {
         throw new Error('Export failed. Please check your query or try again.');
       }
