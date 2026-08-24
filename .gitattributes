@@ -1,0 +1,7 @@
+# Alembic ships a Mako template for generating migration scripts. It is
+# tooling, not project source, so keep it out of the language statistics.
+alembic/script.py.mako linguist-vendored
+
+# Generated migration scripts are Alembic output rather than hand-written
+# application code; count them as vendored so they do not skew the stats.
+alembic/versions/* linguist-generated=false
