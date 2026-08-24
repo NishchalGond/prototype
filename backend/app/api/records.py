@@ -64,23 +64,51 @@ def _build_records_query(
     for col, val in (
         (Record.community, community), (Record.sub_community, sub_community),
         (Record.building_cluster, building_cluster),
-        (Record.bedroom, bedroom), (Record.developer, developer),
+        (Record.developer, developer),
         (Record.nationality, nationality), (Record.source_file, source_file),
     ):
         if val:
             stmt = stmt.where(col == val)
+
+    if bedroom:
+        b_clean = bedroom.strip()
+        stmt = stmt.where(
+            or_(
+                Record.bedroom == b_clean,
+                Record.bedroom.ilike(f"%{b_clean}%")
+            )
+        )
+
+    # Valid phone pattern: +9715X (9 digits), +971 landline (8 digits), or international (10-15 digits)
+    # Excludes truncated numbers like +55240883 or 055240883
+    valid_contact_filter = or_(
+        Record.mobile_1.op("~")("^\\+9715[024568][0-9]{7}$"),
+        Record.mobile_1.op("~")("^\\+971[234679][0-9]{7}$"),
+        Record.mobile_1.op("~")("^\\+[1-9][0-9]{9,14}$"),
+        Record.email_address.is_not(None),
+    )
 
     if record_status:
         st_upper = record_status.upper()
         if st_upper in ("ALL", "ALL_RECORDS", "ALL_WITH_INCOMPLETE", "SHOW_ALL"):
             pass  # show all records including duplicates and incomplete
         elif st_upper in ("INCOMPLETE", "MISSING_CONTACT"):
-            stmt = stmt.where(Record.status == "INCOMPLETE")
+            stmt = stmt.where(
+                or_(
+                    Record.status == "INCOMPLETE",
+                    Record.mobile_1.is_(None),
+                    ~valid_contact_filter
+                )
+            )
+        elif st_upper == "VALID":
+            stmt = stmt.where(Record.status == "VALID")
+            stmt = stmt.where(valid_contact_filter)
         else:
             stmt = stmt.where(Record.status == st_upper)
     else:
-        # Default: show only VALID (outreach-ready with both name and contact info)
+        # Default: show only VALID (outreach-ready with verified standard phone or email)
         stmt = stmt.where(Record.status == "VALID")
+        stmt = stmt.where(valid_contact_filter)
 
     if property_type:
         stmt = stmt.where(Record.property_type.ilike(property_type))
