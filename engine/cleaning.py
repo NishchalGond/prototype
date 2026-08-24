@@ -21,7 +21,12 @@ _WS_RE = re.compile(r"\s+")
 def clean_text(v, *, strip_id_prefix: bool = True) -> str | None:
     if v is None:
         return None
-    s = str(v).replace("\xa0", " ")
+    if isinstance(v, float) and v.is_integer():
+        s = str(int(v))
+    else:
+        s = str(v).replace("\xa0", " ")
+        if re.fullmatch(r"-?\d+\.0+", s.strip()):
+            s = s.strip().split(".")[0]
     s = _WS_RE.sub(" ", s).strip()
     if strip_id_prefix:
         s = _ID_PREFIX_RE.sub("", s).strip()
@@ -46,6 +51,8 @@ def clean_name(v) -> str | None:
 # phones
 # --------------------------------------------------------------------------
 _UAE_PREFIXES = ("50", "52", "54", "55", "56", "58")
+_UAE_LANDLINE_AREA_CODES = ("2", "3", "4", "6", "7", "9")
+_PHONE_SPLIT_RE = re.compile(r"[/,;\n\r&|]|\s+(?:and|or)\s+", re.I)
 
 
 def clean_phone(v) -> tuple[str | None, str | None]:
@@ -56,6 +63,10 @@ def clean_phone(v) -> tuple[str | None, str | None]:
     """
     if v is None:
         return None, None
+    
+    if isinstance(v, float) and v.is_integer():
+        v = int(v)
+        
     s = str(v).strip()
     if not s or s.lower() in NULL_TOKENS:
         return None, None
@@ -73,6 +84,8 @@ def clean_phone(v) -> tuple[str | None, str | None]:
             return None, "phone_corrupt_scientific"
         s = f"{int(f)}"
         from_scientific = True
+    elif re.fullmatch(r"\d+\.0+", s):
+        s = s.split(".")[0]
 
     s = s.replace("|", " ")
     # O/o used for a leading zero
@@ -92,7 +105,8 @@ def clean_phone(v) -> tuple[str | None, str | None]:
     # --- resolve to E.164 only when the country is actually knowable --------
     if from_scientific:
         # keep the digits for a human to inspect; never assert a country code
-        return digits, "phone_precision_lost_in_excel"
+        return None, "phone_precision_lost_in_excel"
+
     if digits.startswith("971"):
         rest = digits[3:]
         # Sources double up prefixes and keep the trunk zero:
@@ -102,32 +116,87 @@ def clean_phone(v) -> tuple[str | None, str | None]:
             rest = rest[1:]
         if rest.startswith("971"):
             rest = rest[3:]
-        digits = "971" + rest
-        # UAE is 971 + 9 digits (mobile) or 971 + 8 (landline). Outside that the
-        # number is damaged; keep the digits for inspection but do not present
-        # it as a valid E.164 number.
-        if len(digits) < 11:
-            return digits, "phone_too_short_for_uae"
-        if len(digits) > 12:
-            return digits, "phone_too_long_for_uae"
-        return "+" + digits, None
-    # 0501234567 -> +971501234567
-    if digits.startswith("0") and len(digits) == 10 and digits[1:3] in _UAE_PREFIXES:
+        
+        # UAE mobile: must have exactly 9 digits starting with 50, 52, 54, 55, 56, 58
+        if rest[:2] in _UAE_PREFIXES:
+            if len(rest) != 9:
+                return None, "phone_too_short_for_uae" if len(rest) < 9 else "phone_too_long_for_uae"
+            return "+971" + rest, None
+            
+        # UAE landline: must have exactly 8 digits starting with area code (2, 3, 4, 6, 7, 9)
+        if rest and rest[0] in _UAE_LANDLINE_AREA_CODES:
+            if len(rest) != 8:
+                return None, "phone_too_short_for_uae" if len(rest) < 8 else "phone_too_long_for_uae"
+            return "+971" + rest, None
+
+        if len(rest) == 9:
+            return "+971" + rest, None
+
+        return None, "phone_invalid_for_uae"
+
+    # UAE Mobile with trunk zero: 0501234567 (10 digits) -> +971501234567
+    if digits.startswith("0") and len(digits) >= 2 and digits[1:3] in _UAE_PREFIXES:
+        if len(digits) != 10:
+            return None, "phone_too_short_for_uae" if len(digits) < 10 else "phone_too_long_for_uae"
         return "+971" + digits[1:], None
-    # 501234567 -> +971501234567
-    if len(digits) == 9 and digits[:2] in _UAE_PREFIXES:
+
+    # UAE Mobile without trunk zero: 501234567 (9 digits) -> +971501234567
+    if digits[:2] in _UAE_PREFIXES:
+        if len(digits) != 9:
+            return None, "phone_too_short_for_uae" if len(digits) < 9 else "phone_too_long_for_uae"
         return "+971" + digits, None
-    # UAE landline written without the trunk 0, e.g. 43920430 -> 04 392 0430.
-    # It is a real number but not a mobile, and prefixing "+" would assert a
-    # country code it does not have (+43 is Austria).
-    if len(digits) in (7, 8) and digits[0] in "234679":
-        return digits, "phone_local_no_country_code"
+
+    # UAE Landline with trunk zero: 043920430 (9 digits) -> +97143920430
+    if digits.startswith("0") and len(digits) >= 2 and digits[1] in _UAE_LANDLINE_AREA_CODES:
+        if len(digits) != 9:
+            return None, "phone_too_short_for_uae" if len(digits) < 9 else "phone_too_long_for_uae"
+        return "+971" + digits[1:], None
+
+    # UAE Landline without trunk zero: 43920430 (8 digits) -> +97143920430
+    if digits and digits[0] in _UAE_LANDLINE_AREA_CODES and len(digits) <= 8:
+        if len(digits) != 8:
+            return None, "phone_too_short_for_uae"
+        return "+971" + digits, None
+
     if digits.startswith("0"):
-        return digits, "phone_local_no_country_code"
-    # 8+ digits without a leading 0 is plausibly already international (e.g. +14155552671, +447911123456, +919876543210, +966501234567)
-    if len(digits) >= 8 and not digits.startswith("0"):
+        return None, "phone_local_no_country_code"
+
+    # Standard international E.164 (10 to 15 digits)
+    if 10 <= len(digits) <= 15 and not digits.startswith("0"):
         return "+" + digits, None
-    return digits, "phone_no_country_code"
+
+    return None, "phone_invalid"
+
+
+def clean_phones_multi(v) -> tuple[list[str], list[str]]:
+    """Extract and normalize all phone numbers from a value (which may contain multiple delimited numbers)."""
+    if v is None:
+        return [], []
+    if isinstance(v, float) and v.is_integer():
+        v = int(v)
+    s = str(v).strip()
+    if not s or s.lower() in NULL_TOKENS:
+        return [], []
+
+    if isinstance(v, int) or not _PHONE_SPLIT_RE.search(s):
+        num, flag = clean_phone(v)
+        return ([num] if num else []), ([flag] if flag else [])
+
+    parts = _PHONE_SPLIT_RE.split(s)
+    numbers: list[str] = []
+    flags: list[str] = []
+    seen: set[str] = set()
+    for p in parts:
+        p = p.strip()
+        if not p or p.lower() in NULL_TOKENS:
+            continue
+        num, flag = clean_phone(p)
+        if flag and flag not in flags:
+            flags.append(flag)
+        if num and num not in seen:
+            seen.add(num)
+            numbers.append(num)
+    return numbers, flags
 
 
 def is_mobile(number: str | None) -> bool:
@@ -166,7 +235,7 @@ def clean_number(v) -> float | None:
         return None
     if isinstance(v, (int, float)) and not isinstance(v, bool):
         f = float(v)
-        return None if f == 0 else f
+        return None if f <= 0 else round(f, 2)
     s = str(v).strip()
     if not s or s.lower() in NULL_TOKENS:
         return None
@@ -177,8 +246,14 @@ def clean_number(v) -> float | None:
         f = float(s)
     except ValueError:
         return None
+    if f <= 0:
+        return None
+    return round(f, 2)
+
+
 _SQM_HEADER_RE = re.compile(r"(sqm|sq\s*\.?\s*m|m2|m²|sq\s*meter|square\s*meter)", re.I)
 _SQM_VAL_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(?:sqm|sq\s*\.?\s*m|m2|m²|sq\s*meter|square\s*meter)", re.I)
+_UNIT_STRIP_RE = re.compile(r"\s*(?:sqm|sq\s*\.?\s*m|m2|m²|sq\s*meter|square\s*meter|sq\s*\.?\s*ft|sqft|square\s*feet|feet|ft)\s*$", re.I)
 SQM_TO_SQFT_MULT = 10.763910416711
 
 
@@ -188,12 +263,15 @@ def clean_size(v, raw_header: str | None = None) -> float | None:
         return None
 
     is_sqm = False
-    if isinstance(v, str) and _SQM_VAL_RE.search(v):
-        is_sqm = True
+    cleaned_input = v
+    if isinstance(v, str):
+        if _SQM_VAL_RE.search(v):
+            is_sqm = True
+        cleaned_input = _UNIT_STRIP_RE.sub("", v).strip()
     elif raw_header and _SQM_HEADER_RE.search(str(raw_header)):
         is_sqm = True
 
-    f = clean_number(v)
+    f = clean_number(cleaned_input)
     if f is None:
         return None
 
@@ -273,11 +351,14 @@ def clean_bedroom(v) -> tuple[str | None, str | None]:
 
 def clean_unit(v) -> str | None:
     """Unit refs carry a trailing '-N' suffix in the DLD owner register
-    ('G1-0' on the owner side vs 'G1' on the property side)."""
+    ('G1-0' on the owner side vs 'G1' on the property side) and strip float artifacts."""
     s = clean_text(v)
     if not s:
         return None
-    return re.sub(r"[-s]+$", "", s).strip() or None
+    s = re.sub(r"(-0|[-s]+)$", "", s).strip()
+    if re.fullmatch(r"\d{1,3}(,\d{3})+", s):
+        s = s.replace(",", "")
+    return s or None
 
 
 def clean_party_type(v) -> str | None:

@@ -56,16 +56,21 @@ def transform(fields: dict, extras: dict) -> tuple[dict, list[str]]:
     if fields.get("Date") is not None and row["record_date"] is None:
         flags.append("date_unparseable")
 
-    # phones: normalize, drop duplicates, keep order, fill 3 slots
+    # phones: normalize, drop duplicates, keep order, fill 3 slots (supporting multi-phone cells)
     seen: set[str] = set()
     mobiles: list[str] = []
     for key in ("Mobile 1", "Mobile 2", "Mobile 3"):
-        num, flag = C.clean_phone(fields.get(key))
-        if flag:
-            flags.append(flag)
-        if num and num not in seen:
-            seen.add(num)
-            mobiles.append(num)
+        val = fields.get(key)
+        if val is None:
+            continue
+        nums, pflags = C.clean_phones_multi(val)
+        for flag in pflags:
+            if flag not in flags:
+                flags.append(flag)
+        for num in nums:
+            if num and num not in seen:
+                seen.add(num)
+                mobiles.append(num)
     for i, slot in enumerate(("mobile_1", "mobile_2", "mobile_3")):
         row[slot] = mobiles[i] if i < len(mobiles) else None
 
@@ -144,6 +149,22 @@ def is_valid_property_context(row: dict) -> bool:
         return True
     if dev and proj:
         return True
+    return False
+
+
+def is_valid_contact(row: dict) -> bool:
+    """Check if the record has at least one valid, non-N/A standard phone or email."""
+    for f in ("mobile_1", "mobile_2", "mobile_3"):
+        val = row.get(f)
+        if val is not None:
+            s = str(val).strip().lower()
+            if s and s not in C.NULL_TOKENS and s != "n/a":
+                return True
+    email = row.get("email_address")
+    if email is not None:
+        s = str(email).strip().lower()
+        if s and s not in C.NULL_TOKENS and s != "n/a":
+            return True
     return False
 
 

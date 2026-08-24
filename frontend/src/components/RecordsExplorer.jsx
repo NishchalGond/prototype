@@ -279,11 +279,10 @@ export default function RecordsExplorer({ initialQuery = '' }) {
             <button
               type="button"
               onClick={() => setShowMobileFilters((prev) => !prev)}
-              className={`lg:hidden neumorph-button px-3 py-2.5 rounded-2xl flex items-center space-x-1.5 text-xs font-bold transition-all shrink-0 cursor-pointer ${
-                [community, propertyType, bedroom, status].some(Boolean)
-                  ? 'text-blue-600 dark:text-blue-400 border border-blue-500/40 bg-blue-500/10'
-                  : 'text-slate-800 dark:text-slate-200'
-              }`}
+              className={`lg:hidden neumorph-button px-3 py-2.5 rounded-2xl flex items-center space-x-1.5 text-xs font-bold transition-all shrink-0 cursor-pointer ${[community, propertyType, bedroom, status].some(Boolean)
+                ? 'text-blue-600 dark:text-blue-400 border border-blue-500/40 bg-blue-500/10'
+                : 'text-slate-800 dark:text-slate-200'
+                }`}
               title="Toggle Filters"
             >
               <SlidersHorizontal className="w-4 h-4" />
@@ -492,20 +491,19 @@ export default function RecordsExplorer({ initialQuery = '' }) {
                             r.status === 'DUPLICATE'
                               ? 'Duplicate Record (Preserved)'
                               : r.status === 'VALID'
-                              ? 'Valid Outreach Ready'
-                              : r.status === 'INCOMPLETE'
-                              ? 'Incomplete (Missing Contact/Name)'
-                              : 'Invalid / Error'
+                                ? 'Valid Outreach Ready'
+                                : r.status === 'INCOMPLETE'
+                                  ? 'Incomplete (Missing Contact/Name)'
+                                  : 'Invalid / Error'
                           }
-                          className={`w-2.5 h-2.5 rounded-full shrink-0 shadow-xs ${
-                            r.status === 'DUPLICATE'
-                              ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)] animate-pulse'
-                              : r.status === 'VALID'
+                          className={`w-2.5 h-2.5 rounded-full shrink-0 shadow-xs ${r.status === 'DUPLICATE'
+                            ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)] animate-pulse'
+                            : r.status === 'VALID'
                               ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
                               : r.status === 'INCOMPLETE'
-                              ? 'bg-indigo-400 dark:bg-indigo-500'
-                              : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]'
-                          }`}
+                                ? 'bg-indigo-400 dark:bg-indigo-500'
+                                : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]'
+                            }`}
                         />
                         <span className="truncate">{r.name || 'N/A'}</span>
                         {r.status === 'DUPLICATE' && (
@@ -740,15 +738,14 @@ export default function RecordsExplorer({ initialQuery = '' }) {
                       <option value="ERROR">ERROR</option>
                     </select>
                   ) : (
-                    <span className={`text-xs font-black font-mono px-2.5 py-1 rounded-full border inline-block ${
-                      selectedRecord.status === 'VALID'
-                        ? 'text-emerald-700 bg-emerald-500/10 border-emerald-500/30'
-                        : selectedRecord.status === 'INCOMPLETE'
+                    <span className={`text-xs font-black font-mono px-2.5 py-1 rounded-full border inline-block ${selectedRecord.status === 'VALID'
+                      ? 'text-emerald-700 bg-emerald-500/10 border-emerald-500/30'
+                      : selectedRecord.status === 'INCOMPLETE'
                         ? 'text-amber-700 bg-amber-500/10 border-amber-500/30'
                         : selectedRecord.status === 'DUPLICATE'
-                        ? 'text-purple-700 bg-purple-500/10 border-purple-500/30'
-                        : 'text-rose-700 bg-rose-500/10 border-rose-500/30'
-                    }`}>
+                          ? 'text-purple-700 bg-purple-500/10 border-purple-500/30'
+                          : 'text-rose-700 bg-rose-500/10 border-rose-500/30'
+                      }`}>
                       {selectedRecord.status}
                     </span>
                   )}
@@ -1096,7 +1093,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
             </div>
 
             <div className="pt-2 flex justify-between items-center border-t border-slate-300/80">
-              <span className="text-[10px] font-mono text-slate-500">Click any row in the dataset table to inspect or edit.</span>
+              <span className="text-[10px] font-mono text-slate-500">Edit it by clicking on the edit button</span>
               <button
                 onClick={() => {
                   setSelectedRecord(null);
