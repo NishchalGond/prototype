@@ -156,6 +156,82 @@
 }
 
 /* ==========================================================================
+   LIGHT MODE — HIGH-CONTRAST TEXT OVERRIDES
+   Without these, Tailwind's pale slate colours are nearly invisible on #eef0f4.
+   Scoped to :root:not(.dark) so these never bleed into dark mode.
+   ========================================================================== */
+:root:not(.dark) h1,
+:root:not(.dark) h2,
+:root:not(.dark) h3,
+:root:not(.dark) h4,
+:root:not(.dark) h5,
+:root:not(.dark) h6 {
+  color: #0f172a !important;
+}
+
+/* Tailwind text utility overrides for light mode */
+:root:not(.dark) .text-slate-900,
+:root:not(.dark) .text-slate-800 {
+  color: #0f172a !important;
+}
+
+:root:not(.dark) .text-slate-700 {
+  color: #1e293b !important;
+}
+
+:root:not(.dark) .text-slate-600 {
+  color: #334155 !important;
+}
+
+:root:not(.dark) .text-slate-500 {
+  color: #475569 !important;
+}
+
+:root:not(.dark) .text-slate-400 {
+  color: #64748b !important;
+}
+
+:root:not(.dark) .text-slate-300 {
+  color: #475569 !important;
+}
+
+/* Gray equivalents */
+:root:not(.dark) .text-gray-900,
+:root:not(.dark) .text-gray-800 {
+  color: #111827 !important;
+}
+
+:root:not(.dark) .text-gray-700 {
+  color: #374151 !important;
+}
+
+:root:not(.dark) .text-gray-600 {
+  color: #4b5563 !important;
+}
+
+:root:not(.dark) .text-gray-500 {
+  color: #6b7280 !important;
+}
+
+/* Make sure buttons and inputs show dark text in light mode */
+:root:not(.dark) button:not(.neumorph-button-primary),
+:root:not(.dark) input,
+:root:not(.dark) select,
+:root:not(.dark) textarea {
+  color: #1e293b;
+}
+
+/* Table text in light mode */
+:root:not(.dark) table thead th {
+  color: #334155 !important;
+  background-color: var(--table-header-bg);
+}
+
+:root:not(.dark) table tbody td {
+  color: #1e293b !important;
+}
+
+/* ==========================================================================
    HIGH-CONTRAST DARK THEME OVERRIDES (ENSURES FULL VISIBILITY)
    ========================================================================== */
 .dark h1,
