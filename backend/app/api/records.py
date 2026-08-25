@@ -93,27 +93,6 @@ def _build_records_query(
         )
     )
 
-    # Complete columns filter: all primary table columns (name, community, building, unit/plot, bedroom, mobile) populated
-    complete_columns_filter = and_(
-        Record.name.is_not(None),
-        Record.name != "",
-        Record.name != "N/A",
-        Record.community.is_not(None),
-        Record.community != "",
-        Record.community != "N/A",
-        Record.building_cluster.is_not(None),
-        Record.building_cluster != "",
-        Record.building_cluster != "N/A",
-        or_(
-            and_(Record.unit_number.is_not(None), Record.unit_number != "", Record.unit_number != "N/A"),
-            and_(Record.plot_number.is_not(None), Record.plot_number != "", Record.plot_number != "N/A"),
-        ),
-        Record.bedroom.is_not(None),
-        Record.bedroom != "",
-        Record.bedroom != "N/A",
-        valid_mobile_filter,
-    )
-
     if record_status:
         st_upper = record_status.upper()
         if st_upper in ("ALL", "ALL_RECORDS", "ALL_WITH_INCOMPLETE", "SHOW_ALL"):
@@ -124,19 +103,18 @@ def _build_records_query(
                     Record.status == "INCOMPLETE",
                     Record.mobile_1.is_(None),
                     ~valid_mobile_filter,
-                    ~complete_columns_filter,
                 )
             )
         elif st_upper in ("VALID", "COMPLETE"):
-            # All complete records with all columns populated
+            # All valid records (outreach-ready with standard valid phone)
             stmt = stmt.where(Record.status == "VALID")
-            stmt = stmt.where(complete_columns_filter)
+            stmt = stmt.where(valid_mobile_filter)
         else:
             stmt = stmt.where(Record.status == st_upper)
     else:
-        # Default on open: ONLY show records which have all data in all columns populated (no N/A values in table)
+        # Default: show all valid outreach-ready records (with verified valid phone)
         stmt = stmt.where(Record.status == "VALID")
-        stmt = stmt.where(complete_columns_filter)
+        stmt = stmt.where(valid_mobile_filter)
 
     if property_type:
         stmt = stmt.where(Record.property_type.ilike(property_type))
@@ -192,8 +170,17 @@ def list_records(
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     col = SORTABLE[sort_by]
-    order_clause = col.desc().nullslast() if sort_dir == "desc" else col.asc().nullslast()
-    stmt = stmt.order_by(order_clause, Record.id.desc())
+    if sort_by == "name" and sort_dir == "asc":
+        # On default initial page load, prioritize complete records where procedure_value > 0 so VALUE (AED) and BEDROOM are visible right at the top
+        stmt = stmt.order_by(
+            Record.procedure_value.desc().nullslast(),
+            Record.bedroom.desc().nullslast(),
+            col.asc().nullslast(),
+            Record.id.desc(),
+        )
+    else:
+        order_clause = col.desc().nullslast() if sort_dir == "desc" else col.asc().nullslast()
+        stmt = stmt.order_by(order_clause, Record.id.desc())
     rows = db.scalars(stmt.offset((page - 1) * page_size).limit(page_size)).all()
     pages = (total + page_size - 1) // page_size
     return Page[RecordOut](
