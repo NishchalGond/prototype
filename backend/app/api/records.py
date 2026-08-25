@@ -93,6 +93,27 @@ def _build_records_query(
         )
     )
 
+    # Complete columns filter: all primary table columns (name, community, building, unit/plot, bedroom, mobile) populated
+    complete_columns_filter = and_(
+        Record.name.is_not(None),
+        Record.name != "",
+        Record.name != "N/A",
+        Record.community.is_not(None),
+        Record.community != "",
+        Record.community != "N/A",
+        Record.building_cluster.is_not(None),
+        Record.building_cluster != "",
+        Record.building_cluster != "N/A",
+        or_(
+            and_(Record.unit_number.is_not(None), Record.unit_number != "", Record.unit_number != "N/A"),
+            and_(Record.plot_number.is_not(None), Record.plot_number != "", Record.plot_number != "N/A"),
+        ),
+        Record.bedroom.is_not(None),
+        Record.bedroom != "",
+        Record.bedroom != "N/A",
+        valid_mobile_filter,
+    )
+
     if record_status:
         st_upper = record_status.upper()
         if st_upper in ("ALL", "ALL_RECORDS", "ALL_WITH_INCOMPLETE", "SHOW_ALL"):
@@ -103,18 +124,19 @@ def _build_records_query(
                     Record.status == "INCOMPLETE",
                     Record.mobile_1.is_(None),
                     ~valid_mobile_filter,
+                    ~complete_columns_filter,
                 )
             )
         elif st_upper in ("VALID", "COMPLETE"):
-            # All valid records (outreach-ready with standard valid phone)
+            # All complete records with all columns populated
             stmt = stmt.where(Record.status == "VALID")
-            stmt = stmt.where(valid_mobile_filter)
+            stmt = stmt.where(complete_columns_filter)
         else:
             stmt = stmt.where(Record.status == st_upper)
     else:
-        # Default: show all valid outreach-ready records (with verified valid phone)
+        # Default on open: ONLY show records which have all data in all columns populated (no N/A values in table)
         stmt = stmt.where(Record.status == "VALID")
-        stmt = stmt.where(valid_mobile_filter)
+        stmt = stmt.where(complete_columns_filter)
 
     if property_type:
         stmt = stmt.where(Record.property_type.ilike(property_type))
