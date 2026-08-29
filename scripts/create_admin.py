@@ -66,7 +66,18 @@ def main() -> int:
         print(f"Password must be at most {MAX_BYTES} bytes.", file=sys.stderr)
         return 1
 
+    # create_all builds the CURRENT models, i.e. head -- not the baseline. A
+    # database left unstamped is then indistinguishable from a legacy one, and
+    # startup replays migrations over columns that already exist
+    # ("duplicate column name: control_signal"). Stamping it here records what
+    # was actually built.
     init_db()
+    try:
+        from backend.app.database.migrations import current_revision, stamp_head
+        if current_revision() is None:
+            stamp_head()
+    except Exception as exc:      # never block account creation on bookkeeping
+        print(f"note: could not stamp the schema version ({exc})", file=sys.stderr)
     db = SessionLocal()
     try:
         user = db.scalar(select(User).where(User.email == email))
