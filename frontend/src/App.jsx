@@ -5,6 +5,7 @@ import OverviewDashboard from './components/OverviewDashboard';
 import UploadSection from './components/UploadSection';
 import LiveProcessingTracker from './components/LiveProcessingTracker';
 import RecordsExplorer from './components/RecordsExplorer';
+import CallQueue from './components/CallQueue';
 import JobDetailsView from './components/JobDetailsView';
 import ColumnMappingInspector from './components/ColumnMappingInspector';
 import Spatial3DCanvas from './components/Spatial3DCanvas';
@@ -191,6 +192,8 @@ export default function App() {
             {activeTab === 'records' && (
               <RecordsExplorer initialQuery={searchQuery} theme={theme} />
             )}
+
+            {activeTab === 'queue' && <CallQueue />}
 
             {activeTab === 'mapping' && (
               <div className="flex-1 overflow-y-auto">
