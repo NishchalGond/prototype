@@ -296,6 +296,11 @@ class Record(Base):
     validation_flags: Mapped[list | None] = mapped_column(JSON)
     enriched_fields: Mapped[list | None] = mapped_column(JSON)
     owner_count: Mapped[int | None] = mapped_column(Integer)   # joint ownership size
+    # Which set of engine rules produced this row. See engine/__init__.py.
+    # NULL means it predates versioning, which is equivalent to "stale".
+    # Indexed because the reprocess planner's only question is "which rows are
+    # not at the current version", asked over the whole table.
+    engine_version: Mapped[int | None] = mapped_column(Integer, index=True)
     extras: Mapped[dict | None] = mapped_column(JSON)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

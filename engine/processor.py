@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Callable
 
 from . import validation as V
+from . import ENGINE_VERSION
 from .dedup import (FUZZY_THRESHOLD, calculate_name_similarity,
                     extract_property_key)
 from .detection import UnreadableFile, open_source
@@ -429,6 +430,9 @@ class Processor:
             row["enriched_fields"] = enriched or None
             row["extras"] = V.json_safe(extras) or None
             row["identity_hash"] = V.identity_hash(row)
+            # Stamped at write time so a later rule change can find exactly the
+            # rows it invalidated.
+            row["engine_version"] = ENGINE_VERSION
 
             if not ok:
                 row["status"] = "INVALID"
