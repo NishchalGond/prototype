@@ -18,6 +18,12 @@ A commercial-grade, multi-register real estate data ingestion, normalization, an
 
 <br/>
 
+> **What changed recently:** cross-register deduplication, Property Type
+> enrichment from portal data (40% → 82%), record lineage with reprocessing,
+> a worker process for ingest, an outreach layer whose call verdicts feed back
+> into data quality, and PDPL opt-out and erasure. Full detail in
+> [CHANGELOG.md](CHANGELOG.md).
+
 ## 🌟 Key Features
 
 <table>
