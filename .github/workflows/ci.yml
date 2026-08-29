@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A superseded run tells you nothing useful once a newer commit exists.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    env:
+      # Tests run against SQLite so they need no service container and stay
+      # fast enough to gate every push. PostgreSQL-only behaviour is covered
+      # by the `migrations` job below.
+      DATABASE_URL: sqlite:///./ci.db
+      SECRET_KEY: ci-secret-key-not-used-outside-this-runner
+      APP_ENV: development
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -q
+
+  migrations:
+    name: Migrations against PostgreSQL
+    runs-on: ubuntu-latest
+    # The migrations carry PostgreSQL-only SQL -- generated columns, GIN
+    # trigram indexes, materialised views, partial indexes with NULLS LAST --
+    # none of which SQLite can parse, so the backend job cannot exercise them.
+    # An error there surfaces on a production table under an ACCESS EXCLUSIVE
+    # lock, which is the worst possible place to find it.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: datalink_ci
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/datalink_ci
+      SECRET_KEY: ci-secret-key-not-used-outside-this-runner
+      APP_ENV: development
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+
+      - name: Apply every migration
+        run: alembic upgrade head
+
+      - name: Roll every migration back
+        # A downgrade that does not work is a migration you cannot undo in an
+        # incident.
+        run: alembic downgrade base
+
+      - name: Re-apply, so the schema is proven reproducible
+        run: alembic upgrade head
+
+      - name: Check the models match the migrations
+        # `alembic check` fails when autogenerate would still produce
+        # operations, i.e. a model was edited without a migration -- after
+        # which a deploy runs against a schema that does not match the code.
+        #
+        # Advisory for now, deliberately. The records table carries four STORED
+        # generated columns, and PostgreSQL rewrites a generated expression
+        # when it stores it, so reflection can report a difference where none
+        # exists. Promote this to a blocking step once a green run confirms it
+        # does not fire spuriously; a gate that cries wolf is worse than none.
+        continue-on-error: true
+        run: alembic check
+
+  frontend:
+    name: Frontend lint and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm run lint
+      - run: npm run build

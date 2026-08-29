@@ -129,6 +129,20 @@ class ColumnPlan:
     positional: bool = False
     unmapped_headers: list[str] = field(default_factory=list)
 
+    def header_for(self, target: str) -> str | None:
+        """Raw source header that fed `target`, or None.
+
+        Needed because some cleaning rules depend on the header rather than the
+        value: a column named "Area (Sqm)" holding a bare 100 is 100 square
+        metres, and nothing in the value itself says so.
+        """
+        for i, t in sorted(self.index_to_target.items()):
+            if t == target and i < len(self.header):
+                h = self.header[i]
+                if h not in (None, ""):
+                    return str(h)
+        return None
+
     def report(self) -> dict:
         return {
             "mapped": {self.header[i] if i < len(self.header) else f"col{i}": t

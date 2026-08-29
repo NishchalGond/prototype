@@ -14,10 +14,13 @@ from pathlib import Path
 from typing import Callable
 
 from . import validation as V
-from .dedup import calculate_name_similarity, extract_property_key
+from . import ENGINE_VERSION
+from .dedup import (FUZZY_THRESHOLD, calculate_name_similarity,
+                    extract_property_key)
 from .detection import UnreadableFile, open_source
 from .mapping import (apply_plan, build_plan, is_reference_sheet,
                       is_repeated_header, sheet_role)
+from .property_reference import load_property_reference
 from .reference import enrich, load_reference
 
 log = logging.getLogger("engine.processor")
@@ -53,9 +56,19 @@ class Processor:
     """Stateless engine. The caller supplies persistence + progress callbacks."""
 
     def __init__(self, *, batch_size: int = 1000, enable_enrichment: bool = True,
-                 reference_path: Path | None = None, record_grain: str = "owner"):
+                 reference_path: Path | None = None, record_grain: str = "owner",
+                 dedup_index=None, property_reference_path: Path | None = None):
         self.batch_size = max(1, batch_size)
         self.record_grain = record_grain
+        # Looks up identity hashes, property keys and phones already stored by
+        # PREVIOUS jobs, one batch at a time. Without it dedup sees only the
+        # file being ingested and the same owner in two registers is stored
+        # twice. None keeps the engine usable with no database at all.
+        self.dedup_index = dedup_index
+        # Property Type for the ~60% of rows whose register never carried one.
+        self.properties = (load_property_reference(property_reference_path)
+                           if enable_enrichment and property_reference_path
+                           else None)
         self.ref = (load_reference(str(reference_path))
                     if enable_enrichment and reference_path else None)
 
@@ -158,6 +171,94 @@ class Processor:
         return index
 
     # ------------------------------------------------------------------
+    def _classify_batch(self, pending, seen, seen_properties, seen_phones,
+                        result) -> list[dict]:
+        """Resolve duplicate status for a whole batch, then hand back the rows.
+
+        Classification is deferred to batch granularity because the
+        cross-register lookups are database round-trips: doing them per row
+        would be one query per record, doing them per batch is three. Rows are
+        still resolved in arrival order, so the first occurrence of a duplicate
+        within the batch stays VALID and later ones become DUPLICATE -- the same
+        semantics as the original per-row loop.
+        """
+        idx = self.dedup_index
+        if idx is not None:
+            db_hashes = idx.seen_hashes([r["identity_hash"] for r, _, _ in pending])
+            db_props = idx.seen_properties([k for _, _, k in pending if k])
+            db_phones = idx.seen_phones(
+                [r["mobile_1"] for r, _, _ in pending if r.get("mobile_1")])
+        else:
+            db_hashes, db_props, db_phones = set(), {}, {}
+
+        rows: list[dict] = []
+        for row, flags, prop_key in pending:
+            if row["identity_hash"] in seen or row["identity_hash"] in db_hashes:
+                row["status"] = "DUPLICATE"
+                flags.append("duplicate_identity_hash")
+                row["validation_flags"] = flags
+                result.duplicate_rows += 1
+                rows.append(row)
+                continue
+
+            # --- Tier 2: fuzzy near-duplicate -------------------------------
+            # Same property, or same phone, plus a name similar enough to be the
+            # same person written differently. In-job matches are checked before
+            # stored ones only because they are free; either is equally valid.
+            match = None
+            if prop_key:
+                prev = seen_properties.get(prop_key) or db_props.get(prop_key)
+                if prev:
+                    sim = calculate_name_similarity(row.get("name"), prev[1])
+                    if sim >= FUZZY_THRESHOLD:
+                        match = ("property", sim, prev[0])
+            if match is None and row.get("mobile_1"):
+                prev = (seen_phones.get(row["mobile_1"])
+                        or db_phones.get(row["mobile_1"]))
+                if prev:
+                    sim = calculate_name_similarity(row.get("name"), prev[1])
+                    if sim >= FUZZY_THRESHOLD:
+                        match = ("phone", sim, prev[0])
+
+            if match is not None:
+                kind, sim, matched_id = match
+                row["status"] = "DUPLICATE"
+                row["fuzzy_match_score"] = round(sim, 3)
+                row["fuzzy_matched_id"] = matched_id
+                flags.append(f"fuzzy_duplicate_{kind}_match_{int(sim * 100)}pct")
+                row["validation_flags"] = flags
+                result.duplicate_rows += 1
+                rows.append(row)
+                continue
+
+            seen.add(row["identity_hash"])
+            if prop_key and row.get("name"):
+                seen_properties[prop_key] = (None, row["name"])
+            if row.get("mobile_1") and row.get("name"):
+                seen_phones[row["mobile_1"]] = (None, row["name"])
+
+            # --- outreach readiness -----------------------------------------
+            has_name = bool(row.get("name") and str(row.get("name")).strip())
+            has_contact = V.is_valid_contact(row)
+            has_property = V.is_valid_property_context(row)
+
+            if has_name and has_contact and has_property:
+                row["status"] = "VALID"
+                result.valid_rows += 1
+            else:
+                row["status"] = "INCOMPLETE"
+                if not has_name and not has_contact:
+                    flags.append("incomplete_missing_name_and_contact")
+                elif not has_name:
+                    flags.append("incomplete_missing_name")
+                elif not has_contact:
+                    flags.append("incomplete_missing_contact")
+                elif not has_property:
+                    flags.append("incomplete_missing_property_info")
+            row["validation_flags"] = flags
+            rows.append(row)
+        return rows
+
     def _process_sheet(self, sheet, source_name, result, seen, seen_properties, seen_phones, on_batch, on_progress):
         # sample the first rows so overloaded headers (AREA / TYPE) resolve on values
         sample_rows: list[list] = []
@@ -228,24 +329,29 @@ class Processor:
         batch: list[dict] = []
         batch_no = 0
         row_no = (sheet.header_row_index + 1) if sheet.header_row_index >= 0 else 0
+        # Resolved once per sheet, not per row: the header is fixed for the
+        # whole sheet and the lookup walks the whole column plan.
+        size_header = plan.header_for("Size")
 
         def flush():
             nonlocal batch, batch_no
             if not batch:
                 return
             batch_no += 1
+            rows = self._classify_batch(batch, seen, seen_properties,
+                                        seen_phones, result)
             try:
-                on_batch(batch)
+                on_batch(rows)
             except Exception as exc:
                 log.exception("batch insert failed")
                 result.errors.append({
                     "sheet_name": sheet.name, "batch_number": batch_no, "source_row": None,
                     "severity": "ERROR", "code": "BATCH_INSERT_FAILED",
                     "message": f"{type(exc).__name__}: {exc}",
-                    "payload": {"batch_size": len(batch)},
+                    "payload": {"batch_size": len(rows)},
                 })
-                result.valid_rows -= len(batch)
-                result.invalid_rows += len(batch)
+                result.valid_rows -= len(rows)
+                result.invalid_rows += len(rows)
             batch = []
 
         consecutive_empty = 0
@@ -296,11 +402,15 @@ class Processor:
                                 fields[k] = v
 
             enriched: list[str] = []
+            enrich_flags: list[str] = []
             if self.ref is not None:
                 try:
-                    enriched = enrich(fields, self.ref, source_name=source_name)
+                    enriched = enrich(fields, self.ref, source_name=source_name,
+                                      flags=enrich_flags,
+                                      properties=self.properties)
                 except Exception:
                     enriched = []
+                    enrich_flags = []
             elif source_name and not fields.get("Community"):
                 from .reference import clean_filename_community
                 inferred = clean_filename_community(source_name)
@@ -308,9 +418,10 @@ class Processor:
                     fields["Community"] = inferred
                     enriched = ["community"]
 
-            row, flags = V.transform(fields, extras)
+            row, flags = V.transform(fields, extras, size_header=size_header)
             ok, vflags = V.validate(row)
             flags.extend(vflags)
+            flags.extend(enrich_flags)
 
             row["source_file"] = source_name
             row["source_sheet"] = sheet.name
@@ -319,6 +430,9 @@ class Processor:
             row["enriched_fields"] = enriched or None
             row["extras"] = V.json_safe(extras) or None
             row["identity_hash"] = V.identity_hash(row)
+            # Stamped at write time so a later rule change can find exactly the
+            # rows it invalidated.
+            row["engine_version"] = ENGINE_VERSION
 
             if not ok:
                 row["status"] = "INVALID"
@@ -331,78 +445,11 @@ class Processor:
                 })
                 return
 
-            if row["identity_hash"] in seen:
-                row["status"] = "DUPLICATE"
-                flags.append("duplicate_identity_hash")
-                row["validation_flags"] = flags
-                result.duplicate_rows += 1
-                batch.append(row)
-                if len(batch) >= self.batch_size:
-                    flush()
-                    if on_progress:
-                        on_progress(result, sheet.name)
-                return
-
-            # --- Fuzzy Near-Duplicate Check (Tier 2) ---
-            prop_key = extract_property_key(row)
-            is_fuzzy_dup = False
-            fuzzy_score = 0.0
-
-            if prop_key and prop_key in seen_properties:
-                prev_record = seen_properties[prop_key]
-                sim = calculate_name_similarity(row.get("name"), prev_record.get("name"))
-                if sim >= 0.85:
-                    is_fuzzy_dup = True
-                    fuzzy_score = round(sim, 3)
-                    flags.append(f"fuzzy_duplicate_property_match_{int(sim*100)}pct")
-
-            if not is_fuzzy_dup and row.get("mobile_1") and row.get("mobile_1") in seen_phones:
-                prev_record = seen_phones[row["mobile_1"]]
-                sim = calculate_name_similarity(row.get("name"), prev_record.get("name"))
-                if sim >= 0.85:
-                    is_fuzzy_dup = True
-                    fuzzy_score = round(sim, 3)
-                    flags.append(f"fuzzy_duplicate_phone_match_{int(sim*100)}pct")
-
-            if is_fuzzy_dup:
-                row["status"] = "DUPLICATE"
-                row["fuzzy_match_score"] = fuzzy_score
-                row["validation_flags"] = flags
-                result.duplicate_rows += 1
-                batch.append(row)
-                if len(batch) >= self.batch_size:
-                    flush()
-                    if on_progress:
-                        on_progress(result, sheet.name)
-                return
-
-            seen.add(row["identity_hash"])
-            if prop_key and row.get("name"):
-                seen_properties[prop_key] = {"name": row["name"], "hash": row["identity_hash"]}
-            if row.get("mobile_1") and row.get("name"):
-                seen_phones[row["mobile_1"]] = {"name": row["name"], "hash": row["identity_hash"]}
-
-            # Check outreach readiness: record must have name, valid phone contact, AND valid property context
-            has_name = bool(row.get("name") and str(row.get("name")).strip())
-            has_contact = V.is_valid_contact(row)
-            has_property = V.is_valid_property_context(row)
-
-            if has_name and has_contact and has_property:
-                row["status"] = "VALID"
-                result.valid_rows += 1
-            else:
-                row["status"] = "INCOMPLETE"
-                if not has_name and not has_contact:
-                    flags.append("incomplete_missing_name_and_contact")
-                elif not has_name:
-                    flags.append("incomplete_missing_name")
-                elif not has_contact:
-                    flags.append("incomplete_missing_contact")
-                elif not has_property:
-                    flags.append("incomplete_missing_property_info")
-                row["validation_flags"] = flags
-
-            batch.append(row)
+            # Duplicate status and outreach readiness are decided in
+            # _classify_batch(), once the whole batch is assembled, so the
+            # cross-register lookups can be batched into three queries instead
+            # of three per row.
+            batch.append((row, flags, extract_property_key(row)))
             if len(batch) >= self.batch_size:
                 flush()
                 if on_progress:

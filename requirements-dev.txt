@@ -1,0 +1,7 @@
+# Test-only dependencies. Kept out of requirements.txt so the production image
+# does not carry a test runner.
+-r requirements.txt
+pytest==8.3.4
+# fastapi.testclient is a thin wrapper over httpx; without it TestClient
+# raises at import time rather than at first use.
+httpx==0.28.1

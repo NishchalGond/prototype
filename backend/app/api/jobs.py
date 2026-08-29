@@ -8,11 +8,13 @@ from pathlib import Path
 from fastapi import (
     APIRouter, BackgroundTasks, Depends, HTTPException, Query, UploadFile, File, status,
 )
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.orm import Session, selectinload
 
 from ..config import settings
 from ..core.security import get_current_user, require_role
+from ..core.dedup_index import DedupIndex
+from ..database.maintenance import refresh_dashboard_caches
 from ..database.session import WRITE_LOCK, SessionLocal, get_db
 from ..models.models import (
     JobSignal, JobStatus, ProcessingError, ProcessingJob, Record, SourceFile,
@@ -539,11 +541,25 @@ def run_job(job_id: int) -> None:
 
     db = SessionLocal()
     try:
+        # Claim the job before touching it. A compare-and-set on the status
+        # is what makes it safe for the API's background task and any number of
+        # worker processes to call this for the same id: exactly one UPDATE
+        # matches a row still sitting in UPLOADED, and everyone else returns.
+        # Cheaper than a lock, and it needs no coordination between processes.
+        claimed = db.execute(
+            update(ProcessingJob)
+            .where(ProcessingJob.id == job_id,
+                   ProcessingJob.status == JobStatus.UPLOADED)
+            .values(status=JobStatus.READING)
+        ).rowcount
+        db.commit()
+        if not claimed:
+            return
+
         job = db.get(ProcessingJob, job_id)
         if job is None:
             return
         src = db.get(SourceFile, job.source_file_id)
-        job.status = JobStatus.READING
         job.started_at = datetime.now(timezone.utc)
         job.heartbeat_at = datetime.now(timezone.utc)
         job.control_signal = None
@@ -570,6 +586,12 @@ def run_job(job_id: int) -> None:
             enable_enrichment=settings.ENABLE_ENRICHMENT,
             reference_path=settings.REFERENCE_WORKBOOK,
             record_grain=settings.RECORD_GRAIN,
+            property_reference_path=settings.PROPERTY_REFERENCE,
+            # Dedup against everything already ingested, not just this file.
+            # exclude_job_id stops a re-run of this job from matching the rows
+            # its own earlier attempt wrote and calling every one a duplicate.
+            dedup_index=(DedupIndex(db, exclude_job_id=job_id)
+                         if settings.CROSS_REGISTER_DEDUP else None),
         )
 
         def on_batch(rows: list[dict]) -> int:
@@ -621,12 +643,14 @@ def run_job(job_id: int) -> None:
                 job.progress_percent = 0.0
             db.commit()
 
-        seen = set(db.scalars(select(Record.identity_hash)
-                              .where(Record.source_file == src.filename)).all())
-
+        # No preloaded hash set. It used to be filtered to this filename, which
+        # meant duplicates were only ever detected within a single register, and
+        # loading every hash for a 20M-row corpus is not something a worker
+        # process can hold anyway. DedupIndex probes the database per batch
+        # instead, so matches now span every register ingested to date.
         result = processor.process(
             Path(src.stored_path), source_name=src.filename,
-            on_batch=on_batch, on_progress=on_progress, seen_hashes=seen,
+            on_batch=on_batch, on_progress=on_progress,
         )
 
         src.detected_format = result.detected_format
@@ -652,6 +676,13 @@ def run_job(job_id: int) -> None:
         job.current_sheet = None
         job.control_signal = None
         db.commit()
+
+        # An ingest is the only thing that changes the dashboard's cached
+        # aggregates, so it is the only thing that needs to refresh them. Runs
+        # after the commit so the rebuild sees this job's rows, and cannot fail
+        # the job -- refresh_dashboard_caches swallows its own errors and stale
+        # tiles are corrected by the next refresh.
+        refresh_dashboard_caches()
 
     except InterruptedError as exc:
         db.rollback()

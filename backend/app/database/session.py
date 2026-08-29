@@ -18,6 +18,10 @@ def _clean_url(u: str) -> str:
 db_url = _clean_url(settings.DATABASE_URL)
 _is_sqlite = db_url.startswith("sqlite")
 
+# Exported so query builders can pick PostgreSQL-only constructs (generated
+# columns, trigram-backed LIKE) without re-parsing the URL or importing settings.
+IS_POSTGRES = not _is_sqlite
+
 # Background jobs each hold a session open for the job's full duration (can be
 # a minute+ on large files), and the dashboard polls /api/jobs/{id} on top of
 # that. With SQLite's file-backed connections, pooling buys nothing and a
@@ -33,7 +37,16 @@ engine = create_engine(
     future=True,
     poolclass=NullPool if _is_sqlite else None,
     pool_pre_ping=not _is_sqlite,
-    **({} if _is_sqlite else {"pool_size": 20, "max_overflow": 40, "pool_timeout": 30}),
+    **({} if _is_sqlite else {
+        "pool_size": settings.DB_POOL_SIZE,
+        "max_overflow": settings.DB_MAX_OVERFLOW,
+        "pool_timeout": 30,
+        # Connections idle longer than this are recycled. Managed PostgreSQL
+        # (RDS, Supabase) and any pooler in front of it will drop idle
+        # connections server-side; without recycling, the first query on a
+        # silently-dead connection fails instead of reconnecting.
+        "pool_recycle": 1800,
+    }),
     connect_args={"check_same_thread": False, "timeout": 60}
     if _is_sqlite else {},
 )
@@ -62,7 +75,12 @@ read_engine = create_engine(
     future=True,
     poolclass=NullPool if _is_read_sqlite else None,
     pool_pre_ping=not _is_read_sqlite,
-    **({} if _is_read_sqlite else {"pool_size": 25, "max_overflow": 50, "pool_timeout": 30}),
+    **({} if _is_read_sqlite else {
+        "pool_size": settings.DB_READ_POOL_SIZE,
+        "max_overflow": settings.DB_READ_MAX_OVERFLOW,
+        "pool_timeout": 30,
+        "pool_recycle": 1800,
+    }),
     connect_args={"check_same_thread": False, "timeout": 60}
     if _is_read_sqlite else {},
 )

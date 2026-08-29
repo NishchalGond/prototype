@@ -1,10 +1,73 @@
 """SQLAlchemy models. Target: PostgreSQL. Compatible with SQLite for local dev."""
+import os
 from datetime import datetime, timezone
 
 from sqlalchemy import (
-    JSON, Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, func,
+    JSON, Boolean, Computed, DateTime, Float, ForeignKey, Index, Integer,
+    String, Text, func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+# Search acceleration columns are computed by the database, not the application,
+# so they can never drift out of sync with the fields they summarise. PostgreSQL
+# is the production target and gets the exact expressions; SQLite (local dev
+# only) gets simplified equivalents because it has no regexp_replace and no `~`
+# operator. The dev approximations are good enough to keep `create_all` working
+# and are never relied on for correctness -- the SQLite search path in
+# core/search.py queries the underlying columns directly instead.
+_IS_SQLITE = "sqlite" in os.getenv("DATABASE_URL", "sqlite").lower()
+
+# Every field the free-text search needs to reach, concatenated and lowercased.
+_SEARCH_SOURCE_FIELDS = (
+    "name", "community", "sub_community", "building_cluster", "unit_number",
+    "mobile_1", "mobile_2", "mobile_3", "email_address", "plot_number",
+    "pi_number", "project", "developer", "property_type", "nationality",
+)
+SEARCH_TEXT_EXPR = "lower(" + " || ' ' || ".join(
+    f"coalesce({f}, '')" for f in _SEARCH_SOURCE_FIELDS
+) + ")"
+
+_MOBILE_BLOB = " || ' ' || ".join(
+    f"coalesce({f}, '')" for f in ("mobile_1", "mobile_2", "mobile_3"))
+
+if _IS_SQLITE:
+    # SQLite has no regexp_replace; strip the punctuation that actually occurs
+    # in the cleaned E.164 output.
+    MOBILE_DIGITS_EXPR = _MOBILE_BLOB
+    for _ch in ("+", "-", " ", "(", ")"):
+        MOBILE_DIGITS_EXPR = f"replace({MOBILE_DIGITS_EXPR}, '{_ch}', '')"
+    # No regex: approximate "looks like a real international number".
+    HAS_VALID_MOBILE_EXPR = (
+        "(mobile_1 IS NOT NULL AND mobile_1 <> '' "
+        "AND lower(mobile_1) <> 'n/a' AND length(mobile_1) >= 11 "
+        "AND substr(mobile_1, 1, 1) = '+')"
+    )
+else:
+    MOBILE_DIGITS_EXPR = f"regexp_replace({_MOBILE_BLOB}, '[^0-9]', '', 'g')"
+    # Mirrors the three accepted shapes the API previously evaluated per row at
+    # query time: UAE mobile, UAE landline, and any other E.164 number.
+    HAS_VALID_MOBILE_EXPR = (
+        "(mobile_1 IS NOT NULL AND mobile_1 <> '' "
+        "AND lower(mobile_1) <> 'n/a' AND ("
+        r"mobile_1 ~ '^\+9715[024568][0-9]{7}$' OR "
+        r"mobile_1 ~ '^\+971[234679][0-9]{7}$' OR "
+        r"mobile_1 ~ '^\+[1-9][0-9]{9,14}$'))"
+    )
+
+
+# community|building|unit blocking key. Deliberately expressed with only
+# CASE/upper/trim/coalesce/nullif so one definition serves PostgreSQL and the
+# SQLite dev database alike.
+_PROPERTY_UNIT_EXPR = (
+    "coalesce(nullif(trim(unit_number), ''), nullif(trim(plot_number), ''))"
+)
+PROPERTY_KEY_EXPR = (
+    "CASE WHEN trim(coalesce(community, '')) <> '' "
+    f"AND {_PROPERTY_UNIT_EXPR} IS NOT NULL "
+    "THEN upper(trim(community)) || '|' || "
+    "upper(trim(coalesce(building_cluster, ''))) || '|' || "
+    f"upper({_PROPERTY_UNIT_EXPR}) END"
+)
 
 
 def utcnow() -> datetime:
@@ -233,12 +296,55 @@ class Record(Base):
     validation_flags: Mapped[list | None] = mapped_column(JSON)
     enriched_fields: Mapped[list | None] = mapped_column(JSON)
     owner_count: Mapped[int | None] = mapped_column(Integer)   # joint ownership size
+    # Which set of engine rules produced this row. See engine/__init__.py.
+    # NULL means it predates versioning, which is equivalent to "stale".
+    # Indexed because the reprocess planner's only question is "which rows are
+    # not at the current version", asked over the whole table.
+    engine_version: Mapped[int | None] = mapped_column(Integer, index=True)
     extras: Mapped[dict | None] = mapped_column(JSON)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
+    # --- search acceleration (database-generated, never written by the app) --
+    # These exist so the dashboard's two hottest predicates stop being computed
+    # per row at query time:
+    #
+    #   search_text       one lowercased blob of every searchable field, with a
+    #                     single GIN trigram index over it. Replaces an OR of
+    #                     ILIKE across 13 separately-indexed columns, which the
+    #                     planner could only answer with a full sequential scan.
+    #   mobile_digits     digits-only form of all three mobile columns, so a
+    #                     number can be found however it was typed.
+    #   has_valid_mobile  the default view's "verified valid mobile" rule,
+    #                     evaluated once at write time instead of running three
+    #                     regexes against every row on every page load.
+    #
+    # Computed(persisted=True) emits GENERATED ALWAYS AS ... STORED, so
+    # SQLAlchemy omits them from INSERT/UPDATE automatically and no ingest or
+    # edit path can leave them stale.
+    # Blocking key for Tier-2 fuzzy dedup: community|building|unit, uppercased,
+    # falling back to plot number when there is no unit. NULL when the row has
+    # no locatable property, so the partial index below stays small.
+    #
+    # This exists as a generated column for the same reason search_text does --
+    # dedup has to probe it for a whole batch of incoming rows at once, and an
+    # expression the planner cannot index turns every batch into a table scan.
+    # engine/dedup.py:extract_property_key() produces the identical string in
+    # Python; test_dedup_key_matches_sql_expression guards the pair.
+    property_key: Mapped[str | None] = mapped_column(
+        Text, Computed(PROPERTY_KEY_EXPR, persisted=True), nullable=True)
+
+    search_text: Mapped[str | None] = mapped_column(
+        Text, Computed(SEARCH_TEXT_EXPR, persisted=True), nullable=True)
+    mobile_digits: Mapped[str | None] = mapped_column(
+        Text, Computed(MOBILE_DIGITS_EXPR, persisted=True), nullable=True)
+    has_valid_mobile: Mapped[bool | None] = mapped_column(
+        Boolean, Computed(HAS_VALID_MOBILE_EXPR, persisted=True), nullable=True)
+
     __table_args__ = (
         Index("ix_records_location", "community", "building_cluster", "unit_number"),
+        # Tier-2 dedup probes this for every incoming batch.
+        Index("ix_records_property_key", "property_key"),
         Index("ix_records_job_status", "job_id", "status"),
         # run_job preloads every identity_hash already stored for the file it is
         # about to ingest; without this the lookup scans the whole table.

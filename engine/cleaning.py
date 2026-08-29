@@ -253,22 +253,39 @@ def clean_number(v) -> float | None:
 
 _SQM_HEADER_RE = re.compile(r"(sqm|sq\s*\.?\s*m|m2|m²|sq\s*meter|square\s*meter)", re.I)
 _SQM_VAL_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(?:sqm|sq\s*\.?\s*m|m2|m²|sq\s*meter|square\s*meter)", re.I)
+_SQFT_VAL_RE = re.compile(
+    r"(\d+(?:\.\d+)?)\s*(?:sq\s*\.?\s*ft|sqft|square\s*feet|feet)", re.I)
 _UNIT_STRIP_RE = re.compile(r"\s*(?:sqm|sq\s*\.?\s*m|m2|m²|sq\s*meter|square\s*meter|sq\s*\.?\s*ft|sqft|square\s*feet|feet|ft)\s*$", re.I)
 SQM_TO_SQFT_MULT = 10.763910416711
 
 
 def clean_size(v, raw_header: str | None = None) -> float | None:
-    """Clean size number, automatically converting Sqm (m2) to Sq.Ft (1 m2 = 10.76391 sq.ft)."""
+    """Clean size number, automatically converting Sqm (m2) to Sq.Ft (1 m2 = 10.76391 sq.ft).
+
+    The unit can be stated in the value ("100 sqm") or only in the column header
+    ("Total Size Sqm."). A unit on the value wins, because it describes that one
+    cell; the header is the fallback for the far commoner case of a bare number
+    under a headline that names the unit once.
+    """
     if v is None:
         return None
 
     is_sqm = False
+    value_states_unit = False
     cleaned_input = v
     if isinstance(v, str):
         if _SQM_VAL_RE.search(v):
-            is_sqm = True
+            is_sqm = value_states_unit = True
+        elif _SQFT_VAL_RE.search(v):
+            # Explicitly square feet: never re-convert, whatever the header says.
+            value_states_unit = True
         cleaned_input = _UNIT_STRIP_RE.sub("", v).strip()
-    elif raw_header and _SQM_HEADER_RE.search(str(raw_header)):
+
+    # Checked for every value type, not just non-strings. Reading a file gives
+    # strings, so gating this behind `elif isinstance(v, str)` meant the header
+    # was consulted for almost nothing and sq.m columns were stored 10.76x too
+    # small.
+    if not value_states_unit and raw_header and _SQM_HEADER_RE.search(str(raw_header)):
         is_sqm = True
 
     f = clean_number(cleaned_input)
@@ -382,6 +399,220 @@ def clean_nationality(v) -> str | None:
     return s.title() if s.isupper() and len(s) > 3 else s
 
 
+# --------------------------------------------------------------------------
+# property type
+# --------------------------------------------------------------------------
+# Source registers state property type in DLD vocabulary ("Unit", "Flat",
+# "Land", "Commercial") while the sales desk works in market vocabulary
+# (Apartment, Villa, Townhouse, Plot). Left raw, the same kind of property
+# splits across several filter values and the field is close to unusable, which
+# is a large part of why it looked empty even where it was populated.
+#
+# Canonical vocabulary is deliberately small. Distinctions the source data
+# cannot support -- Villa vs Townhouse, Apartment vs Duplex -- are not invented
+# here; they need the property reference layer.
+PROPERTY_TYPES = (
+    "Apartment", "Villa", "Townhouse", "Penthouse", "Plot", "Office",
+    "Retail", "Warehouse", "Building", "Hotel Apartment", "Commercial",
+    "Labour Camp", "Showroom",
+)
+
+# Matched on the normalised (uppercase, punctuation-stripped) value. Longest
+# phrase wins, so "HOTEL APARTMENT" is not read as "APARTMENT".
+_PROPERTY_TYPE_MAP = {
+    "APARTMENT": "Apartment", "APARTMENTS": "Apartment", "APT": "Apartment",
+    "FLAT": "Apartment", "FLATS": "Apartment", "UNIT": "Apartment",
+    "UNITS": "Apartment", "RESIDENTIAL FLAT": "Apartment",
+    "RESIDENTIAL UNIT": "Apartment", "RESIDENTIAL APARTMENT": "Apartment",
+    "STUDIO": "Apartment",
+    "VILLA": "Villa", "VILLAS": "Villa", "RESIDENTIAL VILLA": "Villa",
+    "INDEPENDENT VILLA": "Villa", "SINGLE VILLA": "Villa",
+    "TOWNHOUSE": "Townhouse", "TOWN HOUSE": "Townhouse", "TH": "Townhouse",
+    "PENTHOUSE": "Penthouse", "PENT HOUSE": "Penthouse",
+    "DUPLEX": "Apartment",
+    "LAND": "Plot", "PLOT": "Plot", "VACANT LAND": "Plot",
+    "RESIDENTIAL LAND": "Plot", "COMMERCIAL LAND": "Plot", "LAND PLOT": "Plot",
+    "OFFICE": "Office", "OFFICES": "Office", "OFFICE SPACE": "Office",
+    "SHOP": "Retail", "SHOPS": "Retail", "RETAIL": "Retail",
+    "SHOWROOM": "Showroom", "SHOW ROOM": "Showroom",
+    "WAREHOUSE": "Warehouse", "STORE": "Warehouse", "STORAGE": "Warehouse",
+    "BUILDING": "Building", "WHOLE BUILDING": "Building", "TOWER": "Building",
+    "HOTEL APARTMENT": "Hotel Apartment", "HOTEL APARTMENTS": "Hotel Apartment",
+    "HOTEL ROOMS": "Hotel Apartment", "SERVICED APARTMENT": "Hotel Apartment",
+    "LABOUR CAMP": "Labour Camp", "LABOR CAMP": "Labour Camp",
+    "STAFF ACCOMMODATION": "Labour Camp",
+    "COMMERCIAL": "Commercial", "RESIDENTIAL": "Apartment",
+}
+
+_PT_PUNCT_RE = re.compile(r"[^A-Z0-9 ]+")
+# Longest-first so multi-word entries are tested before their component words.
+_PT_PHRASES = sorted(_PROPERTY_TYPE_MAP, key=len, reverse=True)
+_PT_PHRASE_RE = re.compile(
+    r"\b(?:%s)\b" % "|".join(re.escape(k) for k in _PT_PHRASES))
+
+
+def clean_property_type(v) -> str | None:
+    """Normalise a property type into the canonical vocabulary, or None.
+
+    An unrecognised value is kept rather than dropped -- the source may know
+    something this map does not -- but it is title-cased so the same word in
+    two letter-cases does not become two filter entries.
+    """
+    s = clean_text(v)
+    if not s:
+        return None
+
+    key = _WS_RE.sub(" ", _PT_PUNCT_RE.sub(" ", s.upper())).strip()
+    if not key:
+        return None
+
+    exact = _PROPERTY_TYPE_MAP.get(key)
+    if exact:
+        return exact
+
+    # "Residential Flat - Freehold", "Unit (Apartment)" and similar: find the
+    # longest known phrase anywhere in the value.
+    m = _PT_PHRASE_RE.search(key)
+    if m:
+        return _PROPERTY_TYPE_MAP[m.group(0)]
+
+    return s.title() if s.isupper() and len(s) > 2 else s
+
+
+# --------------------------------------------------------------------------
+# developers
+# --------------------------------------------------------------------------
+# Source files write a developer a dozen ways -- "EMAAR", "Emaar Properties",
+# "EMAAR PROPERTIES PJSC", "Emaar Properties L.L.C" -- and the reference
+# workbook adds its own ("Emaar Properties (JV with Meraas/Dubai Holding)").
+# Left alone they are distinct strings, so every Developer filter, facet count
+# and GROUP BY splits one builder into several. Canonicalising here is what the
+# "Developer Reference Resolver" is supposed to do.
+
+# Parenthetical qualifiers: "(JV with Meraas/Dubai Holding)", "(Verified)".
+_DEV_PAREN_RE = re.compile(r"\s*[\(\[].*?[\)\]]", re.S)
+# Legal form and generic corporate words, stripped to reach the brand token.
+_DEV_SUFFIX_RE = re.compile(
+    r"\b(p\.?\s?j\.?\s?s\.?\s?c|l\.?\s?l\.?\s?c|fz\s?-?\s?llc|fzco|fze|psc|"
+    r"pvt|private|ltd|limited|co|company|corp|corporation|est|establishment|"
+    r"group|holdings?|international|developments?|development|developers?|"
+    r"properties|property|real\s+estate|realty|projects?)\b\.?",
+    re.I,
+)
+_DEV_PUNCT_RE = re.compile(r"[^A-Z0-9 ]+")
+
+# Placeholder values that name no builder. Storing them makes a record look
+# enriched while giving the sales desk nothing to act on.
+_DEV_NOT_A_DEVELOPER = {
+    "MULTIPLE PRIVATE", "MULTIPLE", "VARIOUS", "VARIOUS PRIVATE", "PRIVATE",
+    "PRIVATE OWNERS", "OWNER", "OWNERS", "INDIVIDUAL", "INDIVIDUALS",
+    "UNKNOWN", "OTHER", "OTHERS", "MISC", "MISCELLANEOUS", "TBD", "NA",
+    "SELF", "GOVERNMENT", "MUNICIPALITY",
+}
+
+# Brand token -> canonical name. Keys are the reduced form produced by
+# _developer_key(), so every spelling that reduces to the same brand collapses.
+_DEVELOPER_CANON = {
+    "EMAAR": "Emaar Properties",
+    "EMAAR SOUTH": "Emaar Properties",
+    "EMAAR MISR": "Emaar Properties",
+    "DAMAC": "DAMAC Properties",
+    "NAKHEEL": "Nakheel",
+    "ALDAR": "Aldar Properties",
+    "SOBHA": "Sobha Realty",
+    "MERAAS": "Meraas",
+    "DUBAI": "Dubai Properties",
+    "DP": "Dubai Properties",
+    "DUBAI HOLDING": "Dubai Holding",
+    "TECOM": "TECOM Group",
+    "AZIZI": "Azizi Developments",
+    "DANUBE": "Danube Properties",
+    "ELLINGTON": "Ellington Properties",
+    "BINGHATTI": "Binghatti Developers",
+    "DEYAAR": "Deyaar Development",
+    "UNION": "Union Properties",
+    "WASL": "Wasl Properties",
+    "OMNIYAT": "Omniyat",
+    "SELECT": "Select Group",
+    "MAG": "MAG Property Development",
+    "TIGER": "Tiger Properties",
+    "NSHAMA": "Nshama",
+    "ARADA": "Arada",
+    "BLOOM": "Bloom Holding",
+    "EAGLE HILLS": "Eagle Hills",
+    "IMKAN": "IMKAN Properties",
+    "MODON": "Modon Properties",
+    "ALEF": "Alef Group",
+    "RAK": "RAK Properties",
+    "SHARJAH": "Sharjah Holding",
+    "ARABTEC": "Arabtec Holding",
+    "SAMANA": "Samana Developers",
+    "OBJECT ONE": "Object 1",
+    "OBJECT 1": "Object 1",
+    "SEVEN": "Seven Tides",
+    "SEVEN TIDES": "Seven Tides",
+    "SIX CONSTRUCT": "Six Construct",
+    "DUBAI SOUTH": "Dubai South",
+    "NAKHEEL PJSC": "Nakheel",
+    "SHAPOORJI PALLONJI": "Shapoorji Pallonji",
+    "ELLINGTON HOUSE": "Ellington Properties",
+    "GJ": "GJ Properties",
+    "PALMA": "Palma Holding",
+    "REPORTAGE": "Reportage Properties",
+    "ORA": "Ora Developers",
+    "SWANK": "Swank Development",
+    "LEOS": "LEOS Developments",
+    "PRESCOTT": "Prescott Development",
+    "IMAN": "Iman Developers",
+    "AYS": "AYS Developers",
+    "ZAYA": "Zaya Living",
+    "SCHON": "Schon Properties",
+    "FAKHRUDDIN": "Fakhruddin Properties",
+    "ORANGE": "Orange Developments",
+    "AQUA": "Aqua Properties",
+    "PANTHEON": "Pantheon Development",
+    "VINCITORE": "Vincitore Realty",
+}
+
+
+def _developer_key(s: str) -> str:
+    """Reduce a developer string to its brand token for canonical lookup."""
+    t = _DEV_PAREN_RE.sub(" ", s).upper()
+    # "TECOM Group / Dubai Holding", "Dubai Properties (master developer);
+    # many tower developers" -- the first segment names the entity, the rest
+    # qualifies it.
+    t = re.split(r"[/;]", t)[0]
+    t = _DEV_SUFFIX_RE.sub(" ", t)
+    t = _DEV_PUNCT_RE.sub(" ", t)
+    return _WS_RE.sub(" ", t).strip()
+
+
+def clean_developer(v) -> str | None:
+    """Canonicalise a developer name, or None when the value names no builder.
+
+    Unknown developers are preserved (title-cased when the source shouted them)
+    rather than dropped -- the map cannot know every builder in the UAE, and
+    losing a real one is worse than leaving it uncanonicalised.
+    """
+    s = clean_text(v)
+    if not s:
+        return None
+
+    key = _developer_key(s)
+    if not key or key in _DEV_NOT_A_DEVELOPER:
+        return None
+
+    canon_name = _DEVELOPER_CANON.get(key)
+    if canon_name:
+        return canon_name
+
+    # No brand match. Keep the original wording, minus any parenthetical, and
+    # fix the all-caps shouting so facets do not split on case alone.
+    kept = re.split(r"[;]", _DEV_PAREN_RE.sub(" ", s))[0]
+    kept = _WS_RE.sub(" ", kept).strip().rstrip(",")
+    return (kept.title() if kept.isupper() and len(kept) > 3 else kept) or None
+
+
 _COMMUNITY_CANON_MAP = {
     "DAMAC HILLS": "DAMAC Hills",
     "DAMAC HILLS 2": "DAMAC Hills 2",
@@ -402,7 +633,31 @@ _COMMUNITY_CANON_MAP = {
     "AL KIFAF": "Al Kifaf",
     "MEYDAN": "Meydan",
     "TOWN SQUARE": "Town Square",
+    "DAMAC LAGOONS": "DAMAC Lagoons",
+    "DUBAI CREEK HARBOUR": "Dubai Creek Harbour",
+    "EMAAR BEACHFRONT": "Emaar Beachfront",
+    "DUBAI SPORTS CITY": "Dubai Sports City",
+    "JUMEIRAH GOLF ESTATES": "Jumeirah Golf Estates",
+    "THE VALLEY": "The Valley",
+    "TILAL AL GHAF": "Tilal Al Ghaf",
 }
+
+# Districts where a trailing number is part of the name, not a stray plot number.
+# "Al Barsha 1/2/3", "Al Quoz 1-4" and "DAMAC Hills 2" are separate communities
+# in separate locations; collapsing them into an unnumbered base merges them and
+# corrupts identity_hash along with the dedup that depends on it.
+_NUMBERED_COMMUNITY_BASES = {
+    "DAMAC HILLS", "AL BARSHA", "AL QUOZ", "AL NAHDA", "AL WARQA", "AL WARQAA",
+    "MUHAISNAH", "JUMEIRAH", "AL SUFOUH", "AL QUSAIS", "AL TWAR", "AL MIZHAR",
+    "INTERNATIONAL CITY", "DUBAI INVESTMENT PARK", "DUBAI INVESTMENTS PARK",
+    "JUMEIRAH VILLAGE", "NAD AL SHEBA", "AL SAFA", "UMM SUQEIM", "AL MANARA",
+    "AL RASHIDIYA", "AL KHAIL HEIGHTS", "LIVING LEGENDS", "AL WASL",
+    "SPRINGS", "MEADOWS", "LAKES", "THE SPRINGS", "THE MEADOWS", "THE LAKES",
+    "EMIRATES HILLS", "AL FURJAN", "SERENA", "MUDON", "REEM",
+}
+# A district suffix is a single small integer. Anything larger is a plot number.
+_MAX_DISTRICT_NUMBER = 9
+_TRAILING_NUM_RE = re.compile(r"^(.*?)\s+(\d{1,2})$")
 
 
 _COMMUNITY_HEADER_NOISE_RE = re.compile(
@@ -418,16 +673,31 @@ def clean_community(v) -> str | None:
     if _COMMUNITY_HEADER_NOISE_RE.match(s.strip()):
         return None
 
-    # Strip trailing plot/sub-location numbers attached to community names (e.g. DAMAC HILLS 1044 -> DAMAC HILLS)
+    # The raw value is matched first. A canonical name that legitimately ends in
+    # a number ("DAMAC Hills 2") has to win before the trailing-number strip
+    # below can eat the digit that distinguishes it.
+    upper_raw = s.upper()
+    if upper_raw in _COMMUNITY_CANON_MAP:
+        return _COMMUNITY_CANON_MAP[upper_raw]
+
+    # A small trailing integer on a known district base is part of the name.
+    m = _TRAILING_NUM_RE.match(s)
+    if m:
+        base_raw, num = m.group(1).strip(), int(m.group(2))
+        base_upper = base_raw.upper()
+        if base_upper in _NUMBERED_COMMUNITY_BASES and 1 <= num <= _MAX_DISTRICT_NUMBER:
+            base = _COMMUNITY_CANON_MAP.get(base_upper)
+            if base is None:
+                base = base_raw.title() if base_raw.isupper() else base_raw
+            return f"{base} {num}"
+
+    # Anything else trailing a number is a plot/sub-location id stuck onto the
+    # community name (e.g. "DAMAC HILLS 1044"); drop it.
     stripped = re.sub(r"\s+\d+$", "", s).strip()
     upper_stripped = stripped.upper()
 
     if upper_stripped in _COMMUNITY_CANON_MAP:
         return _COMMUNITY_CANON_MAP[upper_stripped]
-
-    upper_raw = s.upper()
-    if upper_raw in _COMMUNITY_CANON_MAP:
-        return _COMMUNITY_CANON_MAP[upper_raw]
 
     if len(stripped) > 2 and stripped.isupper():
         return stripped.title()
