@@ -60,3 +60,12 @@ Documentation/
 
 # Generated SECRET_KEY for local runs. Never committed.
 .secret.local
+
+# Knowledge graph (graphify). The report and the hand-written community labels
+# are worth keeping -- the report is readable and diffs sensibly, and the labels
+# took real effort to write. Everything else regenerates: the cache, the dated
+# backups, the interactive HTML, and .graphify_python, which holds an absolute
+# path to whichever machine last built it.
+graphify-out/*
+!graphify-out/GRAPH_REPORT.md
+!graphify-out/.graphify_labels.json
