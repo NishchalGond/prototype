@@ -53,6 +53,10 @@ from . import cleaning as C
 
 log = logging.getLogger("engine.property_reference")
 
+# Distilled lookups committed with the code; see PropertyReference.to_index().
+# Regenerate with scripts/build_property_index.py after refreshing the export.
+_INDEX_FALLBACK = Path(__file__).resolve().parent / "resources" / "property_index.json"
+
 # Column spellings seen across portal and registry exports. Matched after
 # normalising to uppercase with punctuation collapsed.
 _COLUMN_ALIASES = {
@@ -268,6 +272,31 @@ class PropertyReference:
 
         return self._by_community.get(_key(comm))
 
+    # --- bundled index ----------------------------------------------------
+    # The portal export is 23MB and gitignored, so a clean clone would enrich
+    # nothing. Only the distilled lookups are needed at runtime, and they are
+    # small enough to commit -- the same trick engine/resources/uae_developers
+    # .json already plays for the gitignored builders workbook.
+    _INDEXES = ("_by_unit", "_by_building", "_by_community", "_by_name")
+
+    def to_index(self) -> dict:
+        return {
+            name: {k: [f.property_type, f.precision, f.support, f.bedroom, f.size]
+                   for k, f in getattr(self, name).items()}
+            for name in self._INDEXES
+        }
+
+    @classmethod
+    def from_index(cls, data: dict) -> "PropertyReference":
+        ref = cls([])
+        for name in cls._INDEXES:
+            setattr(ref, name, {
+                k: PropertyFacts(property_type=v[0], precision=v[1],
+                                 support=v[2], bedroom=v[3], size=v[4])
+                for k, v in (data.get(name) or {}).items()
+            })
+        return ref
+
     def stats(self) -> dict:
         return {
             "source_rows": len(self.rows),
@@ -391,6 +420,14 @@ def load_property_reference(path: str | Path) -> PropertyReference:
     """
     path = Path(path)
     if not path.exists():
+        # Fall back to the index committed alongside the code, so enrichment
+        # works from a clean clone without the 23MB export present.
+        if _INDEX_FALLBACK.exists():
+            import json
+            ref = PropertyReference.from_index(
+                json.loads(_INDEX_FALLBACK.read_text(encoding="utf-8")))
+            log.info("property reference loaded from bundled index: %s", ref.stats())
+            return ref
         log.info("property reference not found: %s", path)
         return PropertyReference([])
 

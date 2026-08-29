@@ -115,8 +115,11 @@ def test_reference_values_are_normalised_on_load():
 
 
 def test_a_missing_reference_file_is_not_an_error(tmp_path):
+    # Must not raise. It now falls back to the committed index rather than
+    # returning nothing, so a missing export degrades enrichment, never breaks
+    # an ingest. See test_enrichment_works_from_a_clean_clone.
     ref = load_property_reference(tmp_path / "does_not_exist.csv")
-    assert len(ref) == 0
+    assert isinstance(ref, PropertyReference)
 
 
 def test_column_spellings_are_detected_across_export_formats(tmp_path):
@@ -234,3 +237,21 @@ def test_a_register_community_is_also_tried_as_a_development_name():
         *[("Dubai Hills Estate", "Club Villas", "", "Villa", 4, 4500)] * 5))
     facts = ref.lookup("Club Villas", None, "12")
     assert facts is not None and facts.property_type == "Villa"
+
+
+# --- bundled index ----------------------------------------------------------
+
+def test_enrichment_works_from_a_clean_clone():
+    # The 23MB export is gitignored; without the committed index a fresh
+    # checkout would enrich no Property Type at all.
+    ref = load_property_reference("no-such-export-directory")
+    assert len(ref) > 0
+    assert ref.lookup("Dubai Marina", "Marina Heights", "") is not None
+
+
+def test_the_index_round_trips():
+    ref = PropertyReference(_rows(
+        *[("Dubai Marina", "Marina Heights", "", "Apartment", 2, 900)] * 4))
+    restored = PropertyReference.from_index(ref.to_index())
+    assert (restored.lookup("Dubai Marina", "Marina Heights", "77").property_type
+            == ref.lookup("Dubai Marina", "Marina Heights", "77").property_type)
