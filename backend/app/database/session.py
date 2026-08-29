@@ -64,6 +64,11 @@ if _is_sqlite:
         # concurrent jobs write in parallel; without this SQLite raises
         # "database is locked" instead of waiting for the writer to finish
         cur.execute("PRAGMA busy_timeout=60000")
+        # SQLite ignores every ON DELETE clause in the schema unless this is on,
+        # per connection. Without it the dev database silently disagrees with
+        # production about referential integrity: records.job_id CASCADE does
+        # not fire, and leads.record_id SET NULL leaves a dangling pointer.
+        cur.execute("PRAGMA foreign_keys=ON")
         cur.close()
 
 read_db_url = _clean_url(settings.READ_DATABASE_URL or settings.DATABASE_URL)

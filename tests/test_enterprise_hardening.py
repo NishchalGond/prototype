@@ -18,7 +18,9 @@ from sqlalchemy import func, select
 from backend.app.core.security import hash_password, verify_password, create_access_token, decode_access_token
 from backend.app.database.session import SessionLocal, init_db
 from backend.app.main import app
-from backend.app.models.models import User, UserRole, Record, RecordStatus, RecordEditAudit, ExportAuditLog
+from backend.app.models.models import (User, UserRole, Record, RecordStatus,
+                                       RecordEditAudit, ExportAuditLog,
+                                       ProcessingJob, SourceFile)
 from engine.dedup import calculate_name_similarity, normalize_name_tokens, extract_property_key
 
 client = TestClient(app)
@@ -43,6 +45,20 @@ def setup_database():
                 is_active=True,
                 can_export=True,
             ))
+            db.commit()
+
+        # Records below are inserted with job_id=1. Foreign keys are enforced
+        # now (PRAGMA foreign_keys=ON), so the parent rows have to exist --
+        # previously SQLite accepted the dangling reference silently.
+        if not db.get(ProcessingJob, 1):
+            src = db.scalar(select(SourceFile).where(SourceFile.id == 1))
+            if not src:
+                src = SourceFile(id=1, filename="test_sheet.xlsx",
+                                 stored_path="/tmp/test_sheet.xlsx",
+                                 size_bytes=1, content_sha256="t" * 64)
+                db.add(src)
+                db.flush()
+            db.add(ProcessingJob(id=1, source_file_id=src.id, status="COMPLETED"))
             db.commit()
     finally:
         db.close()

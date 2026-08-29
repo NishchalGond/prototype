@@ -15,6 +15,8 @@ from ..config import settings
 from ..core.security import get_current_user, require_role
 from ..core.dedup_index import DedupIndex
 from ..database.maintenance import refresh_dashboard_caches
+from .erasure import apply_erasures
+from .leads import relink_leads
 from ..database.session import WRITE_LOCK, SessionLocal, get_db
 from ..models.models import (
     JobSignal, JobStatus, ProcessingError, ProcessingJob, Record, SourceFile,
@@ -683,6 +685,22 @@ def run_job(job_id: int) -> None:
         # the job -- refresh_dashboard_caches swallows its own errors and stale
         # tiles are corrected by the next refresh.
         refresh_dashboard_caches()
+
+        # Reprocessing deleted and rewrote this job's records, detaching any
+        # leads that pointed at the old row ids. Reattach them by identity_hash
+        # so outreach history follows the data it belongs to.
+        try:
+            relink_leads(db, job_id)
+        except Exception:
+            log.exception("lead relink failed for job %s", job_id)
+
+        # Records are rebuilt from a source file that still contains the
+        # people who asked to be erased. Without this, the next reprocess
+        # quietly restores what was deleted.
+        try:
+            apply_erasures(db, job_id)
+        except Exception:
+            log.exception("erasure re-apply failed for job %s", job_id)
 
     except InterruptedError as exc:
         db.rollback()

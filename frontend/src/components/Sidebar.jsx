@@ -1,5 +1,5 @@
 import React from 'react';
-import { 
+import { PhoneCall, 
   LayoutDashboard, 
   Upload, 
   Database, 
@@ -13,6 +13,7 @@ export const navItems = [
   { id: 'upload', label: 'Data Ingestion & Upload', icon: Upload, shortLabel: 'Upload' },
   { id: 'jobs', label: 'Processing Jobs', icon: Activity, shortLabel: 'Jobs' },
   { id: 'records', label: 'Processed Records', icon: Database, shortLabel: 'Records' },
+  { id: 'queue', label: 'Call Queue', icon: PhoneCall, shortLabel: 'Queue' },
   { id: 'mapping', label: 'Column Mapping Schema', icon: Layers, shortLabel: 'Schema' },
 ];
 

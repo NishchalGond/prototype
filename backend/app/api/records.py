@@ -15,8 +15,9 @@ from ..core.security import (
     get_current_user, require_export_permission, require_role,
 )
 from ..models.models import (
-    ExportAuditLog, ProcessingError, ProcessingJob, Record, RecordEditAudit,
-    RecordStatus, SourceFile, User, UserRole,
+    ContactVerdict, ExportAuditLog, Lead, LeadStage, ProcessingError,
+    ProcessingJob, Record, RecordEditAudit, RecordStatus, SourceFile, User,
+    UserRole,
 )
 from ..schemas.schemas import (
     AliasRequest, ColumnMappingOut, DashboardStats, FilterOptions, JobOut, Page, RecordOut,
@@ -132,6 +133,33 @@ def _build_records_query(
         stmt = stmt.where(Record.email_address.is_not(None))
     elif has_email is False:
         stmt = stmt.where(Record.email_address.is_(None))
+
+    # Opt-outs, enforced here rather than at each call site, because the two
+    # call sites are exactly the paths that must honour them: the list the desk
+    # calls from, and the export it takes off-platform. A DO_NOT_CONTACT stage
+    # that still appears in either is not an opt-out, it is a note.
+    #
+    # An anti-join on identity_hash rather than record_id: the lead survives
+    # reprocessing and its record_id is briefly NULL afterwards, so keying on
+    # the pointer would let an opted-out person reappear in the window between
+    # a reprocess and the relink.
+    #
+    # leads is small -- a row exists only where someone was actually worked --
+    # so this stays a cheap semi-join against a unique index, not a scan.
+    stmt = stmt.where(
+        ~select(Lead.id)
+        .where(
+            Lead.identity_hash == Record.identity_hash,
+            or_(
+                Lead.stage == LeadStage.DO_NOT_CONTACT,
+                # A number a human dialled and disproved outranks anything the
+                # pipeline inferred about it. has_valid_mobile only says the
+                # number is well FORMED; only a call can say it is WRONG.
+                Lead.contact_verdict.in_(ContactVerdict.SUPPRESSING),
+            ),
+        )
+        .exists()
+    )
 
     return stmt
 
@@ -583,6 +611,10 @@ def update_record(
                 changes.append(
                     RecordEditAudit(
                         record_id=rec.id,
+                        # The durable link. record_id is SET NULL now, so
+                        # without this the audit trail survives a reprocess but
+                        # can no longer say which record it belonged to.
+                        identity_hash=rec.identity_hash,
                         user_id=user_id,
                         user_email=user_email,
                         field_name=field,
@@ -730,6 +762,17 @@ def dashboard_stats(
     valid = by_status.get(RecordStatus.VALID, 0)
     success_rate = round(100.0 * valid / total_records, 1) if total_records else 0.0
 
+    # The tiles count what the database HOLDS; the record list shows what the
+    # desk may WORK. Opt-outs and disproved contacts make those two numbers
+    # differ, and a dashboard reading 2 beside a list of 1 with no explanation
+    # is how people stop trusting both. Reported rather than quietly folded in:
+    # the suppressed rows are still real records and still count as inventory.
+    suppressed = db.scalar(
+        select(func.count(Lead.id)).where(
+            or_(Lead.stage == LeadStage.DO_NOT_CONTACT,
+                Lead.contact_verdict.in_(ContactVerdict.SUPPRESSING)))
+    ) or 0
+
     return DashboardStats(
         success_rate=success_rate,
         community_distribution=[{"name": c["community"], "count": c["count"]}
@@ -738,6 +781,7 @@ def dashboard_stats(
         total_files=db.scalar(select(func.count(SourceFile.id))) or 0,
         total_jobs=db.scalar(select(func.count(ProcessingJob.id))) or 0,
         total_records=total_records,
+        suppressed_records=suppressed,
         valid_records=by_status.get(RecordStatus.VALID, 0),
         invalid_records=by_status.get(RecordStatus.INVALID, 0),
         duplicate_records=db.scalar(

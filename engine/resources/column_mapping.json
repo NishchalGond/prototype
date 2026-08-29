@@ -725,7 +725,8 @@
     "No": "too generic/dangerous - \"No\" collides with unrelated Plot No/Unit No/Reg No contexts elsewhere.",
     "Contact ID": "likely a CRM record identifier, not a phone number - \"ID\" signals a database key.",
     "Client Type": "same failure class as Person Type/Customer Type - verified elsewhere to be occupancy/entity type, not buyer/seller.",
-    "Area onwed": "typo of \"Area owned\" - already deliberately excluded (an ownership SHARE, not the unit size). Verified via 014 TOWER joint-ownership analysis."
+    "Area onwed": "typo of \"Area owned\" - already deliberately excluded (an ownership SHARE, not the unit size). Verified via 014 TOWER joint-ownership analysis.",
+    "USAGE": "values are area/usage zones (\"Airport\", \"Residential\"), not dwelling types. 29 sampled rows put 'Airport' into Property Type. -> extras"
   },
   "value_warnings": {
     "TYPE": "mostly Buyer/Seller (3,851 rows) but 141 rows hold A/B/C/D block codes - validate values, don't trust the header"

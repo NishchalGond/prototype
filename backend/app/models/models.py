@@ -117,7 +117,13 @@ class RecordEditAudit(Base):
     __tablename__ = "record_edits_audit"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    record_id: Mapped[int] = mapped_column(ForeignKey("records.id", ondelete="CASCADE"), index=True)
+    # SET NULL, not CASCADE. A hand-correction is no more derivable from the
+    # source file than a phone call is: reprocessing a job used to delete both
+    # the correction and the record of who made it. identity_hash is the
+    # durable link, the same way it is for leads.
+    record_id: Mapped[int | None] = mapped_column(
+        ForeignKey("records.id", ondelete="SET NULL"), index=True)
+    identity_hash: Mapped[str | None] = mapped_column(String(64), index=True)
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
     user_email: Mapped[str] = mapped_column(String(320), index=True)
     field_name: Mapped[str] = mapped_column(String(64), index=True)
@@ -352,3 +358,169 @@ class Record(Base):
         # purpose, and a unique constraint would reject them at insert.
         Index("ix_records_sourcefile_identity", "source_file", "identity_hash"),
     )
+
+
+class LeadStage:
+    """Where a lead sits in the sales conversation, not its data quality.
+
+    Deliberately separate from Record.status (VALID / INVALID / DUPLICATE /
+    INCOMPLETE), which describes the row, not the person. Overloading one field
+    with both meanings is how "is this record clean?" and "did we sell to them?"
+    become the same question, and neither can be answered afterwards.
+    """
+    NEW = "NEW"
+    CONTACTED = "CONTACTED"
+    INTERESTED = "INTERESTED"
+    NEGOTIATING = "NEGOTIATING"
+    WON = "WON"
+    LOST = "LOST"
+    # Honoured by list and export paths. An opt-out that only lives in a note
+    # field is not an opt-out.
+    DO_NOT_CONTACT = "DO_NOT_CONTACT"
+
+    ALL = (NEW, CONTACTED, INTERESTED, NEGOTIATING, WON, LOST, DO_NOT_CONTACT)
+    OPEN = (NEW, CONTACTED, INTERESTED, NEGOTIATING)
+
+
+class ContactVerdict:
+    """What the phone call proved about the data.
+
+    A salesperson who dials and hears "wrong number" has produced the single
+    best available verdict on that number -- better than any regex, better than
+    has_valid_mobile, better than a portal. Until now it landed in a free-text
+    outcome field and died there.
+
+    Stored on the Lead, so it is keyed by identity_hash and survives the
+    reprocessing that deletes and rewrites records. That is what stops the
+    engine resurrecting a number a human already disproved.
+    """
+    REACHED = "REACHED"                # the number is good, person confirmed
+    WRONG_NUMBER = "WRONG_NUMBER"      # number belongs to someone else
+    NOT_OWNER = "NOT_OWNER"            # reached someone, not this property's owner
+    SOLD = "SOLD"                      # they no longer own it; record is stale
+    UNREACHABLE = "UNREACHABLE"        # rang out repeatedly, no verdict either way
+
+    ALL = (REACHED, WRONG_NUMBER, NOT_OWNER, SOLD, UNREACHABLE)
+
+    # Verdicts that mean "do not put this in front of the desk again".
+    # UNREACHABLE is deliberately absent: nobody answering is not evidence the
+    # number is wrong, and dropping those would quietly delete the hard half of
+    # the list.
+    SUPPRESSING = (WRONG_NUMBER, NOT_OWNER, SOLD)
+
+
+class ActivityKind:
+    CALL = "CALL"
+    WHATSAPP = "WHATSAPP"
+    EMAIL = "EMAIL"
+    MEETING = "MEETING"
+    NOTE = "NOTE"
+    STAGE_CHANGE = "STAGE_CHANGE"
+
+    ALL = (CALL, WHATSAPP, EMAIL, MEETING, NOTE, STAGE_CHANGE)
+
+
+class Lead(Base):
+    """Outreach state for one owner. Created on first contact, not at ingest.
+
+    Not columns on Record, for two reasons. At 20M rows, where a small fraction
+    is ever worked, per-lead columns would be mostly NULL and every schema
+    change would rewrite the whole table. And Record is derived data: it is
+    deleted and rewritten wholesale whenever a job is reprocessed.
+
+    That second point drives the keying. `identity_hash` is the durable link,
+    because it survives a reprocess that renumbers every row. `record_id` is a
+    convenience pointer for joins and is deliberately ON DELETE SET NULL: when
+    reprocessing deletes the record, the lead must NOT go with it. Call history
+    is not derivable from a source file -- lose it and it is gone.
+    """
+    __tablename__ = "leads"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # The durable identity. Survives reprocessing; relink_leads() re-attaches
+    # record_id afterwards by matching on it.
+    identity_hash: Mapped[str] = mapped_column(String(64), index=True, unique=True)
+    record_id: Mapped[int | None] = mapped_column(
+        ForeignKey("records.id", ondelete="SET NULL"), index=True)
+
+    stage: Mapped[str] = mapped_column(String(24), default=LeadStage.NEW, index=True)
+    owner_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    # The one question a sales desk asks every morning: what is due today.
+    next_action_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), index=True)
+    last_activity_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    # What outreach proved about the underlying data. See ContactVerdict.
+    contact_verdict: Mapped[str | None] = mapped_column(String(24), index=True)
+    contact_verdict_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Who judged it. A verdict hides a record from the whole desk, so an
+    # unattributed one is a claim nobody can check and nobody can appeal.
+    # Denormalised email so it survives the user being deleted.
+    contact_verdict_by: Mapped[str | None] = mapped_column(String(320))
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    activities: Mapped[list["LeadActivity"]] = relationship(
+        back_populates="lead", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        # The work queue: "my open leads, soonest first".
+        Index("ix_leads_queue", "owner_user_id", "stage", "next_action_at"),
+    )
+
+
+class LeadActivity(Base):
+    """Append-only record of what was actually done. Never edited, never derived."""
+    __tablename__ = "lead_activities"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # Hangs off the lead, never off the record, so a reprocess cannot cascade
+    # it away.
+    lead_id: Mapped[int] = mapped_column(
+        ForeignKey("leads.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    # Denormalised so history stays readable after a user is deleted.
+    user_email: Mapped[str] = mapped_column(String(320))
+
+    kind: Mapped[str] = mapped_column(String(24), index=True)
+    outcome: Mapped[str | None] = mapped_column(String(64))
+    note: Mapped[str | None] = mapped_column(Text)
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, index=True)
+
+    lead: Mapped["Lead"] = relationship(back_populates="activities")
+
+
+class ErasureRequest(Base):
+    """A person asked to be removed. Durable, because records are not.
+
+    Redacting the rows is not enough on its own: records are derived data,
+    rebuilt from the stored source file whenever a job is reprocessed, and that
+    file still contains the person. Without a standing record of the request,
+    the next reprocess quietly restores what was erased.
+
+    Keyed by identity_hash for the same reason leads are -- it is the only
+    identifier that survives rows being deleted and rewritten. apply_erasures()
+    re-applies redaction after every ingest.
+
+    Kept separate from Lead: someone can ask to be erased without ever having
+    been contacted, and an auditor asks for this register on its own.
+    """
+    __tablename__ = "erasure_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    identity_hash: Mapped[str] = mapped_column(String(64), index=True, unique=True)
+
+    requested_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    # Denormalised so the register stays complete after a user is deleted.
+    requested_by_email: Mapped[str] = mapped_column(String(320))
+    reason: Mapped[str | None] = mapped_column(Text)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    records_redacted: Mapped[int] = mapped_column(Integer, default=0)

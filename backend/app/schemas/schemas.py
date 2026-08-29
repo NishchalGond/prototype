@@ -238,6 +238,9 @@ class DashboardStats(BaseModel):
     total_files: int
     total_jobs: int
     total_records: int
+    # Held but not workable: opt-outs and disproved contacts. Explains why the
+    # tile and the record list report different numbers.
+    suppressed_records: int = 0
     valid_records: int
     invalid_records: int
     duplicate_records: int
