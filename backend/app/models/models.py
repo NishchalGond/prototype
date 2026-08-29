@@ -454,6 +454,10 @@ class Lead(Base):
     # What outreach proved about the underlying data. See ContactVerdict.
     contact_verdict: Mapped[str | None] = mapped_column(String(24), index=True)
     contact_verdict_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Who judged it. A verdict hides a record from the whole desk, so an
+    # unattributed one is a claim nobody can check and nobody can appeal.
+    # Denormalised email so it survives the user being deleted.
+    contact_verdict_by: Mapped[str | None] = mapped_column(String(320))
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(

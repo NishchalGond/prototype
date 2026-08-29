@@ -163,3 +163,31 @@ def test_usage_column_no_longer_lands_in_property_type():
     # values are area zones rather than dwelling types.
     from engine.mapping import DO_NOT_MAP, norm_header
     assert norm_header("USAGE") in DO_NOT_MAP
+
+
+# --- a verdict must be reversible and attributable --------------------------
+
+def test_a_verdict_records_who_made_it(db, user):
+    # A verdict hides a record from the whole desk. Unattributed, it is a claim
+    # nobody can check.
+    record = _record(db)
+    lead = _get_or_create_lead(db, record)
+    lead.contact_verdict = ContactVerdict.WRONG_NUMBER
+    lead.contact_verdict_by = user.email
+    db.commit()
+    assert db.scalar(select(Lead)).contact_verdict_by == "agent@example.com"
+
+
+def test_clearing_a_verdict_brings_the_record_back(db, user):
+    record = _record(db)
+    lead = _verdict(db, record, ContactVerdict.WRONG_NUMBER)
+    assert db.scalars(_build_records_query()).all() == []
+
+    # What DELETE /leads/{id}/verdict does. People mis-click, and without a way
+    # back a single wrong tap buries a valuable property permanently.
+    lead.contact_verdict = None
+    lead.contact_verdict_at = None
+    lead.contact_verdict_by = None
+    db.commit()
+
+    assert [r.id for r in db.scalars(_build_records_query()).all()] == [record.id]

@@ -38,6 +38,10 @@ def upgrade() -> None:
     op.add_column("leads", sa.Column("contact_verdict", sa.String(24), nullable=True))
     op.add_column("leads", sa.Column("contact_verdict_at",
                                      sa.DateTime(timezone=True), nullable=True))
+    # Who judged it. A verdict hides a record from the whole desk, so an
+    # unattributed one is a claim nobody can check and nobody can appeal.
+    op.add_column("leads", sa.Column("contact_verdict_by", sa.String(320),
+                                     nullable=True))
     op.create_index("ix_leads_contact_verdict", "leads", ["contact_verdict"])
 
     op.add_column("record_edits_audit",
@@ -89,5 +93,6 @@ def downgrade() -> None:
     op.drop_index("ix_record_edits_audit_identity_hash", table_name="record_edits_audit")
     op.drop_column("record_edits_audit", "identity_hash")
     op.drop_index("ix_leads_contact_verdict", table_name="leads")
+    op.drop_column("leads", "contact_verdict_by")
     op.drop_column("leads", "contact_verdict_at")
     op.drop_column("leads", "contact_verdict")

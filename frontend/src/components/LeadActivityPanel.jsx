@@ -75,6 +75,15 @@ export default function LeadActivityPanel({ recordId }) {
       // A record with no outreach yet is the normal case, not an error state.
       setHistory([]);
     }
+    try {
+      // A standing verdict has to be visible on open, not only after logging
+      // something -- otherwise a suppressed record looks untouched.
+      const res = await apiFetch(`/api/leads?record_id=${recordId}`);
+      if (res.ok) {
+        const rows = await res.json();
+        setLead(rows.find((l) => l.record_id === recordId) || null);
+      }
+    } catch { /* no lead yet is the normal case */ }
   }, [recordId]);
 
   useEffect(() => { load(); }, [load]);
@@ -110,6 +119,19 @@ export default function LeadActivityPanel({ recordId }) {
     }
   }
 
+  async function clearVerdict() {
+    if (!lead) return;
+    setError(null);
+    try {
+      const res = await apiFetch(`/api/leads/${lead.id}/verdict`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Could not clear the verdict.');
+      setLead(await res.json());
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   const currentStage = lead?.stage;
 
   return (
@@ -118,8 +140,24 @@ export default function LeadActivityPanel({ recordId }) {
         <span className="text-[10px] font-mono text-slate-500 font-bold">OUTREACH</span>
         <span className="flex items-center gap-2">
           {lead?.contact_verdict && (
-            <span className="text-[10px] font-mono font-bold text-rose-700">
-              {lead.contact_verdict.replace(/_/g, ' ')}
+            <span className="flex items-center gap-1.5">
+              <span
+                className="text-[10px] font-mono font-bold text-rose-700"
+                title={`Judged by ${lead.contact_verdict_by || 'unknown'}`
+                  + (lead.contact_verdict_at ? ` on ${when(lead.contact_verdict_at)}` : '')}
+              >
+                {lead.contact_verdict.replace(/_/g, ' ')}
+              </span>
+              {/* People mis-click, and a verdict hides the record from the
+                  whole desk. Without a way back, nobody dares use it. */}
+              <button
+                type="button"
+                onClick={clearVerdict}
+                className="neumorph-button px-1.5 py-0.5 text-[10px] font-bold text-slate-600"
+                title="Put this record back in front of the desk"
+              >
+                Undo
+              </button>
             </span>
           )}
           {currentStage && (

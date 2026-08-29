@@ -762,6 +762,17 @@ def dashboard_stats(
     valid = by_status.get(RecordStatus.VALID, 0)
     success_rate = round(100.0 * valid / total_records, 1) if total_records else 0.0
 
+    # The tiles count what the database HOLDS; the record list shows what the
+    # desk may WORK. Opt-outs and disproved contacts make those two numbers
+    # differ, and a dashboard reading 2 beside a list of 1 with no explanation
+    # is how people stop trusting both. Reported rather than quietly folded in:
+    # the suppressed rows are still real records and still count as inventory.
+    suppressed = db.scalar(
+        select(func.count(Lead.id)).where(
+            or_(Lead.stage == LeadStage.DO_NOT_CONTACT,
+                Lead.contact_verdict.in_(ContactVerdict.SUPPRESSING)))
+    ) or 0
+
     return DashboardStats(
         success_rate=success_rate,
         community_distribution=[{"name": c["community"], "count": c["count"]}
@@ -770,6 +781,7 @@ def dashboard_stats(
         total_files=db.scalar(select(func.count(SourceFile.id))) or 0,
         total_jobs=db.scalar(select(func.count(ProcessingJob.id))) or 0,
         total_records=total_records,
+        suppressed_records=suppressed,
         valid_records=by_status.get(RecordStatus.VALID, 0),
         invalid_records=by_status.get(RecordStatus.INVALID, 0),
         duplicate_records=db.scalar(

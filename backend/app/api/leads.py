@@ -74,6 +74,8 @@ class LeadOut(BaseModel):
     next_action_at: datetime | None
     last_activity_at: datetime | None
     contact_verdict: str | None = None
+    contact_verdict_at: datetime | None = None
+    contact_verdict_by: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -188,6 +190,7 @@ def log_activity(
     if payload.verdict:
         lead.contact_verdict = payload.verdict
         lead.contact_verdict_at = now
+        lead.contact_verdict_by = user.email
         # A number proved wrong should stop being scheduled. Leaving a callback
         # on a record nobody can reach just recycles the same dead end.
         if payload.verdict in ContactVerdict.SUPPRESSING:
@@ -251,6 +254,7 @@ def update_lead(
 def list_leads(
     stage: str | None = None,
     owner_user_id: int | None = None,
+    record_id: int | None = Query(None, description="Only the lead for this record."),
     mine: bool = Query(False, description="Only leads assigned to the caller."),
     due: bool = Query(False, description="Only leads whose next action is due."),
     open_only: bool = Query(False, description="Exclude WON, LOST, DO_NOT_CONTACT."),
@@ -265,6 +269,8 @@ def list_leads(
     the machinery the 20M-row records table needs.
     """
     stmt = select(Lead)
+    if record_id is not None:
+        stmt = stmt.where(Lead.record_id == record_id)
     if mine:
         stmt = stmt.where(Lead.owner_user_id == user.id)
     elif owner_user_id is not None:
@@ -281,6 +287,38 @@ def list_leads(
         stmt.order_by(Lead.next_action_at.asc().nullslast(), Lead.id.desc())
         .limit(limit)
     ).all()
+
+
+@router.delete("/leads/{lead_id}/verdict", response_model=LeadOut)
+def clear_verdict(
+    lead_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Reverse a verdict, putting the record back in front of the desk.
+
+    A verdict hides a record from everyone, and people mis-click. Without this
+    a single wrong tap buries a valuable property permanently, which makes the
+    whole feedback loop something nobody dares use. The reversal is logged, so
+    "who hid this and who brought it back" both stay answerable.
+    """
+    lead = db.get(Lead, lead_id)
+    if lead is None:
+        raise HTTPException(404, f"Lead {lead_id} not found.")
+    if lead.contact_verdict is None:
+        return lead
+
+    db.add(LeadActivity(
+        lead_id=lead.id, user_id=user.id, user_email=user.email,
+        kind=ActivityKind.STAGE_CHANGE,
+        outcome=f"verdict cleared ({lead.contact_verdict})",
+        note=f"Originally judged by {lead.contact_verdict_by or 'unknown'}."))
+    lead.contact_verdict = None
+    lead.contact_verdict_at = None
+    lead.contact_verdict_by = None
+    db.commit()
+    db.refresh(lead)
+    return lead
 
 
 @router.get("/leads/verdicts")
