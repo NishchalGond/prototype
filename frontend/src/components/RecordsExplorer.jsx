@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, ChevronLeft, ChevronRight, X, ArrowUpDown, ArrowUp, ArrowDown, Edit3, Save, CheckCircle2, AlertCircle, Download, FileSpreadsheet, FileText, Loader2, SlidersHorizontal, RotateCcw, Filter } from 'lucide-react';
 import CustomSelect from './CustomSelect';
 import { apiFetch } from '../lib/api';
+import LeadActivityPanel from './LeadActivityPanel';
 
 /** Render a result count, marking it as a floor when the API capped its count. */
 function formatTotal(total, capped) {
@@ -1094,6 +1095,9 @@ export default function RecordsExplorer({ initialQuery = '' }) {
                   </div>
                 </div>
               </div>
+
+              {/* Outreach: log the call while looking at the person. */}
+              <LeadActivityPanel recordId={selectedRecord.id} />
 
               {/* Provenance Footer */}
               <div className="p-2.5 rounded-xl bg-[#eef0f4] border border-slate-300/80 shadow-[inset_2px_2px_4px_#cbd2dc] font-mono text-xs">
