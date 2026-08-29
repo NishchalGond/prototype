@@ -33,6 +33,14 @@ export default function AuthLockScreen({ onAuthenticate, theme, toggleTheme }) {
         const data = await res.json();
         setSession(data.access_token, data.user);
         onAuthenticate(data.user);
+      } else if (res.status >= 500 || res.status === 502 || res.status === 504) {
+        // The dev proxy answers 500 when the API is not listening, so a dead
+        // backend used to read as "check your credentials" -- which sends
+        // someone hunting through passwords for a server that is simply down.
+        setError('The server is not responding. Check that the backend is '
+                 + 'running, then try again.');
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 600);
       } else {
         const err = await res.json().catch(() => ({}));
         setError(err.detail || 'Authentication failed. Please check credentials.');
