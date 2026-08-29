@@ -38,6 +38,13 @@ def main() -> int:
     ap.add_argument("--email", default=settings.ADMIN_EMAIL,
                     help=f"Admin email (default: {settings.ADMIN_EMAIL})")
     ap.add_argument("--name", default="Lead Data Administrator")
+    # The API deliberately refuses to grant a role at or above the caller's own,
+    # so DEVELOPER, CEO and CCO cannot be created through it -- there would be
+    # nobody senior enough to do it. They are bootstrapped here, from a shell on
+    # the server, which is the one place authority can come from outside the
+    # hierarchy.
+    ap.add_argument("--role", default=UserRole.ADMIN, choices=list(UserRole.ALL),
+                    help="Role to create or promote to (default: ADMIN).")
     ap.add_argument("--generate", action="store_true",
                     help="Generate a random password and print it once.")
     args = ap.parse_args()
@@ -65,7 +72,7 @@ def main() -> int:
         user = db.scalar(select(User).where(User.email == email))
         if user:
             user.hashed_password = hash_password(password)
-            user.role = UserRole.ADMIN
+            user.role = args.role
             user.is_active = True
             user.can_export = True
             action = "reset"
@@ -74,7 +81,7 @@ def main() -> int:
                 email=email,
                 hashed_password=hash_password(password),
                 full_name=args.name,
-                role=UserRole.ADMIN,
+                role=args.role,
                 is_active=True,
                 can_export=True,
             ))

@@ -79,10 +79,65 @@ class Base(DeclarativeBase):
 
 
 class UserRole:
+    """Who can do what, ordered.
+
+    RANK exists so authority is compared rather than enumerated. An ADMIN may
+    create and reset the people below them and nobody else: without an ordering,
+    "admin manages users" quietly means an admin can promote themselves to CEO
+    or reset the chief executive's password, which is the most common way a
+    role system fails.
+    """
+    DEVELOPER = "DEVELOPER"          # platform owner; see GHOST below
+    CEO = "CEO"
+    CCO = "CCO"
     ADMIN = "ADMIN"
     DATA_PROCESSOR = "DATA_PROCESSOR"
     VIEWER = "VIEWER"
-    ALL = (ADMIN, DATA_PROCESSOR, VIEWER)
+
+    ALL = (DEVELOPER, CEO, CCO, ADMIN, DATA_PROCESSOR, VIEWER)
+
+    RANK = {
+        VIEWER: 1,
+        DATA_PROCESSOR: 2,
+        ADMIN: 3,
+        CCO: 4,
+        CEO: 5,
+        DEVELOPER: 6,
+    }
+
+    # Full sight of the business: every record, and the team analytics that say
+    # who called whom and who holds which leads.
+    EXECUTIVE = (DEVELOPER, CEO, CCO)
+
+    # May create, reset and deactivate accounts -- always only those ranked
+    # strictly below themselves.
+    MANAGES_USERS = (DEVELOPER, CEO, CCO, ADMIN)
+
+    # Hidden from every listing except another DEVELOPER's. Deliberately paired
+    # with PrivilegedActionAudit: an account nobody can see must be an account
+    # whose every action is written down, or a breach involving it can never be
+    # reconstructed.
+    GHOST = (DEVELOPER,)
+
+    @staticmethod
+    def rank(role: str | None) -> int:
+        return UserRole.RANK.get(role or "", 0)
+
+    @staticmethod
+    def at_least(role: str) -> tuple:
+        """Every role ranked at or above `role`.
+
+        Call sites say what authority they need, not who happens to have it
+        today. Listing roles by hand is how adding CEO above ADMIN silently
+        locks the CEO out of everything an admin could do.
+        """
+        floor = UserRole.rank(role)
+        return tuple(r for r in UserRole.ALL if UserRole.rank(r) >= floor)
+
+    @staticmethod
+    def outranks(actor_role: str | None, target_role: str | None) -> bool:
+        """True when actor may act on target. Strict: equals cannot touch equals."""
+        return UserRole.rank(actor_role) > UserRole.rank(target_role)
 
 
 class User(Base):
@@ -95,6 +150,11 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(32), default=UserRole.VIEWER, index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     can_export: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Set when an account is created or its password reset by someone else.
+    # Enforced in get_current_user, not merely surfaced in the UI: a flag the
+    # frontend is trusted to honour is not a control.
+    must_change_password: Mapped[bool] = mapped_column(Boolean, default=False)
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
@@ -524,3 +584,34 @@ class ErasureRequest(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     last_applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     records_redacted: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class PrivilegedActionAudit(Base):
+    """Every account action, and everything a hidden account does.
+
+    The DEVELOPER role is invisible to all other users. That is a reasonable
+    thing to want and an unreasonable thing to leave untraced: an unlogged
+    superuser makes any future breach impossible to investigate, and an
+    invisible one makes it impossible to even notice. So the account is hidden
+    from listings, never from this table.
+
+    Covers ordinary account administration too, because "who reset whose
+    password" is exactly the question asked after an incident.
+    """
+    __tablename__ = "privileged_action_audit"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    actor_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    # Denormalised so the trail survives the actor being deleted -- including
+    # by themselves.
+    actor_email: Mapped[str] = mapped_column(String(320), index=True)
+    actor_role: Mapped[str] = mapped_column(String(32))
+
+    action: Mapped[str] = mapped_column(String(64), index=True)
+    target_user_id: Mapped[int | None] = mapped_column(Integer, index=True)
+    target_email: Mapped[str | None] = mapped_column(String(320))
+    detail: Mapped[str | None] = mapped_column(Text)
+
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, index=True)

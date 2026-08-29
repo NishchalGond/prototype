@@ -556,7 +556,7 @@ def update_record(
     body: RecordUpdate,
     request: Request,
     current_user: User = Depends(
-        require_role([UserRole.ADMIN, UserRole.DATA_PROCESSOR])),
+        require_role(list(UserRole.at_least(UserRole.DATA_PROCESSOR)))),
     db: Session = Depends(get_db)
 ):
     """Hardened update endpoint: cleans fields, re-validates, re-hashes, and logs audit trail."""
@@ -835,7 +835,7 @@ def _sync_alias_files(cfg: dict) -> None:
 @router.post("/column-mappings/alias", response_model=ColumnMappingOut)
 def add_alias(
     body: AliasRequest,
-    _user: User = Depends(require_role([UserRole.ADMIN])),
+    _user: User = Depends(require_role(list(UserRole.at_least(UserRole.ADMIN)))),
 ):
     """Add a new custom header alias for a target field and persist permanently."""
     path = Path(__file__).resolve().parents[3] / "engine" / "resources" / "column_mapping.json"
@@ -861,7 +861,7 @@ def add_alias(
 @router.delete("/column-mappings/alias", response_model=ColumnMappingOut)
 def remove_alias(
     body: AliasRequest,
-    _user: User = Depends(require_role([UserRole.ADMIN])),
+    _user: User = Depends(require_role(list(UserRole.at_least(UserRole.ADMIN)))),
 ):
     """Remove a custom header alias permanently."""
     path = Path(__file__).resolve().parents[3] / "engine" / "resources" / "column_mapping.json"

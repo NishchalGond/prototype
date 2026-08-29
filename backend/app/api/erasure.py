@@ -38,7 +38,7 @@ router = APIRouter(tags=["erasure"])
 
 # Erasure destroys data that cannot be recovered from the source file once the
 # request is standing. Administrators only.
-_ADMIN = require_role([UserRole.ADMIN])
+_ADMIN = require_role(list(UserRole.at_least(UserRole.ADMIN)))
 
 # The columns that identify a person. search_text, mobile_digits and
 # has_valid_mobile are generated from these, so they clear themselves -- which

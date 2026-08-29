@@ -12,7 +12,7 @@ from typing import Annotated, Sequence
 
 import bcrypt
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -102,7 +102,14 @@ def get_current_user_optional(
     return user
 
 
+# The only routes reachable while a forced password change is outstanding.
+# Anything else would let someone keep working indefinitely on a password an
+# administrator handed them and can therefore still guess.
+PASSWORD_CHANGE_EXEMPT = ("/api/auth/me", "/api/auth/password", "/api/auth/login")
+
+
 def get_current_user(
+    request: Request,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security_scheme)],
     db: Annotated[Session, Depends(get_db)],
 ) -> User:
@@ -139,6 +146,16 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is deactivated.",
+        )
+
+    # Enforced here rather than left to the frontend. A "please change your
+    # password" banner the client is trusted to honour is a suggestion; this is
+    # a control, and it holds for anything calling the API directly too.
+    if user.must_change_password and request.url.path not in PASSWORD_CHANGE_EXEMPT:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="PASSWORD_CHANGE_REQUIRED: set your own password before "
+                   "using the platform.",
         )
 
     return user

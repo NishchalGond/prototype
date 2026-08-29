@@ -40,7 +40,7 @@ router = APIRouter(prefix="/maintenance", tags=["maintenance"])
 
 # Reprocessing rewrites records in bulk. Operators can upload and run jobs;
 # re-deriving the whole corpus is an administrator's decision.
-_ADMIN = require_role([UserRole.ADMIN])
+_ADMIN = require_role(list(UserRole.at_least(UserRole.ADMIN)))
 
 # Statuses that mean a job is already occupying a worker. Re-queueing one would
 # race its own rows.

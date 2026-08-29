@@ -33,7 +33,7 @@ _ALLOWED_SUFFIX = {".xlsx", ".xlsm", ".xls", ".csv"}
 
 # Ingestion is a write path: uploading, starting, pausing and cancelling all
 # change stored data, so viewers get read access only.
-_OPERATOR = require_role([UserRole.ADMIN, UserRole.DATA_PROCESSOR])
+_OPERATOR = require_role(list(UserRole.at_least(UserRole.DATA_PROCESSOR)))
 
 
 def _job_out(job: ProcessingJob) -> JobOut:
