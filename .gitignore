@@ -57,3 +57,6 @@ Documentation/
 # Local notes that reference accounts or environments. Never committed:
 # git history is permanent, so a credential pushed once must be rotated.
 *.local.md
+
+# Generated SECRET_KEY for local runs. Never committed.
+.secret.local
