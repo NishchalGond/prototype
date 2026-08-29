@@ -71,12 +71,36 @@ def calculate_name_similarity(name1: str | None, name2: str | None) -> float:
     return difflib.SequenceMatcher(None, n1, n2).ratio()
 
 
+# Similarity at or above which two names on the same property (or the same
+# phone) are treated as the same person rather than two owners. Below it the
+# rows are kept separate -- joint ownership genuinely puts several people on one
+# unit, so a loose threshold silently deletes co-owners.
+FUZZY_THRESHOLD = 0.85
+
+
+def _first_nonblank(*values) -> str:
+    for v in values:
+        if v is None:
+            continue
+        s = str(v).strip()
+        if s:
+            return s
+    return ""
+
+
 def extract_property_key(row: dict[str, Any]) -> str | None:
-    """Generate compound property location key (Community + Unit/Plot)."""
-    comm = (row.get("community") or "").strip().upper()
-    unit = (row.get("unit_number") or row.get("plot_number") or "").strip().upper()
-    bldg = (row.get("building_cluster") or "").strip().upper()
-    
+    """Generate compound property location key (Community + Unit/Plot).
+
+    MUST produce the same string as models.PROPERTY_KEY_EXPR, which computes it
+    in SQL for rows already in the database. Tier-2 dedup matches incoming rows
+    against stored ones by joining on this key, so any divergence between the
+    two definitions silently stops cross-register duplicates from being found.
+    test_dedup_key_matches_sql_expression pins them together.
+    """
+    comm = _first_nonblank(row.get("community")).upper()
+    unit = _first_nonblank(row.get("unit_number"), row.get("plot_number")).upper()
+    bldg = _first_nonblank(row.get("building_cluster")).upper()
+
     if comm and unit:
         return f"{comm}|{bldg}|{unit}"
     return None
