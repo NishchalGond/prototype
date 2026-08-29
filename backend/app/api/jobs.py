@@ -8,7 +8,7 @@ from pathlib import Path
 from fastapi import (
     APIRouter, BackgroundTasks, Depends, HTTPException, Query, UploadFile, File, status,
 )
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.orm import Session, selectinload
 
 from ..config import settings
@@ -541,11 +541,25 @@ def run_job(job_id: int) -> None:
 
     db = SessionLocal()
     try:
+        # Claim the job before touching it. A compare-and-set on the status
+        # is what makes it safe for the API's background task and any number of
+        # worker processes to call this for the same id: exactly one UPDATE
+        # matches a row still sitting in UPLOADED, and everyone else returns.
+        # Cheaper than a lock, and it needs no coordination between processes.
+        claimed = db.execute(
+            update(ProcessingJob)
+            .where(ProcessingJob.id == job_id,
+                   ProcessingJob.status == JobStatus.UPLOADED)
+            .values(status=JobStatus.READING)
+        ).rowcount
+        db.commit()
+        if not claimed:
+            return
+
         job = db.get(ProcessingJob, job_id)
         if job is None:
             return
         src = db.get(SourceFile, job.source_file_id)
-        job.status = JobStatus.READING
         job.started_at = datetime.now(timezone.utc)
         job.heartbeat_at = datetime.now(timezone.utc)
         job.control_signal = None

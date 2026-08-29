@@ -47,10 +47,10 @@ _ADMIN = require_role([UserRole.ADMIN])
 _BUSY = (JobStatus.READING, JobStatus.PROCESSING, JobStatus.VALIDATING,
          JobStatus.SAVING)
 
-# Ceiling on how many jobs one call may queue. Ingest currently runs in the web
-# process, so queueing every stale job at once would starve the dashboard for
-# as long as the backlog takes. Reprocessing in batches keeps the platform
-# usable while it catches up, and the endpoint is safe to call repeatedly.
+# Ceiling on how many jobs one call may queue. With worker.py running, queued
+# jobs no longer compete with the API for CPU, so this is a blast-radius limit
+# rather than a throughput one: a mistaken call re-derives a handful of jobs,
+# not the whole corpus. The endpoint is safe to call repeatedly.
 DEFAULT_BATCH = 5
 MAX_BATCH = 50
 
