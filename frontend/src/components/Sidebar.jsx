@@ -1,5 +1,5 @@
 import React from 'react';
-import { PhoneCall, 
+import { UsersRound, LineChart, PhoneCall, 
   LayoutDashboard, 
   Upload, 
   Database, 
@@ -15,10 +15,24 @@ export const navItems = [
   { id: 'records', label: 'Processed Records', icon: Database, shortLabel: 'Records' },
   { id: 'queue', label: 'Call Queue', icon: PhoneCall, shortLabel: 'Queue' },
   { id: 'mapping', label: 'Column Mapping Schema', icon: Layers, shortLabel: 'Schema' },
+  // Rank floors, mirroring UserRole.at_least on the server. Hiding a tab
+  // the API would refuse anyway saves an operator a 403 they cannot act on.
+  { id: 'team', label: 'Team Accounts', icon: UsersRound, shortLabel: 'Team', minRank: 3 },
+  { id: 'executive', label: 'Executive View', icon: LineChart, shortLabel: 'Exec', minRank: 4 },
 ];
 
-export default function Sidebar({ activeTab, setActiveTab, activeJob, theme }) {
+// Mirrors UserRole.RANK on the server. The API is the control; this only
+// avoids showing a tab that would answer 403.
+const RANK = { VIEWER: 1, DATA_PROCESSOR: 2, ADMIN: 3, CCO: 4, CEO: 5, DEVELOPER: 6 };
+
+function visibleFor(userRole) {
+  const rank = RANK[userRole] || 0;
+  return navItems.filter((i) => !i.minRank || rank >= i.minRank);
+}
+
+export default function Sidebar({ activeTab, setActiveTab, activeJob, theme, userRole }) {
   const isDark = theme === 'dark';
+  const visibleItems = visibleFor(userRole);
 
   return (
     <aside className="hidden md:flex w-64 bg-[var(--bg-main)] border-r border-slate-500/20 flex-col justify-between h-screen sticky top-0 z-30 select-none shadow-[8px_0_16px_rgba(0,0,0,0.06)] transition-colors duration-200 shrink-0">
@@ -50,7 +64,7 @@ export default function Sidebar({ activeTab, setActiveTab, activeJob, theme }) {
 
         {/* Navigation Items */}
         <nav className="p-4 space-y-3 mt-2">
-          {navItems.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             const hasBadge = item.id === 'jobs' && activeJob;
@@ -132,10 +146,11 @@ export default function Sidebar({ activeTab, setActiveTab, activeJob, theme }) {
 }
 
 {/* Mobile Native Bottom Navigation Bar */}
-export function MobileBottomNav({ activeTab, setActiveTab, activeJob }) {
+export function MobileBottomNav({ activeTab, setActiveTab, activeJob, userRole }) {
+  const visibleItems = visibleFor(userRole);
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-main)]/95 backdrop-blur-lg border-t border-slate-500/20 px-2 py-1.5 flex items-center justify-around shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
-      {navItems.map((item) => {
+      {visibleItems.map((item) => {
         const Icon = item.icon;
         const isActive = activeTab === item.id;
         const hasBadge = item.id === 'jobs' && activeJob;

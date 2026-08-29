@@ -6,6 +6,9 @@ import UploadSection from './components/UploadSection';
 import LiveProcessingTracker from './components/LiveProcessingTracker';
 import RecordsExplorer from './components/RecordsExplorer';
 import CallQueue from './components/CallQueue';
+import UserManagement from './components/UserManagement';
+import ExecutiveDashboard from './components/ExecutiveDashboard';
+import ForcePasswordChange from './components/ForcePasswordChange';
 import JobDetailsView from './components/JobDetailsView';
 import ColumnMappingInspector from './components/ColumnMappingInspector';
 import Spatial3DCanvas from './components/Spatial3DCanvas';
@@ -116,6 +119,21 @@ export default function App() {
     );
   }
 
+  // The API refuses every route except /auth/me and /auth/password while this
+  // is set, so rendering the app would show a wall of failed requests.
+  if (currentUser?.must_change_password) {
+    return (
+      <ForcePasswordChange
+        user={currentUser}
+        onChanged={(user) => {
+          setCurrentUser(user);
+          localStorage.setItem('datalink_user', JSON.stringify(user));
+        }}
+        onLogout={handleLogout}
+      />
+    );
+  }
+
   return (
     <div className={`relative h-screen w-screen bg-[var(--bg-main)] text-[var(--text-main)] font-sans selection:bg-blue-600 selection:text-white overflow-hidden transition-colors duration-200`}>
       {/* Dynamic 3D Spatial Canvas */}
@@ -129,6 +147,7 @@ export default function App() {
           setActiveTab={setActiveTab}
           activeJob={activeJobId ? { id: activeJobId, status: 'RUNNING' } : null}
           theme={theme}
+          userRole={currentUser?.role}
         />
 
         {/* Fixed Content Panel */}
@@ -195,6 +214,10 @@ export default function App() {
 
             {activeTab === 'queue' && <CallQueue />}
 
+            {activeTab === 'team' && <UserManagement currentUser={currentUser} />}
+
+            {activeTab === 'executive' && <ExecutiveDashboard />}
+
             {activeTab === 'mapping' && (
               <div className="flex-1 overflow-y-auto">
                 <ColumnMappingInspector theme={theme} />
@@ -206,6 +229,7 @@ export default function App() {
 
       {/* Native Mobile Bottom Navigation Bar (< md) */}
       <MobileBottomNav
+        userRole={currentUser?.role}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         activeJob={activeJobId}

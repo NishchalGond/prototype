@@ -129,6 +129,9 @@ class UserOut(BaseModel):
     role: str
     is_active: bool
     can_export: bool
+    # The client needs this to show the change-password screen. It is not the
+    # control -- get_current_user enforces it server-side regardless.
+    must_change_password: bool = False
     created_at: datetime
     last_login_at: datetime | None = None
 

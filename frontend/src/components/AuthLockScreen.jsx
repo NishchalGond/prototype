@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, KeyRound, ShieldCheck, Sun, Moon, ArrowRight, Sparkles, Mail, UserCheck } from 'lucide-react';
 import DataLinkLogo from './DataLinkLogo';
 import { setSession } from '../lib/api';
+import { COMPANY_DOMAIN, EMAIL_PLACEHOLDER } from '../lib/org';
 
 export default function AuthLockScreen({ onAuthenticate, theme, toggleTheme }) {
   const [email, setEmail] = useState('');
@@ -134,7 +135,7 @@ export default function AuthLockScreen({ onAuthenticate, theme, toggleTheme }) {
                   type="email"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                  placeholder="name@company.com"
+                  placeholder={EMAIL_PLACEHOLDER}
                   autoFocus
                   required
                   className="w-full neumorph-inset rounded-2xl pl-11 pr-4 py-3 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none transition-all"
@@ -193,6 +194,70 @@ export default function AuthLockScreen({ onAuthenticate, theme, toggleTheme }) {
               )}
             </button>
           </form>
+
+          {/* --- Single sign-on ------------------------------------------
+              UI only, by request: there is no OAuth flow behind these yet.
+              They are rendered disabled and say so, rather than as live
+              buttons that silently do nothing -- a sign-in control that looks
+              real and is not is worse than an obviously unfinished one,
+              because someone locked out will keep clicking it.
+              To make these work: register an app (Entra ID for Microsoft,
+              Google Cloud console for Google), add a
+              /api/auth/oauth/{provider} callback that verifies the returned
+              token and issues the same JWT /api/auth/login already does, then
+              swap the handler here. Match on the verified email against an
+              existing User row rather than creating accounts on the fly --
+              otherwise anyone in the tenant gets in, and role assignment stops
+              being a decision anybody made. */}
+          <div className="mt-5 space-y-3">
+            <div className="flex items-center gap-3" aria-hidden="true">
+              <span className="h-px flex-1 bg-slate-300/70" />
+              <span className="text-[10px] font-mono text-slate-400 font-bold">
+                OR CONTINUE WITH
+              </span>
+              <span className="h-px flex-1 bg-slate-300/70" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled
+                title="Google sign-in is not connected yet"
+                className="neumorph-button py-2.5 rounded-xl text-xs font-bold text-slate-500 flex items-center justify-center gap-2 opacity-60 cursor-not-allowed"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.7v3h3.9c2.3-2.1 3.5-5.2 3.5-8.9z"/>
+                  <path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1 .7-2.4 1.1-4 1.1-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0 0 12 24z"/>
+                  <path fill="#FBBC05" d="M5.4 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.4a12 12 0 0 0 0 10.8l4-3.1z"/>
+                  <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.4 6.6l4 3.1C6.3 6.9 8.9 4.8 12 4.8z"/>
+                </svg>
+                Google
+              </button>
+
+              {/* Company mail is on Outlook, so this is the one that will
+                  actually matter: Microsoft Entra ID (formerly Azure AD).
+                  Signing in with the work account people already have beats
+                  another password for them to forget. */}
+              <button
+                type="button"
+                disabled
+                title="Microsoft sign-in is not connected yet"
+                className="neumorph-button py-2.5 rounded-xl text-xs font-bold text-slate-500 flex items-center justify-center gap-2 opacity-60 cursor-not-allowed"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 23 23" aria-hidden="true">
+                  <path fill="#F25022" d="M1 1h10v10H1z"/>
+                  <path fill="#7FBA00" d="M12 1h10v10H12z"/>
+                  <path fill="#00A4EF" d="M1 12h10v10H1z"/>
+                  <path fill="#FFB900" d="M12 12h10v10H12z"/>
+                </svg>
+                Microsoft
+              </button>
+            </div>
+
+            <p className="text-[10px] text-slate-400 text-center">
+              Single sign-on is not connected yet. Use your {COMPANY_DOMAIN} email and password.
+            </p>
+          </div>
 
         </div>
       </div>
