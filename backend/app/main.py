@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))          # make `engine` importable
 
-from backend.app.api import auth, jobs, maintenance, records  # noqa: E402
+from backend.app.api import auth, jobs, leads, maintenance, records  # noqa: E402
 from backend.app.config import settings                       # noqa: E402
 from backend.app.database.session import SessionLocal, init_db  # noqa: E402
 from backend.app.models.models import User, UserRole          # noqa: E402
@@ -162,3 +162,4 @@ app.include_router(auth.router, prefix=settings.API_PREFIX, tags=["auth"])
 app.include_router(jobs.router, prefix=settings.API_PREFIX, tags=["jobs"])
 app.include_router(records.router, prefix=settings.API_PREFIX, tags=["records"])
 app.include_router(maintenance.router, prefix=settings.API_PREFIX, tags=["maintenance"])
+app.include_router(leads.router, prefix=settings.API_PREFIX, tags=["leads"])

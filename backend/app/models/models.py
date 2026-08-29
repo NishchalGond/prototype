@@ -352,3 +352,103 @@ class Record(Base):
         # purpose, and a unique constraint would reject them at insert.
         Index("ix_records_sourcefile_identity", "source_file", "identity_hash"),
     )
+
+
+class LeadStage:
+    """Where a lead sits in the sales conversation, not its data quality.
+
+    Deliberately separate from Record.status (VALID / INVALID / DUPLICATE /
+    INCOMPLETE), which describes the row, not the person. Overloading one field
+    with both meanings is how "is this record clean?" and "did we sell to them?"
+    become the same question, and neither can be answered afterwards.
+    """
+    NEW = "NEW"
+    CONTACTED = "CONTACTED"
+    INTERESTED = "INTERESTED"
+    NEGOTIATING = "NEGOTIATING"
+    WON = "WON"
+    LOST = "LOST"
+    # Honoured by list and export paths. An opt-out that only lives in a note
+    # field is not an opt-out.
+    DO_NOT_CONTACT = "DO_NOT_CONTACT"
+
+    ALL = (NEW, CONTACTED, INTERESTED, NEGOTIATING, WON, LOST, DO_NOT_CONTACT)
+    OPEN = (NEW, CONTACTED, INTERESTED, NEGOTIATING)
+
+
+class ActivityKind:
+    CALL = "CALL"
+    WHATSAPP = "WHATSAPP"
+    EMAIL = "EMAIL"
+    MEETING = "MEETING"
+    NOTE = "NOTE"
+    STAGE_CHANGE = "STAGE_CHANGE"
+
+    ALL = (CALL, WHATSAPP, EMAIL, MEETING, NOTE, STAGE_CHANGE)
+
+
+class Lead(Base):
+    """Outreach state for one owner. Created on first contact, not at ingest.
+
+    Not columns on Record, for two reasons. At 20M rows, where a small fraction
+    is ever worked, per-lead columns would be mostly NULL and every schema
+    change would rewrite the whole table. And Record is derived data: it is
+    deleted and rewritten wholesale whenever a job is reprocessed.
+
+    That second point drives the keying. `identity_hash` is the durable link,
+    because it survives a reprocess that renumbers every row. `record_id` is a
+    convenience pointer for joins and is deliberately ON DELETE SET NULL: when
+    reprocessing deletes the record, the lead must NOT go with it. Call history
+    is not derivable from a source file -- lose it and it is gone.
+    """
+    __tablename__ = "leads"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # The durable identity. Survives reprocessing; relink_leads() re-attaches
+    # record_id afterwards by matching on it.
+    identity_hash: Mapped[str] = mapped_column(String(64), index=True, unique=True)
+    record_id: Mapped[int | None] = mapped_column(
+        ForeignKey("records.id", ondelete="SET NULL"), index=True)
+
+    stage: Mapped[str] = mapped_column(String(24), default=LeadStage.NEW, index=True)
+    owner_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    # The one question a sales desk asks every morning: what is due today.
+    next_action_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), index=True)
+    last_activity_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    activities: Mapped[list["LeadActivity"]] = relationship(
+        back_populates="lead", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        # The work queue: "my open leads, soonest first".
+        Index("ix_leads_queue", "owner_user_id", "stage", "next_action_at"),
+    )
+
+
+class LeadActivity(Base):
+    """Append-only record of what was actually done. Never edited, never derived."""
+    __tablename__ = "lead_activities"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # Hangs off the lead, never off the record, so a reprocess cannot cascade
+    # it away.
+    lead_id: Mapped[int] = mapped_column(
+        ForeignKey("leads.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    # Denormalised so history stays readable after a user is deleted.
+    user_email: Mapped[str] = mapped_column(String(320))
+
+    kind: Mapped[str] = mapped_column(String(24), index=True)
+    outcome: Mapped[str | None] = mapped_column(String(64))
+    note: Mapped[str | None] = mapped_column(Text)
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, index=True)
+
+    lead: Mapped["Lead"] = relationship(back_populates="activities")
