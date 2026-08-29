@@ -215,3 +215,53 @@ def test_who_did_it_survives_the_user_being_deleted(db, user):
     db.commit()
     activity = _log(db, user, lead)
     assert activity.user_email == "agent@example.com"
+
+
+# --- the opt-out actually opts out ------------------------------------------
+
+def test_an_opted_out_person_disappears_from_the_record_list(db, user):
+    """DO_NOT_CONTACT has to bite on the paths the desk actually uses.
+
+    A stage that still shows up in the call list and the export is a note, not
+    an opt-out. Enforced in _build_records_query, which both paths share.
+    """
+    from backend.app.api.records import _build_records_query
+
+    kept = _record(db, identity_hash="keep-me", name="Sara Haddad")
+    opted_out = _record(db, identity_hash="opt-out", name="Mohammed Al Rashid")
+    lead = _get_or_create_lead(db, opted_out)
+    lead.stage = LeadStage.DO_NOT_CONTACT
+    db.commit()
+
+    visible = db.scalars(_build_records_query()).all()
+    assert [r.id for r in visible] == [kept.id]
+
+
+def test_other_stages_stay_visible(db, user):
+    from backend.app.api.records import _build_records_query
+
+    record = _record(db)
+    lead = _get_or_create_lead(db, record)
+    lead.stage = LeadStage.WON       # closed, but not opted out
+    db.commit()
+    assert [r.id for r in db.scalars(_build_records_query()).all()] == [record.id]
+
+
+def test_the_opt_out_holds_while_a_lead_is_detached(db, user):
+    # Between a reprocess and the relink, record_id is NULL. Keying the
+    # exclusion on the pointer instead of identity_hash would let an opted-out
+    # person reappear in exactly that window.
+    from backend.app.api.records import _build_records_query
+
+    record = _record(db, identity_hash="opt-out")
+    lead = _get_or_create_lead(db, record)
+    lead.stage = LeadStage.DO_NOT_CONTACT
+    db.commit()
+
+    db.execute(delete(Record).where(Record.job_id == 1))
+    db.commit()
+    _record(db, identity_hash="opt-out")      # rewritten, lead not yet relinked
+
+    db.refresh(lead)
+    assert lead.record_id is None
+    assert db.scalars(_build_records_query()).all() == []

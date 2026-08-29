@@ -15,8 +15,8 @@ from ..core.security import (
     get_current_user, require_export_permission, require_role,
 )
 from ..models.models import (
-    ExportAuditLog, ProcessingError, ProcessingJob, Record, RecordEditAudit,
-    RecordStatus, SourceFile, User, UserRole,
+    ExportAuditLog, Lead, LeadStage, ProcessingError, ProcessingJob, Record,
+    RecordEditAudit, RecordStatus, SourceFile, User, UserRole,
 )
 from ..schemas.schemas import (
     AliasRequest, ColumnMappingOut, DashboardStats, FilterOptions, JobOut, Page, RecordOut,
@@ -132,6 +132,25 @@ def _build_records_query(
         stmt = stmt.where(Record.email_address.is_not(None))
     elif has_email is False:
         stmt = stmt.where(Record.email_address.is_(None))
+
+    # Opt-outs, enforced here rather than at each call site, because the two
+    # call sites are exactly the paths that must honour them: the list the desk
+    # calls from, and the export it takes off-platform. A DO_NOT_CONTACT stage
+    # that still appears in either is not an opt-out, it is a note.
+    #
+    # An anti-join on identity_hash rather than record_id: the lead survives
+    # reprocessing and its record_id is briefly NULL afterwards, so keying on
+    # the pointer would let an opted-out person reappear in the window between
+    # a reprocess and the relink.
+    #
+    # leads is small -- a row exists only where someone was actually worked --
+    # so this stays a cheap semi-join against a unique index, not a scan.
+    stmt = stmt.where(
+        ~select(Lead.id)
+        .where(Lead.identity_hash == Record.identity_hash,
+               Lead.stage == LeadStage.DO_NOT_CONTACT)
+        .exists()
+    )
 
     return stmt
 
