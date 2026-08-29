@@ -5,11 +5,12 @@ import json
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, or_, select, text as sa_text
 from sqlalchemy.orm import Session, selectinload
 
 from ..config import settings
-from ..database.session import get_db, get_read_db
+from ..database.session import IS_POSTGRES, get_db, get_read_db
+from ..core.search import build_search_filter
 from ..core.security import (
     get_current_user, require_export_permission, require_role,
 )
@@ -34,11 +35,16 @@ SORTABLE = {
     "created_at": Record.created_at, "record_date": Record.record_date,
 }
 
-SEARCHABLE = (Record.name, Record.community, Record.sub_community,
-              Record.building_cluster, Record.unit_number, Record.mobile_1,
-              Record.mobile_2, Record.mobile_3, Record.email_address,
-              Record.plot_number, Record.pi_number, Record.project,
-              Record.developer)
+# Free-text search now lives in core/search.py. It tokenises the query and
+# requires every token to match, so "Mohammed Ahmed Marina Heights" finds the
+# owner even though no single column holds all four words -- the old whole-
+# phrase ILIKE across 13 columns could not, and forced a sequential scan
+# besides. See that module for why the column list moved with it.
+
+# Counting every matching row costs a full scan of the match set, which at 20M
+# rows is seconds for a broad filter and is spent on a number nobody reads past
+# the first significant digit. Counting stops here and the UI shows "20,000+".
+COUNT_CEILING = 20_000
 
 
 def _build_records_query(
@@ -57,9 +63,9 @@ def _build_records_query(
     has_email: bool | None = None,
 ):
     stmt = select(Record)
-    if q:
-        like = f"%{q.strip()}%"
-        stmt = stmt.where(or_(*[c.ilike(like) for c in SEARCHABLE]))
+    search = build_search_filter(q, is_postgres=IS_POSTGRES)
+    if search is not None:
+        stmt = stmt.where(search)
 
     for col, val in (
         (Record.community, community), (Record.sub_community, sub_community),
@@ -79,19 +85,16 @@ def _build_records_query(
             )
         )
 
-    # Valid phone pattern: must have non-null, non-N/A mobile_1 that matches valid standard format
-    # Excludes N/A, empty, and truncated numbers like +55240883 or 055240883
-    valid_mobile_filter = and_(
-        Record.mobile_1.is_not(None),
-        Record.mobile_1 != "",
-        Record.mobile_1 != "N/A",
-        Record.mobile_1 != "n/a",
-        or_(
-            Record.mobile_1.op("~")("^\\+9715[024568][0-9]{7}$"),
-            Record.mobile_1.op("~")("^\\+971[234679][0-9]{7}$"),
-            Record.mobile_1.op("~")("^\\+[1-9][0-9]{9,14}$"),
-        )
-    )
+    # "Verified valid mobile": non-null, non-N/A, and matching one of the three
+    # accepted E.164 shapes (UAE mobile, UAE landline, other international) --
+    # so truncated junk like +55240883 or 055240883 is excluded.
+    #
+    # This used to be three regexes evaluated against every row on every page
+    # load, which no index can serve and which the default view runs
+    # unconditionally. The rule now lives in the has_valid_mobile generated
+    # column, computed once at write time, and the partial indexes added in
+    # 9c41ab7de205 are built on it.
+    valid_mobile_filter = Record.has_valid_mobile.is_(True)
 
     if record_status:
         st_upper = record_status.upper()
@@ -168,7 +171,16 @@ def list_records(
         has_mobile=has_mobile, has_email=has_email,
     )
 
-    total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    # Counting the full match set is a scan of every matching row. On a broad
+    # filter over 20M records that is the slowest part of the request, and it
+    # produces a number the UI only uses to draw a page count. Counting stops at
+    # COUNT_CEILING: below it the total is exact, at it the UI shows "20,000+"
+    # and the user narrows their filter, which is what they should do anyway.
+    total = db.scalar(
+        select(func.count()).select_from(stmt.limit(COUNT_CEILING).subquery())
+    ) or 0
+    total_capped = total >= COUNT_CEILING
+
     col = SORTABLE[sort_by]
     if sort_by == "name" and sort_dir == "asc":
         # On default initial page load, prioritize complete records where procedure_value > 0 so VALUE (AED) and BEDROOM are visible right at the top
@@ -181,11 +193,17 @@ def list_records(
     else:
         order_clause = col.desc().nullslast() if sort_dir == "desc" else col.asc().nullslast()
         stmt = stmt.order_by(order_clause, Record.id.desc())
+    # OFFSET is bounded by COUNT_CEILING above (the UI cannot page past the
+    # capped total), so the planner never walks more than a few thousand index
+    # entries before the LIMIT. That keeps plain offset pagination viable; if
+    # deeper navigation is ever exposed, this is the point to switch to a
+    # keyset cursor on (sort_key, id).
     rows = db.scalars(stmt.offset((page - 1) * page_size).limit(page_size)).all()
     pages = (total + page_size - 1) // page_size
     return Page[RecordOut](
         items=[RecordOut.model_validate(r) for r in rows], total=total, page=page,
         page_size=page_size, total_pages=pages, has_next=page < pages, has_prev=page > 1,
+        total_capped=total_capped,
     )
 
 
@@ -382,16 +400,64 @@ def export_records(
         )
 
 
+# --------------------------------------------------------------------------
+# Cached aggregate access.
+#
+# Both helpers read a materialised view and return None if it is not there, so
+# every caller keeps a live-query fallback. That matters in three situations:
+# SQLite dev databases (no materialised views at all), a deploy where the app
+# rolls out before `alembic upgrade head` has finished, and a view that has been
+# dropped by hand. In all three the dashboard stays correct and merely slow,
+# rather than erroring.
+def _matview(db: Session, sql: str):
+    try:
+        return db.execute(sa_text(sql)).all()
+    except Exception:
+        # A missing relation aborts the surrounding PostgreSQL transaction, so
+        # the session must be rolled back before the fallback query can run on it.
+        db.rollback()
+        return None
+
+
+def _facet_cache(db: Session) -> dict[str, list[str]] | None:
+    """Return {column_name: [distinct values]} from mv_record_facets, or None."""
+    rows = _matview(
+        db,
+        "SELECT field, value FROM mv_record_facets "
+        "WHERE value <> '' ORDER BY field, value",
+    )
+    if rows is None:
+        return None
+    out: dict[str, list[str]] = {}
+    for field, value in rows:
+        out.setdefault(field, []).append(value)
+    return out
+
+
 @router.get("/records/filters", response_model=FilterOptions)
 def filter_options(
     _user: User = Depends(get_current_user),
     db: Session = Depends(get_read_db),
 ):
-    """Distinct values for the dashboard filter dropdowns."""
+    """Distinct values for the dashboard filter dropdowns.
+
+    Served from the mv_record_facets materialised view rather than seven
+    SELECT DISTINCT scans of the records table. Dropdown contents only change
+    when a file is ingested, so they are refreshed on that event (and on a
+    schedule) instead of being recomputed for every dashboard load by every one
+    of ~60 users. Falls back to live DISTINCT when the view is absent, which is
+    the case on SQLite dev databases and before the migration has run.
+    """
+    facets = _facet_cache(db)
+
     def distinct(col, limit=500, is_community=False):
-        raw_vals = [v for (v,) in db.execute(
-            select(col).where(col.is_not(None)).distinct().order_by(col).limit(limit)
-        ).all() if v]
+        cached = facets.get(col.key) if facets is not None else None
+        if cached is not None:
+            raw_vals = cached[:limit]
+        else:
+            raw_vals = [v for (v,) in db.execute(
+                select(col).where(col.is_not(None)).distinct().order_by(col).limit(limit)
+            ).all() if v]
         if is_community:
             valid_comms = []
             for v in raw_vals:
@@ -576,19 +642,45 @@ def dashboard_stats(
     _user: User = Depends(get_current_user),
     db: Session = Depends(get_read_db),
 ):
-    total_records = db.scalar(select(func.count(Record.id))) or 0
+    # The stat tiles are polled by every open dashboard. Computing them live
+    # meant a full-table COUNT plus a GROUP BY plus a 17-aggregate scan per
+    # poll, per user -- at 60 users that is continuous full scans of a 20M-row
+    # table for numbers that change only when a job finishes. mv_record_stats
+    # holds all of it in a single row; the live path below still runs when the
+    # view is unavailable.
+    cached = _matview(db, "SELECT * FROM mv_record_stats LIMIT 1")
+    stats_row = cached[0]._mapping if cached else None
 
-    by_status = dict(db.execute(
-        select(Record.status, func.count(Record.id)).group_by(Record.status)).all())
+    if stats_row is not None:
+        total_records = stats_row["total_records"] or 0
+        by_status = {
+            RecordStatus.VALID: stats_row["valid_records"] or 0,
+            RecordStatus.INVALID: stats_row["invalid_records"] or 0,
+            "DUPLICATE": stats_row["duplicate_records"] or 0,
+        }
+    else:
+        total_records = db.scalar(select(func.count(Record.id))) or 0
+        by_status = dict(db.execute(
+            select(Record.status, func.count(Record.id)).group_by(Record.status)).all())
+
     jobs_by_status = dict(db.execute(
         select(ProcessingJob.status, func.count(ProcessingJob.id))
         .group_by(ProcessingJob.status)).all())
 
-    top = [{"community": c, "count": n} for c, n in db.execute(
-        select(Record.community, func.count(Record.id))
-        .where(Record.community.is_not(None))
-        .group_by(Record.community).order_by(func.count(Record.id).desc()).limit(10)
-    ).all()]
+    # mv_record_facets already stores a per-community count, so the top-10 chart
+    # is a 10-row read from a small view instead of a GROUP BY over every record.
+    top_rows = _matview(
+        db,
+        "SELECT value, n FROM mv_record_facets WHERE field = 'community' "
+        "ORDER BY n DESC LIMIT 10",
+    )
+    if top_rows is None:
+        top_rows = db.execute(
+            select(Record.community, func.count(Record.id))
+            .where(Record.community.is_not(None))
+            .group_by(Record.community).order_by(func.count(Record.id).desc()).limit(10)
+        ).all()
+    top = [{"community": c, "count": n} for c, n in top_rows]
 
     # Field completeness in a single pass. This used to issue one
     # `COUNT(*) WHERE col IS NOT NULL` per field -- 17 sequential scans of the
@@ -609,9 +701,14 @@ def dashboard_stats(
 
     completeness: dict[str, float] = {}
     if total_records:
-        counts = db.execute(
-            select(*[func.count(col) for _, col in COMPLETENESS_FIELDS])
-        ).one()
+        if stats_row is not None:
+            # Same 17 aggregates, already computed by the materialised view.
+            counts = [stats_row[f"c_{label}"] or 0
+                      for label, _ in COMPLETENESS_FIELDS]
+        else:
+            counts = db.execute(
+                select(*[func.count(col) for _, col in COMPLETENESS_FIELDS])
+            ).one()
         completeness = {
             label: round(100.0 * n / total_records, 1)
             for (label, _), n in zip(COMPLETENESS_FIELDS, counts)

@@ -62,8 +62,25 @@ class Settings(BaseSettings):
     ENABLE_ENRICHMENT: bool = True
     REFERENCE_WORKBOOK: Path = ROOT / "Builders data" / "UAE_Development_Builders.xlsx"
 
+    # Property-attribute dataset used to fill Property Type (and Bedroom/Size
+    # at unit precision) for rows whose register never carried one. Any CSV or
+    # Excel export with community / building / property_type columns works --
+    # see engine/property_reference.py for the recognised column spellings.
+    # Absent file = enrichment simply fills less; nothing fails.
+    # Points at the Property Finder scrape (90,807 Dubai listings). A directory
+    # is read whole and de-duplicated on listing id, so the overlapping partial
+    # dumps in it cost nothing. Note the folder name is spelled "propertyfiinder"
+    # on disk; kept as-is so the default works without a rename.
+    PROPERTY_REFERENCE: Path = ROOT / "propertyfiinder"
+
     # Duplicate detection strategy, see engine/dedup.py
     DEDUP_STRATEGY: str = "identity"
+
+    # Match incoming rows against every register already ingested, not just the
+    # file being processed. Off restores the old single-file behaviour, which is
+    # occasionally what you want when back-filling a register you intend to
+    # reconcile by hand.
+    CROSS_REGISTER_DEDUP: bool = True
 
     # --- api ------------------------------------------------------------
     API_PREFIX: str = "/api"
@@ -75,6 +92,22 @@ class Settings(BaseSettings):
     ]
     DEFAULT_PAGE_SIZE: int = 50
     MAX_PAGE_SIZE: int = 500
+
+    # --- connection pooling ----------------------------------------------
+    # Every pooled connection is a backend process on the database server, and
+    # these ceilings are per application process: N uvicorn workers multiply
+    # them. The previous 20+40 write and 25+50 read defaults allowed 135
+    # connections from a single worker, which exceeds PostgreSQL's default
+    # max_connections of 100 on its own -- the failure mode at ~60 users was
+    # the database refusing connections, not slow queries.
+    #
+    # These defaults suit one worker against a small managed instance. Raising
+    # worker count means lowering these, or putting PgBouncer / RDS Proxy in
+    # front and pointing the app at that instead.
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
+    DB_READ_POOL_SIZE: int = 10
+    DB_READ_MAX_OVERFLOW: int = 20
 
     # --- derived ---------------------------------------------------------
     @property

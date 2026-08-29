@@ -26,6 +26,10 @@ class Page(BaseModel, Generic[T]):
     total_pages: int
     has_next: bool
     has_prev: bool
+    # True when counting stopped at the ceiling instead of scanning the whole
+    # match set, i.e. `total` is a floor ("20,000+") rather than an exact count.
+    # Defaulted so existing paginated endpoints need no change.
+    total_capped: bool = False
 
 
 class ErrorResponse(BaseModel):

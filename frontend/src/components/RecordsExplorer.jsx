@@ -3,6 +3,11 @@ import { Search, ChevronLeft, ChevronRight, X, ArrowUpDown, ArrowUp, ArrowDown, 
 import CustomSelect from './CustomSelect';
 import { apiFetch } from '../lib/api';
 
+/** Render a result count, marking it as a floor when the API capped its count. */
+function formatTotal(total, capped) {
+  return capped ? `${total.toLocaleString()}+` : total.toLocaleString();
+}
+
 export default function RecordsExplorer({ initialQuery = '' }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -19,6 +24,11 @@ export default function RecordsExplorer({ initialQuery = '' }) {
   const [limit, setLimit] = useState(25);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
+  // The API stops counting at a ceiling rather than scanning every matching row
+  // (see COUNT_CEILING in records.py), so a large result set reports a floor.
+  // Render it as "20,000+" instead of quietly presenting a floor as an exact
+  // total -- the honest number is what tells a user to narrow their filter.
+  const [totalCapped, setTotalCapped] = useState(false);
   const [filterOptions, setFilterOptions] = useState({ communities: [], property_types: [], bedroom_types: [], source_files: [], statuses: [] });
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
@@ -96,6 +106,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
         setRecords(items);
         setTotalPages(data.total_pages || 1);
         setTotalRecords(data.total || 0);
+        setTotalCapped(Boolean(data.total_capped));
 
         if (data.filter_options) {
           setFilterOptions({
@@ -224,7 +235,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
           <div>
             <h2 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Processed Dataset Explorer</h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
-              Search, filter, and inspect normalized records across all ingested registers ({totalRecords.toLocaleString()} records).
+              Search, filter, and inspect normalized records across all ingested registers ({formatTotal(totalRecords, totalCapped)} records).
             </p>
           </div>
 
@@ -584,7 +595,7 @@ export default function RecordsExplorer({ initialQuery = '' }) {
             <div className="text-slate-800 dark:text-slate-200 font-bold text-[11px] sm:text-xs">
               Page <span className="text-blue-600 dark:text-blue-400 font-black">{page}</span> of{' '}
               <span className="text-blue-600 dark:text-blue-400 font-black">{totalPages}</span>{' '}
-              <span className="text-slate-500 dark:text-slate-400 font-normal">({totalRecords.toLocaleString()})</span>
+              <span className="text-slate-500 dark:text-slate-400 font-normal">({formatTotal(totalRecords, totalCapped)})</span>
             </div>
             <div className="flex items-center space-x-1.5 shrink-0">
               <button
