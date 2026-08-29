@@ -52,7 +52,7 @@ International phone standardizer, normalizing to ITU E.164 format across UAE and
 
 Unit conversion: sq.m → sq.ft (`× 10.7639`).
 
-Developer Reference Resolver maps naming variants (e.g. `EMAAR` → `Emaar Properties PJSC`) to canonical entities, with owner/buyer and developer fields kept strictly decoupled.
+Developer Reference Resolver maps naming variants (`EMAAR`, `Emaar Properties PJSC`, `EMAAR PROPERTIES L.L.C` → `Emaar Properties`) to canonical entities, with owner/buyer and developer fields kept strictly decoupled. Placeholder values (`Multiple private developers`, `Various`) are dropped rather than stored as builders.
 
 </td>
 </tr>

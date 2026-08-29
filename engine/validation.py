@@ -25,8 +25,15 @@ def looks_like_building_row(extras: dict, fields: dict) -> bool:
     return hits >= 2
 
 
-def transform(fields: dict, extras: dict) -> tuple[dict, list[str]]:
-    """Map target-label dict -> DB column dict, cleaning every value."""
+def transform(fields: dict, extras: dict,
+              *, size_header: str | None = None) -> tuple[dict, list[str]]:
+    """Map target-label dict -> DB column dict, cleaning every value.
+
+    `size_header` is the raw source header of the Size column. Sizes arrive in
+    square metres as often as square feet, and when the unit is stated only in
+    the header ("Area (Sqm)") the value alone cannot be interpreted -- without
+    it every such column is stored 10.76x too small.
+    """
     flags: list[str] = []
     row: dict = {}
 
@@ -46,11 +53,11 @@ def transform(fields: dict, extras: dict) -> tuple[dict, list[str]]:
     row["party_type"] = C.clean_party_type(fields.get("Type (Buyer/Seller)"))
     row["pi_number"] = C.clean_text(fields.get("PI number"))
     row["nationality"] = C.clean_nationality(fields.get("Nationality"))
-    row["property_type"] = C.clean_text(fields.get("Property Type"))
-    row["developer"] = C.clean_text(fields.get("Developer"))
+    row["property_type"] = C.clean_property_type(fields.get("Property Type"))
+    row["developer"] = C.clean_developer(fields.get("Developer"))
     row["project"] = C.clean_text(fields.get("Project"))
 
-    row["size"] = C.clean_size(fields.get("Size"))
+    row["size"] = C.clean_size(fields.get("Size"), raw_header=size_header)
     row["procedure_value"] = C.clean_number(fields.get("Procedure Value"))
     row["record_date"] = C.clean_date(fields.get("Date"))
     if fields.get("Date") is not None and row["record_date"] is None:
