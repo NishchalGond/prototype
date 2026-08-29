@@ -117,7 +117,13 @@ class RecordEditAudit(Base):
     __tablename__ = "record_edits_audit"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    record_id: Mapped[int] = mapped_column(ForeignKey("records.id", ondelete="CASCADE"), index=True)
+    # SET NULL, not CASCADE. A hand-correction is no more derivable from the
+    # source file than a phone call is: reprocessing a job used to delete both
+    # the correction and the record of who made it. identity_hash is the
+    # durable link, the same way it is for leads.
+    record_id: Mapped[int | None] = mapped_column(
+        ForeignKey("records.id", ondelete="SET NULL"), index=True)
+    identity_hash: Mapped[str | None] = mapped_column(String(64), index=True)
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
     user_email: Mapped[str] = mapped_column(String(320), index=True)
     field_name: Mapped[str] = mapped_column(String(64), index=True)
@@ -376,6 +382,33 @@ class LeadStage:
     OPEN = (NEW, CONTACTED, INTERESTED, NEGOTIATING)
 
 
+class ContactVerdict:
+    """What the phone call proved about the data.
+
+    A salesperson who dials and hears "wrong number" has produced the single
+    best available verdict on that number -- better than any regex, better than
+    has_valid_mobile, better than a portal. Until now it landed in a free-text
+    outcome field and died there.
+
+    Stored on the Lead, so it is keyed by identity_hash and survives the
+    reprocessing that deletes and rewrites records. That is what stops the
+    engine resurrecting a number a human already disproved.
+    """
+    REACHED = "REACHED"                # the number is good, person confirmed
+    WRONG_NUMBER = "WRONG_NUMBER"      # number belongs to someone else
+    NOT_OWNER = "NOT_OWNER"            # reached someone, not this property's owner
+    SOLD = "SOLD"                      # they no longer own it; record is stale
+    UNREACHABLE = "UNREACHABLE"        # rang out repeatedly, no verdict either way
+
+    ALL = (REACHED, WRONG_NUMBER, NOT_OWNER, SOLD, UNREACHABLE)
+
+    # Verdicts that mean "do not put this in front of the desk again".
+    # UNREACHABLE is deliberately absent: nobody answering is not evidence the
+    # number is wrong, and dropping those would quietly delete the hard half of
+    # the list.
+    SUPPRESSING = (WRONG_NUMBER, NOT_OWNER, SOLD)
+
+
 class ActivityKind:
     CALL = "CALL"
     WHATSAPP = "WHATSAPP"
@@ -417,6 +450,10 @@ class Lead(Base):
     next_action_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), index=True)
     last_activity_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    # What outreach proved about the underlying data. See ContactVerdict.
+    contact_verdict: Mapped[str | None] = mapped_column(String(24), index=True)
+    contact_verdict_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(

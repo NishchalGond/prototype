@@ -15,8 +15,9 @@ from ..core.security import (
     get_current_user, require_export_permission, require_role,
 )
 from ..models.models import (
-    ExportAuditLog, Lead, LeadStage, ProcessingError, ProcessingJob, Record,
-    RecordEditAudit, RecordStatus, SourceFile, User, UserRole,
+    ContactVerdict, ExportAuditLog, Lead, LeadStage, ProcessingError,
+    ProcessingJob, Record, RecordEditAudit, RecordStatus, SourceFile, User,
+    UserRole,
 )
 from ..schemas.schemas import (
     AliasRequest, ColumnMappingOut, DashboardStats, FilterOptions, JobOut, Page, RecordOut,
@@ -147,8 +148,16 @@ def _build_records_query(
     # so this stays a cheap semi-join against a unique index, not a scan.
     stmt = stmt.where(
         ~select(Lead.id)
-        .where(Lead.identity_hash == Record.identity_hash,
-               Lead.stage == LeadStage.DO_NOT_CONTACT)
+        .where(
+            Lead.identity_hash == Record.identity_hash,
+            or_(
+                Lead.stage == LeadStage.DO_NOT_CONTACT,
+                # A number a human dialled and disproved outranks anything the
+                # pipeline inferred about it. has_valid_mobile only says the
+                # number is well FORMED; only a call can say it is WRONG.
+                Lead.contact_verdict.in_(ContactVerdict.SUPPRESSING),
+            ),
+        )
         .exists()
     )
 
@@ -602,6 +611,10 @@ def update_record(
                 changes.append(
                     RecordEditAudit(
                         record_id=rec.id,
+                        # The durable link. record_id is SET NULL now, so
+                        # without this the audit trail survives a reprocess but
+                        # can no longer say which record it belonged to.
+                        identity_hash=rec.identity_hash,
                         user_id=user_id,
                         user_email=user_email,
                         field_name=field,

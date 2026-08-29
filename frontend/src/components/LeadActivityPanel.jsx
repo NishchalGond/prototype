@@ -20,6 +20,19 @@ const KINDS = [
 
 const STAGES = ['NEW', 'CONTACTED', 'INTERESTED', 'NEGOTIATING', 'WON', 'LOST', 'DO_NOT_CONTACT'];
 
+// What the call proved about the DATA, as distinct from the sale. One click,
+// because a verdict typed into a free-text box is a verdict nothing can act on.
+// The three marked `suppresses` drop the record out of the list and exports;
+// "No answer" deliberately does not, since nobody picking up is not evidence
+// the number is wrong.
+const VERDICTS = [
+  { value: 'REACHED', label: 'Reached them', suppresses: false },
+  { value: 'WRONG_NUMBER', label: 'Wrong number', suppresses: true },
+  { value: 'NOT_OWNER', label: 'Not the owner', suppresses: true },
+  { value: 'SOLD', label: 'Already sold', suppresses: true },
+  { value: 'UNREACHABLE', label: 'No answer', suppresses: false },
+];
+
 // Muted, deliberately: the stage is context while reading a record, not the
 // loudest thing on screen. DO_NOT_CONTACT is the exception and reads as a stop.
 const STAGE_STYLE = {
@@ -49,6 +62,7 @@ export default function LeadActivityPanel({ recordId }) {
   const [outcome, setOutcome] = useState('');
   const [note, setNote] = useState('');
   const [stage, setStage] = useState('');
+  const [verdict, setVerdict] = useState('');
   const [nextAction, setNextAction] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -77,6 +91,7 @@ export default function LeadActivityPanel({ recordId }) {
           outcome: outcome || null,
           note: note || null,
           stage: stage || null,
+          verdict: verdict || null,
           // datetime-local has no timezone; the API stores UTC.
           next_action_at: nextAction ? new Date(nextAction).toISOString() : null,
         }),
@@ -86,7 +101,7 @@ export default function LeadActivityPanel({ recordId }) {
         throw new Error(body.detail || 'Could not save the activity.');
       }
       setLead(await res.json());
-      setOutcome(''); setNote(''); setStage(''); setNextAction('');
+      setOutcome(''); setNote(''); setStage(''); setNextAction(''); setVerdict('');
       await load();
     } catch (err) {
       setError(err.message);
@@ -101,11 +116,18 @@ export default function LeadActivityPanel({ recordId }) {
     <div className="p-3 rounded-xl bg-[#eef0f4] border border-slate-300/80 shadow-[inset_2px_2px_4px_#cbd2dc] space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-mono text-slate-500 font-bold">OUTREACH</span>
-        {currentStage && (
-          <span className={`text-[10px] font-mono font-bold ${STAGE_STYLE[currentStage] || 'text-slate-600'}`}>
-            {currentStage.replace(/_/g, ' ')}
-          </span>
-        )}
+        <span className="flex items-center gap-2">
+          {lead?.contact_verdict && (
+            <span className="text-[10px] font-mono font-bold text-rose-700">
+              {lead.contact_verdict.replace(/_/g, ' ')}
+            </span>
+          )}
+          {currentStage && (
+            <span className={`text-[10px] font-mono font-bold ${STAGE_STYLE[currentStage] || 'text-slate-600'}`}>
+              {currentStage.replace(/_/g, ' ')}
+            </span>
+          )}
+        </span>
       </div>
 
       {/* Log it and move it on in one submit. Two steps to record one phone
@@ -160,6 +182,33 @@ export default function LeadActivityPanel({ recordId }) {
           aria-label="Note"
           className="neumorph-inset text-slate-800 rounded-lg px-2 py-1.5 text-xs w-full focus:outline-none resize-none"
         />
+
+        <div className="space-y-1">
+          <span className="text-[10px] font-mono text-slate-500 font-bold">
+            WHAT IT PROVED ABOUT THE DATA
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {VERDICTS.map((v) => (
+              <button
+                key={v.value}
+                type="button"
+                onClick={() => setVerdict(verdict === v.value ? '' : v.value)}
+                aria-pressed={verdict === v.value}
+                title={v.suppresses
+                  ? 'Removes this record from the list and exports'
+                  : 'Keeps the record in the list'}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+                  verdict === v.value
+                    ? (v.suppresses ? 'neumorph-button text-rose-700 ring-1 ring-rose-300'
+                                    : 'neumorph-button-primary')
+                    : 'neumorph-button text-slate-600'
+                }`}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="flex items-center gap-2">
           <label className="text-[10px] font-mono text-slate-500 font-bold whitespace-nowrap"

@@ -22,13 +22,14 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, selectinload
 
 from ..core.security import get_current_user
 from ..database.session import get_db
 from ..models.models import (
-    ActivityKind, Lead, LeadActivity, LeadStage, Record, User,
+    ActivityKind, ContactVerdict, Lead, LeadActivity, LeadStage, Record,
+    RecordEditAudit, User,
 )
 
 log = logging.getLogger(__name__)
@@ -47,6 +48,10 @@ class ActivityIn(BaseModel):
     # record one phone call is how outreach data stops getting entered.
     stage: str | None = None
     next_action_at: datetime | None = None
+    # What the call proved about the data, not about the sale. See
+    # ContactVerdict: this is the feedback loop that lets outreach correct the
+    # database instead of only consuming it.
+    verdict: str | None = None
 
 
 class ActivityOut(BaseModel):
@@ -68,6 +73,7 @@ class LeadOut(BaseModel):
     owner_user_id: int | None
     next_action_at: datetime | None
     last_activity_at: datetime | None
+    contact_verdict: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -117,6 +123,16 @@ def relink_leads(db: Session, job_id: int) -> int:
     ):
         lead.record_id = by_hash[lead.identity_hash]
         relinked += 1
+
+    # Hand-corrections are no more derivable from a source file than phone
+    # calls are, and they detach the same way.
+    for audit in db.scalars(
+        select(RecordEditAudit).where(RecordEditAudit.record_id.is_(None),
+                                      RecordEditAudit.identity_hash.in_(by_hash.keys()))
+    ):
+        audit.record_id = by_hash[audit.identity_hash]
+        relinked += 1
+
     if relinked:
         db.commit()
         log.info("relinked %d lead(s) after reprocessing job %d", relinked, job_id)
@@ -138,6 +154,9 @@ def log_activity(
         raise HTTPException(422, f"kind must be one of {', '.join(ActivityKind.ALL)}")
     if payload.stage is not None and payload.stage not in LeadStage.ALL:
         raise HTTPException(422, f"stage must be one of {', '.join(LeadStage.ALL)}")
+    if payload.verdict is not None and payload.verdict not in ContactVerdict.ALL:
+        raise HTTPException(
+            422, f"verdict must be one of {', '.join(ContactVerdict.ALL)}")
 
     record = db.get(Record, record_id)
     if record is None:
@@ -165,6 +184,14 @@ def log_activity(
         lead.next_action_at = payload.next_action_at
     if lead.owner_user_id is None:
         lead.owner_user_id = user.id
+
+    if payload.verdict:
+        lead.contact_verdict = payload.verdict
+        lead.contact_verdict_at = now
+        # A number proved wrong should stop being scheduled. Leaving a callback
+        # on a record nobody can reach just recycles the same dead end.
+        if payload.verdict in ContactVerdict.SUPPRESSING:
+            lead.next_action_at = None
 
     db.commit()
     db.refresh(lead)
@@ -252,6 +279,51 @@ def list_leads(
     # Nulls last: a lead with no scheduled action is not overdue, it is unplanned.
     return db.scalars(
         stmt.order_by(Lead.next_action_at.asc().nullslast(), Lead.id.desc())
+        .limit(limit)
+    ).all()
+
+
+@router.get("/leads/verdicts")
+def verdict_summary(
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """What outreach has proved about the data, in aggregate.
+
+    The counts are a data-quality report the pipeline cannot produce on its
+    own: only a human on a phone can tell you a well-formed number belongs to
+    the wrong person. A rising WRONG_NUMBER count against one source file is a
+    signal about that register, not about the sales team.
+    """
+    counts = dict(db.execute(
+        select(Lead.contact_verdict, func.count(Lead.id))
+        .where(Lead.contact_verdict.is_not(None))
+        .group_by(Lead.contact_verdict)
+    ).all())
+    return {
+        "verdicts": {v: counts.get(v, 0) for v in ContactVerdict.ALL},
+        "suppressed_records": sum(counts.get(v, 0)
+                                  for v in ContactVerdict.SUPPRESSING),
+        "note": "suppressed records are hidden from the record list and exports",
+    }
+
+
+@router.get("/leads/needs-new-number", response_model=list[LeadOut])
+def needs_new_number(
+    limit: int = Query(200, ge=1, le=1000),
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Leads whose number was disproved -- the re-sourcing work list.
+
+    These are known-valuable properties with a known-bad contact, which makes
+    them the highest-yield rows to re-source rather than dead weight.
+    """
+    return db.scalars(
+        select(Lead)
+        .where(Lead.contact_verdict.in_((ContactVerdict.WRONG_NUMBER,
+                                         ContactVerdict.NOT_OWNER)))
+        .order_by(Lead.contact_verdict_at.desc())
         .limit(limit)
     ).all()
 
