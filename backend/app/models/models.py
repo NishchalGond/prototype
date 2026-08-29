@@ -452,3 +452,34 @@ class LeadActivity(Base):
         DateTime(timezone=True), default=utcnow, index=True)
 
     lead: Mapped["Lead"] = relationship(back_populates="activities")
+
+
+class ErasureRequest(Base):
+    """A person asked to be removed. Durable, because records are not.
+
+    Redacting the rows is not enough on its own: records are derived data,
+    rebuilt from the stored source file whenever a job is reprocessed, and that
+    file still contains the person. Without a standing record of the request,
+    the next reprocess quietly restores what was erased.
+
+    Keyed by identity_hash for the same reason leads are -- it is the only
+    identifier that survives rows being deleted and rewritten. apply_erasures()
+    re-applies redaction after every ingest.
+
+    Kept separate from Lead: someone can ask to be erased without ever having
+    been contacted, and an auditor asks for this register on its own.
+    """
+    __tablename__ = "erasure_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    identity_hash: Mapped[str] = mapped_column(String(64), index=True, unique=True)
+
+    requested_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    # Denormalised so the register stays complete after a user is deleted.
+    requested_by_email: Mapped[str] = mapped_column(String(320))
+    reason: Mapped[str | None] = mapped_column(Text)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    records_redacted: Mapped[int] = mapped_column(Integer, default=0)
