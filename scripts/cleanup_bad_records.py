@@ -1,3 +1,4 @@
+# Purges unidentifiable artifact rows and duplicate records
 """Delete records that carry no information, and reclaim the space.
 
     python scripts/cleanup_bad_records.py            # report only, deletes nothing
