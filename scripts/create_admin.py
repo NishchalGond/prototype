@@ -1,3 +1,4 @@
+# Interactive administrator bootstrap script
 """Create or reset an administrator account.
 
 The application no longer ships a default password, so this is the supported way
