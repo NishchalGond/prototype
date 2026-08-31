@@ -1,3 +1,4 @@
+/** Vector Brand Logo for DataLink Engine */
 import React from 'react';
 
 export default function DataLinkLogo({ className = "w-6 h-6", glow = true }) {
