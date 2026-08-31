@@ -238,6 +238,7 @@ prototype/
 │   │   ├── models/          # SQLModel database schemas
 │   │   └── main.py          # FastAPI application entrypoint
 │   └── requirements.txt     # Python backend dependencies
+├── Documentation/           # System, API specifications & scaling guides
 ├── engine/
 │   ├── cleaning.py          # E.164 phone cleaning & sq.m → sq.ft conversion
 │   ├── detection.py         # Column header detection & matching
