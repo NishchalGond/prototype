@@ -1,3 +1,4 @@
+# Developer and community reference catalog lookup cache
 """Reference data + enrichment.
 
 Source: "Builders data/UAE_Development_Builders.xlsx" — 483 UAE developments
