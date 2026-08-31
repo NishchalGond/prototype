@@ -1,3 +1,4 @@
+# Reconstructs outreach verification flags
 from backend.app.database.session import engine
 from sqlalchemy import text
 
