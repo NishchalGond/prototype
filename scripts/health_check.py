@@ -45,19 +45,30 @@ print()
 print("=== 4. Outreach Validation Logic ===")
 from engine import validation as V
 
+def _has_contact(row: dict) -> bool:
+    return bool(row.get("mobile_1") or row.get("mobile_2") or row.get("mobile_3") or row.get("email_address"))
+
 # Record with name + phone -> VALID
 fields3 = {"Name": "John Doe", "Mobile 1": "+971551234567", "Community": "Dubai Hills"}
 row3, _ = V.transform(fields3, {})
 has_name3 = bool(row3.get("name") and str(row3.get("name")).strip())
-has_contact3 = bool(row3.get("mobile_1") or row3.get("email_address"))
+has_contact3 = _has_contact(row3)
 print(f"  Name+Phone: has_name={has_name3}, has_contact={has_contact3} -> should be VALID")
 assert has_name3 and has_contact3, "FAIL"
+
+# Record with name + secondary mobile only -> VALID
+fields3b = {"Name": "Ali Hassan", "Mobile 2": "+971509876543", "Community": "Downtown Dubai"}
+row3b, _ = V.transform(fields3b, {})
+has_name3b = bool(row3b.get("name") and str(row3b.get("name")).strip())
+has_contact3b = _has_contact(row3b)
+print(f"  Name+Mobile 2: has_name={has_name3b}, has_contact={has_contact3b} -> should be VALID")
+assert has_name3b and has_contact3b, "FAIL"
 
 # Record with name only -> INCOMPLETE
 fields4 = {"Name": "Jane Doe", "Community": "Dubai Hills"}
 row4, _ = V.transform(fields4, {})
 has_name4 = bool(row4.get("name") and str(row4.get("name")).strip())
-has_contact4 = bool(row4.get("mobile_1") or row4.get("email_address"))
+has_contact4 = _has_contact(row4)
 print(f"  Name only:  has_name={has_name4}, has_contact={has_contact4} -> should be INCOMPLETE")
 assert has_name4 and not has_contact4, "FAIL"
 
@@ -65,7 +76,7 @@ assert has_name4 and not has_contact4, "FAIL"
 fields5 = {"Mobile 1": "+971551234567"}
 row5, _ = V.transform(fields5, {})
 has_name5 = bool(row5.get("name") and str(row5.get("name")).strip())
-has_contact5 = bool(row5.get("mobile_1") or row5.get("email_address"))
+has_contact5 = _has_contact(row5)
 print(f"  Phone only: has_name={has_name5}, has_contact={has_contact5} -> should be INCOMPLETE")
 assert not has_name5 and has_contact5, "FAIL"
 
