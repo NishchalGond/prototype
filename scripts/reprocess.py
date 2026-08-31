@@ -1,3 +1,4 @@
+# Re-applies cleaning and normalization transformations to existing records
 """Re-run every stored source file through the current engine.
 
 Use after an engine change that alters cleaning/mapping output, so the stored
