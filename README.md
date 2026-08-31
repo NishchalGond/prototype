@@ -227,6 +227,20 @@ The app will be available at **`http://localhost:3000/`**.
 
 <br/>
 
+
+## 🛠️ Developer Quick Start
+
+```bash
+# 1. Start the FastAPI backend
+./start-backend.ps1
+
+# 2. Start the Vite React frontend
+./start-frontend.ps1
+
+# 3. Run the complete test suite
+pytest
+```
+
 ## 📁 Repository Structure
 
 ```
