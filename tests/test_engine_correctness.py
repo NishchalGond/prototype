@@ -1,3 +1,4 @@
+# Core engine normalization correctness test suite
 """Regression tests for five defects found in the cleaning/enrichment audit.
 
 Each test here failed before the fix and names the specific data corruption it
