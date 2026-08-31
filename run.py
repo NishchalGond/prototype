@@ -1,3 +1,4 @@
+# CLI execution entrypoint for pipeline actions
 import os
 import sys
 from pathlib import Path
