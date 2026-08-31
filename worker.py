@@ -1,3 +1,4 @@
+# Standalone batch ingestion worker process
 """Ingest worker. Runs jobs outside the web process.
 
     python worker.py
