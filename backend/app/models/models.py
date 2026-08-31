@@ -1,3 +1,4 @@
+# SQLModel schemas representing canonical real estate records and job states
 """SQLAlchemy models. Target: PostgreSQL. Compatible with SQLite for local dev."""
 import os
 from datetime import datetime, timezone
