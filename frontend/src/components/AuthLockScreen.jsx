@@ -1,3 +1,4 @@
+/** Authentication Gate & Login Lockscreen */
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, KeyRound, ShieldCheck, Sun, Moon, ArrowRight, Sparkles, Mail, UserCheck } from 'lucide-react';
 import DataLinkLogo from './DataLinkLogo';
