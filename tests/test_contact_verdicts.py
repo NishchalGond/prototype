@@ -1,3 +1,4 @@
+# Outreach verdict and contact feedback integration test suite
 """Outreach as a data-quality sensor.
 
 A salesperson who dials and hears "wrong number" has produced better evidence
