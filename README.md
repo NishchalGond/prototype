@@ -231,9 +231,10 @@ The app will be available at **`http://localhost:3000/`**.
 
 ```
 prototype/
+├── alembic/                 # Database schema migrations & versioning
 ├── backend/
 │   ├── app/
-│   │   ├── api/             # FastAPI routes (records, jobs, upload)
+│   │   ├── api/             # FastAPI routes (records, jobs, upload, crm)
 │   │   ├── database/        # Supabase PostgreSQL session manager
 │   │   ├── models/          # SQLModel database schemas
 │   │   └── main.py          # FastAPI application entrypoint
@@ -252,7 +253,12 @@ prototype/
 │   │   └── index.css        # Neumorphism utility classes & CSS variables
 │   ├── package.json
 │   └── vite.config.js
+├── scripts/                 # Maintenance, migration, and data normalization tools
+├── tests/                   # Backend & engine test suites
 ├── column_mapping.json      # Canonical target fields & alias definitions
+├── worker.py                # Standalone queue worker for heavy ingestion jobs
+├── start-backend.ps1        # Local backend service launcher
+├── start-frontend.ps1       # Local frontend development launcher
 ├── .gitignore                # Excludes secrets, database files, node_modules
 └── README.md
 ```
