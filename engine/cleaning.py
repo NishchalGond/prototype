@@ -1,3 +1,4 @@
+# Normalization and E.164 sanitization routines
 """Value-level normalization.
 
 Every rule here traces to a defect actually observed in the 100 source files.
