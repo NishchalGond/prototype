@@ -1,3 +1,4 @@
+/** Fixed Navigation Sidebar with Role-Based Menu Items */
 import React from 'react';
 import { UsersRound, LineChart, PhoneCall, 
   LayoutDashboard, 
