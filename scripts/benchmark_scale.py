@@ -1,3 +1,4 @@
+# High-volume dataset throughput and concurrency benchmark suite
 """Seed a PostgreSQL database to N million records and time the real queries.
 
     python scripts/benchmark_scale.py --rows 20000000        # seed, then time
