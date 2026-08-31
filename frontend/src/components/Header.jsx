@@ -1,3 +1,4 @@
+/** Top Navigation Header with Search and Theme Controls */
 import React from 'react';
 import { Search, RefreshCw, Cloud, Sun, Moon, LogOut, ShieldCheck } from 'lucide-react';
 import DataLinkLogo from './DataLinkLogo';
