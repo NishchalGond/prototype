@@ -1,3 +1,4 @@
+# Database engine session lifecycle and connection pooling
 import threading
 from collections.abc import Iterator
 from contextlib import nullcontext
