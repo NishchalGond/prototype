@@ -1,3 +1,4 @@
+# Cross-register deduplication test suite
 """Deduplication must span registers, not just the file being ingested.
 
 Before this, `seen_hashes` was preloaded filtered by `source_file == <this
