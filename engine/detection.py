@@ -1,3 +1,4 @@
+# Heuristic header matching and column detection rules
 """Format detection + streaming sheet readers.
 
 The audit proved extensions lie: a 46 MB ".xls" was an HTML table, and an
