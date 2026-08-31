@@ -1,3 +1,4 @@
+# Verifies 5-field core completeness rule
 import os
 import sys
 from dotenv import load_dotenv
