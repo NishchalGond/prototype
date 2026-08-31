@@ -105,6 +105,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
+# --- API Lifespan & Security Middleware Configuration ---
 app = FastAPI(
     title="Prototype Data Processing API",
     version="1.0.0",
