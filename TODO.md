@@ -1,45 +1,225 @@
-# 📋 DataLink Engine — 23-Day Master Task Backlog
+# 📋 DataLink Engine — 23-Day Production Master Plan & Task Backlog
+
+## 🎯 Purpose
+Take the existing DataLink Engine prototype and complete the production build within **23 working days**. 
+Saturdays are dedicated primarily to full-day testing and review with two people. After Day 23, the system moves into real-world running, issue collection, fixing, retesting, and polishing.
 
 ---
 
-## 🏗️ Week 1: Understand, Decide & Build the Foundation (Days 1–7)
-- [x] **Day 1:** Prototype audit, map engine/backend/frontend/tests, initialize 5 control documents.
-- [ ] **Day 2:** Translate target AWS architecture into concrete technical requirements; record decisions in `DECISIONS.md`.
-- [ ] **Day 3:** Prepare configuration structure, environment variables (`.env.example`), and Git checkpoints.
-- [ ] **Day 4:** Implement pluggable Storage Adapter (`LocalStorage` / `S3Storage`) and S3 Presigned URL endpoint (`POST /api/upload/presign`).
-- [ ] **Day 5:** Configure production PostgreSQL / Aurora Serverless v2 connectivity and connection pooler (RDS Proxy).
-- [ ] **Day 6:** Validate Alembic migrations, canonical schema, GIN trigram indexes, and baseline data.
-- [ ] **Day 7:** Foundation integration: Connect API + Storage + Database; run smoke & regression tests; create Git checkpoint.
+## 1. 📅 Weekly Timeline
+
+| Week | Main Focus | What Will Be Completed | Testing / Review |
+|---|---|---|---|
+| **Week 1** | **Prototype, Scope & Foundation** | Understand the existing prototype, confirm scope, finalize the production approach, establish the foundation, and connect the main application with storage and database. | **Saturday:** Full-day testing |
+| **Week 2** | **Processing & Backend Integration** | Complete asynchronous processing, worker integration, reliability, large-file handling, production builds, and core deployment. | **Saturday:** Full-day system testing |
+| **Week 3** | **Frontend, Deployment & Security** | Complete the frontend production flow, upload/job experience, API access, deployment, HTTPS, security, and monitoring. | **Saturday:** Full-day end-to-end testing |
+| **Week 4** | **Stabilization & Final Release** | Fix issues found during testing, validate performance and reliability, complete final integration, and prepare the production release candidate. | Final validation, questions, observations, and pending issues |
 
 ---
 
-## ⚡ Week 2: Asynchronous Processing & Production Runtime (Days 8–14)
-- [ ] **Day 8:** Implement durable SQS job dispatch queue, retry policy, and Dead Letter Queue (DLQ).
-- [ ] **Day 9:** Adapt `worker.py` around queued jobs while preserving existing normalization algorithms in `engine/`.
-- [ ] **Day 10:** Worker retrieves source files directly from S3, validates job identity, and invokes `Processor`.
-- [ ] **Day 11:** Implement job lifecycle states, idempotency, duplicate protection, and failure capture.
-- [ ] **Day 12:** Verify chunked streaming, batch database writes, memory controls, and error logs using 50MB+ datasets.
-- [ ] **Day 13:** Author multi-stage Dockerfiles for API and Worker; verify repeatable build artifacts.
-- [ ] **Day 14:** Deploy API and Worker to runtime (ECS Fargate); verify `/health` endpoint and service connectivity.
+## 2. 🔄 Overall Flow
+
+```
+Existing Prototype ➔ Build ➔ Test ➔ Fix ➔ Integrate ➔ Final Test ➔ Release Candidate
+```
 
 ---
 
-## 🌐 Week 3: Complete Application & Operations (Days 15–21)
-- [ ] **Day 15:** Connect React `UploadSection.jsx` to direct-to-S3 presigned upload flow with progress tracking.
-- [ ] **Day 16:** Complete job status UX: queued, processing, completed, and error states with downloadable export links.
-- [ ] **Day 17:** Finalize API ingress, ALB reverse proxy, request timeouts, and TLS-ready access.
-- [ ] **Day 18:** Build and distribute static React bundle to S3 + CloudFront CDN; validate SPA routing.
-- [ ] **Day 19:** Configure custom domain and SSL/TLS via ACM; verify HTTPS frontend and API paths.
-- [ ] **Day 20:** Security hardening: migrate secrets to AWS Secrets Manager; configure AWS WAF and IAM least privilege.
-- [ ] **Day 21:** Implement observability: CloudWatch logs, container metrics, queue depth alarms, and `X-Correlation-ID` tracing.
+## 3. 📝 Detailed Day-by-Day Timeline & Backlog
+
+Each day should be completed, tested, and stabilized before moving forward.
 
 ---
 
-## 🚀 Final 2 Days: Prove & Freeze (Days 22–23)
-- [ ] **Day 22:** Full system integration test: upload → S3 → SQS → Worker → DB → Export → Download (including edge cases).
-- [ ] **Day 23:** Freeze feature additions; run release checklist; document known issues; cut **Production Build v1.0**.
+### 🏗️ Week 1 — Prototype, Scope & Foundation
+
+#### • Day 1: Existing Prototype Review
+- **Activity:** Prototype Review & Baseline Audit
+- **Work to Complete:**
+  - [x] Review the complete website, engine, backend, frontend, database, migrations, worker, and tests.
+  - [x] Identify what works, what needs refactoring, and what must be preserved.
+- **Expected Result:** Clear understanding of the current system and gaps.
+
+#### • Day 2: Requirements & Scope
+- **Activity:** Scope Confirmation
+- **Work to Complete:**
+  - [ ] List required features, improvements, missing pieces, and production requirements.
+  - [ ] Confirm and lock the 23-day production scope in `DECISIONS.md`.
+- **Expected Result:** Initial scope confirmed.
+
+#### • Day 3: Production Architecture
+- **Activity:** Target Architecture Finalization
+- **Work to Complete:**
+  - [ ] Finalize the production architecture and required infrastructure/services for storage, database, queue, compute, frontend, security, and monitoring.
+  - [ ] Specify UAE region (`me-central-1`) data residency boundaries for PDPL compliance.
+- **Expected Result:** Target production approach confirmed.
+
+#### • Day 4: Backend Foundation
+- **Activity:** Structure & Config Refactoring
+- **Work to Complete:**
+  - [ ] Work on backend structure, configuration management (`config.py`), APIs, and required production changes.
+  - [ ] Update `.env.example` with complete configuration specifications.
+- **Expected Result:** Backend foundation ready.
+
+#### • Day 5: Database & Storage
+- **Activity:** Database & Storage Integration
+- **Work to Complete:**
+  - [ ] Complete production database integration (Aurora PostgreSQL / Supabase) and Alembic migrations as required.
+  - [ ] Implement secure file storage adapters and handling.
+- **Expected Result:** Database and storage working.
+
+#### • Day 6 — Saturday: Testing & Review
+- **Activity:** Full-Day Review Session (2 People)
+- **Work to Complete:**
+  - [ ] Full-day testing with 2 people.
+  - [ ] Test website functionality, backend, database, uploads, and existing features.
+  - [ ] Record errors, edge cases, and observations in `KNOWN_ISSUES.md`.
+- **Expected Result:** Issues documented and priorities identified.
+
+#### • Day 7: Stabilization
+- **Activity:** Foundation Hardening
+- **Work to Complete:**
+  - [ ] Fix important issues identified during Saturday testing.
+  - [ ] Stabilize Week 1 foundation and run regression checks.
+- **Expected Result:** Stable Week-1 foundation.
 
 ---
 
-## 🔄 Post Day 23: Real-World Run & Improvement Cycle
-- [ ] Real workload execution → CloudWatch observation → Issue triage with Claude → Approval & deployment.
+### ⚡ Week 2 — Processing & Backend Integration
+
+#### • Day 8: Job Queue
+- **Activity:** Asynchronous Dispatch Architecture
+- **Work to Complete:**
+  - [ ] Implement asynchronous job queue (SQS / Redis), retry handling, and failed-job/dead-letter queue (DLQ) handling.
+- **Expected Result:** Reliable job dispatch.
+
+#### • Day 9: Worker Integration
+- **Activity:** Background Worker Setup
+- **Work to Complete:**
+  - [ ] Integrate the existing processing worker (`worker.py`) into the production job flow while preserving core normalization logic in `engine/`.
+- **Expected Result:** Worker can receive and execute jobs.
+
+#### • Day 10: File Processing Flow
+- **Activity:** End-to-End File Pipeline
+- **Work to Complete:**
+  - [ ] Connect stored source files to the worker and existing processing engine.
+  - [ ] Verify the automated file ingestion and processing path.
+- **Expected Result:** Uploaded files can be processed automatically.
+
+#### • Day 11: Job Reliability
+- **Activity:** State Machine & Fault Tolerance
+- **Work to Complete:**
+  - [ ] Complete job states (`queued`, `processing`, `completed`, `failed`), failure handling, retry behavior, duplicate protection, and safe completion.
+- **Expected Result:** Reliable and traceable jobs.
+
+#### • Day 12 — Saturday: Full System Testing
+- **Activity:** Stress & Error Testing Session (2 People)
+- **Work to Complete:**
+  - [ ] Full-day testing with 2 people.
+  - [ ] Test normal, wrong, large, and repeated files, failed jobs, retries, and processing results.
+- **Expected Result:** Complete issue list and verified problem areas.
+
+#### • Day 13: Fixes & Stabilization
+- **Activity:** Worker & Pipeline Stabilization
+- **Work to Complete:**
+  - [ ] Resolve important issues from Week-2 testing and stabilize processing engine.
+- **Expected Result:** Processing system stabilized.
+
+#### • Day 14: Production Runtime
+- **Activity:** Container & Runtime Deployment
+- **Work to Complete:**
+  - [ ] Prepare multi-stage Docker builds and deploy backend and worker to the selected production runtime (e.g., ECS Fargate).
+  - [ ] Verify health, connectivity, logs, and one complete real job.
+- **Expected Result:** Core production runtime works.
+
+---
+
+### 🌐 Week 3 — Frontend, Deployment & Security
+
+#### • Day 15: Frontend Integration
+- **Activity:** UI & Upload Connection
+- **Work to Complete:**
+  - [ ] Connect the existing frontend upload experience with the production backend and file-processing flow.
+- **Expected Result:** Production upload flow works.
+
+#### • Day 16: Job Status & Results
+- **Activity:** Real-Time Tracking UX & Exports
+- **Work to Complete:**
+  - [ ] Complete queued, processing, completed, and failed states, progress tracking, error handling, results, and downloads.
+- **Expected Result:** Users can clearly track and retrieve jobs.
+
+#### • Day 17: API & Secure Access
+- **Activity:** Ingress & Routing
+- **Work to Complete:**
+  - [ ] Finalize API routing, health checks, secure access, timeouts, and production reverse proxy configuration (ALB).
+- **Expected Result:** Stable production API.
+
+#### • Day 18 — Saturday: End-to-End Testing
+- **Activity:** Comprehensive User Flow Review (2 People)
+- **Work to Complete:**
+  - [ ] Full-day testing with 2 people.
+  - [ ] Test upload ➔ processing ➔ database ➔ result ➔ export/download and multiple user scenarios.
+- **Expected Result:** End-to-end issues identified and prioritized.
+
+#### • Day 19: Bug Fixing & Stabilization
+- **Activity:** Workflow Fixes
+- **Work to Complete:**
+  - [ ] Fix important issues found during Saturday testing and retest affected workflows.
+- **Expected Result:** Stable end-to-end flow.
+
+#### • Day 20: Security Hardening
+- **Activity:** Access & Secrets Governance
+- **Work to Complete:**
+  - [ ] Review authentication, permissions, secrets management, database/storage access, and production security controls.
+- **Expected Result:** Security baseline complete.
+
+#### • Day 21: Monitoring & Logging
+- **Activity:** Observability & Tracing
+- **Work to Complete:**
+  - [ ] Complete application, worker, queue, and database logging/monitoring.
+  - [ ] Add useful alerts and distributed tracing.
+- **Expected Result:** System can be monitored and diagnosed.
+
+---
+
+### 🚀 Week 4 — Final Stabilization & Release
+
+#### • Day 22: Final Testing
+- **Activity:** Regression & Realistic Load Testing
+- **Work to Complete:**
+  - [ ] Run complete regression and integration testing.
+  - [ ] Verify fixes have not broken existing functionality.
+  - [ ] Test important edge cases and realistic workloads.
+- **Expected Result:** Final test results and remaining issues documented.
+
+#### • Day 23: Final Review & Release Candidate
+- **Activity:** Production Readiness Sign-Off
+- **Work to Complete:**
+  - [ ] Complete final review, resolve blocking issues, confirm production readiness.
+  - [ ] Document known limitations and prepare the release candidate for real-world running.
+- **Expected Result:** Production candidate ready.
+
+---
+
+## 4. 🔄 After the 23-Day Build
+
+Day 23 is the completion of the initial production build, not the end of improvement. The next stage is **real-world operation and evidence-based refinement**.
+
+| Stage | Action |
+|---|---|
+| **1. Run** | Use the system with real and representative workloads. |
+| **2. Observe** | Watch the actual user flow, processing, results, and system behavior. |
+| **3. Collect** | Gather errors, questions, unexpected results, user feedback, and improvement requests. |
+| **4. Prioritize** | Separate critical issues, important improvements, and later polish. |
+| **5. Fix** | Resolve the highest-priority problems. |
+| **6. Retest** | Repeat the failing scenario and run regression tests. |
+| **7. Optimize** | Improve performance and reliability based on actual measurements. |
+| **8. Polish** | Improve UI, workflow, documentation, and remaining non-critical areas. |
+
+---
+
+## 5. 🛡️ Final Working Rule
+
+$$\textbf{Build} \longrightarrow \textbf{Test} \longrightarrow \textbf{Find Issues} \longrightarrow \textbf{Fix} \longrightarrow \textbf{Confirm} \longrightarrow \textbf{Continue}$$
+
+> **Key Rule:** Saturday testing sessions are protected for deeper review with two people so that new work is not continuously added while hidden problems accumulate.

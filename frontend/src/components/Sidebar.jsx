@@ -138,7 +138,7 @@ export default function Sidebar({ activeTab, setActiveTab, activeJob, theme, use
             style={{ color: '#2563EB' }}
             className="font-black"
           >
-            Supabase Cloud DB
+            Local PostgreSQL DB
           </p>
         </div>
       </div>

@@ -453,7 +453,7 @@ export default function UploadSection({ onUploadComplete, activeJob }) {
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight mt-2">Ingestion & Inspection Studio</h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
-              Upload multiple registers, inspect schema mappings with <strong>Inspect All</strong>, and execute automated batch ingestion directly into Supabase.
+              Upload multiple registers, inspect schema mappings with <strong>Inspect All</strong>, and execute automated batch ingestion directly into PostgreSQL.
             </p>
           </div>
 

@@ -25,7 +25,7 @@ export default function OverviewDashboard({ stats, setActiveTab, setSelectedJobI
           <DataLinkLogo className="w-8 h-8 sm:w-10 sm:h-10" />
         </div>
         <p className="text-slate-900 dark:text-slate-100 font-black text-xs sm:text-sm tracking-widest uppercase">
-          CONNECTING TO SUPABASE CLOUD...
+          CONNECTING TO LOCAL POSTGRESQL...
         </p>
         <p className="text-slate-500 dark:text-slate-400 text-xs">Loading live telemetry and canonical real estate registers</p>
       </div>
@@ -38,7 +38,7 @@ export default function OverviewDashboard({ stats, setActiveTab, setSelectedJobI
       value: stats.total_records.toLocaleString(),
       subtitle: `${stats.valid_records.toLocaleString()} Validated Rows`,
       icon: Database,
-      badge: 'Supabase Cloud',
+      badge: 'Local PostgreSQL',
       iconBg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
     },
     {
@@ -86,7 +86,7 @@ export default function OverviewDashboard({ stats, setActiveTab, setSelectedJobI
               Real Estate Data Engine
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-2xl font-medium">
-              Real-time batch ingestion, column standardization (1 sq.m = 10.7639 sq.ft), global phone cleaning, and row-level traceability on Supabase Cloud.
+              Real-time batch ingestion, column standardization (1 sq.m = 10.7639 sq.ft), global phone cleaning, and row-level traceability on Local PostgreSQL.
             </p>
           </div>
 

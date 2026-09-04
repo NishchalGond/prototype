@@ -50,7 +50,7 @@ export default function Header({
         ) : (
           <div className="flex items-center space-x-2 bg-[var(--card-bg)] border border-emerald-500/30 px-3.5 py-1 rounded-full text-[11px] font-medium neumorph-inset">
             <Cloud className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">Supabase Cloud Engine Online</span>
+            <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">Local PostgreSQL Engine Online</span>
           </div>
         )}
       </div>
